@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedApp Reconstruction Guide</title>
+  <style>
+    :root { --ink:#172033; --muted:#5c667a; --line:#d9e0e8; --paper:#fffdf9; --wash:#f1f7f6; --teal:#087a72; --navy:#123456; --danger:#a42c24; --warn:#8a5b00; --good:#17663b; }
+    * { box-sizing:border-box; } body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.58 Georgia, 'Times New Roman', serif; }
+    header { padding:56px max(24px, calc((100% - 1080px)/2)); color:white; background:var(--navy); border-bottom:8px solid #e8ae3b; }
+    h1,h2,h3,h4 { font-family:Arial, Helvetica, sans-serif; letter-spacing:0; line-height:1.18; } h1 { max-width:800px; margin:0; font-size:2.65rem; } h2 { margin:0 0 18px; font-size:1.7rem; color:var(--navy); } h3 { margin:28px 0 10px; font-size:1.13rem; } h4 { margin:0 0 7px; font-size:1rem; }
+    header p { max-width:760px; margin:16px 0 0; font-size:1.1rem; color:#dce8ef; } main { max-width:1080px; margin:auto; padding:38px 24px 72px; } section { margin:0 0 50px; scroll-margin-top:20px; } p { margin:0 0 12px; } a { color:var(--teal); } code { padding:1px 5px; border-radius:3px; background:#e9eef1; font:0.88em Consolas, monospace; } pre { overflow:auto; margin:14px 0; padding:16px; color:#eff7f7; background:#172c3a; border-radius:5px; font:0.86rem/1.5 Consolas, monospace; } pre code { padding:0; background:transparent; }
+    .meta { margin-top:22px; font:0.88rem Arial, sans-serif; color:#c7d7e2; } .toc { margin:0 0 42px; padding:22px 26px; background:var(--wash); border-left:5px solid var(--teal); } .toc ol { columns:2; margin:10px 0 0; padding-left:22px; } .toc li { margin:4px 0; }
+    .callout { margin:16px 0; padding:14px 17px; border-left:5px solid var(--teal); background:var(--wash); } .callout.warning { border-color:#d49716; background:#fff6dd; } .callout.danger { border-color:var(--danger); background:#fff0ee; } .callout.good { border-color:var(--good); background:#edf8ef; }
+    table { width:100%; margin:13px 0 20px; border-collapse:collapse; font-size:0.91rem; } th { color:white; background:var(--navy); font-family:Arial, sans-serif; text-align:left; } th,td { padding:9px 11px; vertical-align:top; border:1px solid var(--line); } tr:nth-child(even) td { background:#f7fafb; } ul,ol { padding-left:24px; } li { margin:5px 0; } .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; } .card { padding:16px; border:1px solid var(--line); border-top:4px solid var(--teal); background:white; } .critical { color:var(--danger); font-weight:bold; } .small { color:var(--muted); font-size:.9rem; }
+    @media (max-width:650px) { header { padding-top:38px; padding-bottom:36px; } h1 { font-size:2rem; } .toc ol { columns:1; } table { min-width:650px; } .table-scroll { overflow:auto; } }
+    @media print { body { font-size:11pt; } header { padding:24px; } main { max-width:none; padding:22px; } section { break-inside:avoid; } a { color:inherit; text-decoration:none; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>MedApp Reconstruction Guide</h1>
+  <p>Technical specification, database design, delivery plan, use cases, and implementation review for the multi-tenant medical management application.</p>
+  <div class="meta">Source reviewed: .NET API and Angular 19 client | Prepared 2026-09-05</div>
+</header>
+<main>
+  <nav class="toc"><strong>Contents</strong><ol><li><a href="#scope">Product scope</a></li><li><a href="#review">Review findings</a></li><li><a href="#architecture">Architecture</a></li><li><a href="#schema">Database schema</a></li><li><a href="#security">Security and tenancy</a></li><li><a href="#api">REST API</a></li><li><a href="#use-cases">Use cases</a></li><li><a href="#frontend">Client application</a></li><li><a href="#build">Rebuild steps</a></li><li><a href="#acceptance">Acceptance checklist</a></li></ol></nav>
+  <section id="scope">
+    <h2>1. Product Scope</h2>
+    <p>MedApp manages one or more medical companies. A company contains areas, specialties, professionals, intervention definitions, patients, appointments, clinical records, and prescriptions. Users operate in one active company at a time; their role determines which workflows they can perform.</p>
+    <div class="grid"><div class="card"><h4>Administration</h4><p>Manage companies, company membership, areas, specialties, professionals, availability, and intervention catalogues.</p></div><div class="card"><h4>Reception</h4><p>Register and find patients, inspect schedules, create, confirm, cancel, and reschedule appointments.</p></div><div class="card"><h4>Clinical Care</h4><p>Review assigned appointments and patient histories, document visits, record vital signs, and issue prescriptions.</p></div></div>
+    <h3>Roles</h3>
+    <div class="table-scroll"><table><thead><tr><th>Role</th><th>Company access</th><th>Permitted workflows</th></tr></thead><tbody><tr><td>Admin</td><td>Any company selected in the application; current API treats Admin as unrestricted.</td><td>All administration, patient, appointment, record, and prescription operations.</td></tr><tr><td>Receptionist</td><td>Only assigned companies.</td><td>Patients and scheduling. No catalogue, membership, clinical record, or prescription mutation.</td></tr><tr><td>Specialist</td><td>Only assigned companies and a linked specialist profile.</td><td>Own availability and appointments; patient history for care; create records and prescriptions for appointments they own.</td></tr></tbody></table></div>
+  </section>
+  <section id="review">
+    <h2>2. Review Findings</h2><p>The .NET solution and Angular client both build successfully. These are the issues to address while recreating or hardening the application.</p>
+    <div class="callout danger"><strong>High: clinical write endpoints are too broadly authorized.</strong> The API marks all medical-record and prescription endpoints as authenticated, so a receptionist can create, alter, or delete clinical data. Require <code>Admin</code>/<code>Specialist</code>, then verify that the specialist is linked to the request user and owns the related appointment or patient-care context.</div>
+    <div class="callout danger"><strong>High: tenant authorization must be server-side for every resource.</strong> The active company is derived from a header or token, but services accept entity IDs and some DTOs carry <code>CompanyId</code>. Every read, update, and delete must query by both entity ID and the resolved company. Validate every foreign key belongs to that same company before persistence. Do not trust a request body company ID.</div>
+    <div class="callout warning"><strong>Medium: migrations are bypassed.</strong> API startup calls <code>EnsureCreatedAsync()</code> although EF migrations and an ApplyMigration project exist. Use <code>Database.MigrateAsync()</code> for a migrated database, preferably from a deployment job, and never mix the two initialization approaches.</div>
+    <div class="callout warning"><strong>Medium: dependency security warning.</strong> The backend build reports a known high-severity advisory for AutoMapper 13.0.1 (GHSA-rvv3-g6hj-g44x). Upgrade to a fixed supported release after checking API compatibility and lock the resolved version.</div>
+    <div class="callout warning"><strong>Client build quality.</strong> Angular reports invalid nested CSS around toast custom properties, an unused dashboard import, two needless optional chains, and five component stylesheets over the 4 kB budget. Correct the CSS syntax, remove/simplify the TypeScript/template code, and either reduce styles or intentionally adjust budgets.</div>
+    <div class="callout"><strong>Deployment concern.</strong> <code>AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()</code> and a development localhost API URL are appropriate only for local development. Allow only deployed UI origins and inject environment-specific API URLs for staging and production.</div>
+  </section>
+  <section id="architecture">
+    <h2>3. Architecture</h2>
+    <div class="table-scroll"><table><thead><tr><th>Layer</th><th>Technology</th><th>Responsibility</th></tr></thead><tbody><tr><td>Web client</td><td>Angular 19, standalone components, Router, Reactive Forms, HttpClient, RxJS/signals</td><td>Role-guarded routes, selected-company state, forms, dashboards, printing prescriptions.</td></tr><tr><td>API</td><td>ASP.NET Core, controllers, JWT bearer authentication, Swagger</td><td>Validation, authorization, tenant enforcement, REST responses, exception handling.</td></tr><tr><td>Application</td><td>C#, DTOs, AutoMapper, services, repository interfaces</td><td>Use-case orchestration and scheduling/business rules.</td></tr><tr><td>Domain</td><td>C# entities and enums</td><td>Core data model without web/framework concerns.</td></tr><tr><td>Infrastructure</td><td>EF Core, SQLite for development, BCrypt, JWT</td><td>Persistence mappings, repositories, token and password services, seed data.</td></tr></tbody></table></div>
+    <pre><code>Angular UI -- Authorization: Bearer JWT + X-Company-Id --&gt; ASP.NET Core API
+  routes/guards/interceptor                                  middleware/controllers
+                                                               |
+                                                          application services
+                                                               |
+                                                       EF Core DbContext / database</code></pre>
+    <p>Use a consistent envelope such as <code>{ success, message, data, errors }</code>. List operations may return <code>{ items, page, pageSize, totalCount }</code> when pagination is introduced.</p>
+  </section>
+  <section id="schema">
+    <h2>4. Database Schema</h2><p>Use UUID/GUID primary keys. Every entity except the membership join has <code>Id</code>, <code>CreatedAt</code> (UTC), and nullable <code>UpdatedAt</code>. Store instants in UTC; define the clinic time zone explicitly when producing appointment slots.</p>
+    <div class="table-scroll"><table><thead><tr><th>Table</th><th>Columns</th><th>Keys and constraints</th></tr></thead><tbody>
+      <tr><td>Companies</td><td>Id, Name(200), TaxId(50), Address(500), Phone(30), Email(200), IsActive, Description</td><td>PK Id. Consider unique TaxId where supplied.</td></tr>
+      <tr><td>Users</td><td>Id, Username(100), PasswordHash, Role, SpecialistId?</td><td>PK Id; unique Username; Role: Admin, Receptionist, Specialist; SpecialistId FK when linked.</td></tr>
+      <tr><td>UserCompanies</td><td>UserId, CompanyId</td><td>Composite PK (UserId, CompanyId); FKs to Users and Companies.</td></tr>
+      <tr><td>Areas</td><td>Id, CompanyId, Name(200), Description</td><td>FK Company; restrict deletion.</td></tr>
+      <tr><td>Specialties</td><td>Id, AreaId, CompanyId, Name(200), Description</td><td>FK Area and Company; verify Area.CompanyId = CompanyId.</td></tr>
+      <tr><td>Specialists</td><td>Id, SpecialtyId, CompanyId, FirstName(100), LastName(100), LicenseNumber(100), Email(200), Phone(30), IsActive</td><td>FK Specialty and Company; add unique (CompanyId, LicenseNumber).</td></tr>
+      <tr><td>SpecialistAvailabilities</td><td>Id, SpecialistId, DayOfWeek, StartHour(5), EndHour(5)</td><td>FK Specialist; DayOfWeek 0-6; validate HH:mm and StartHour &lt; EndHour.</td></tr>
+      <tr><td>InterventionTypes</td><td>Id, SpecialtyId, CompanyId, Name(200), Code(50), Description, DurationMinutes, RequiresAnesthesia, RequiresHospitalization, IsActive</td><td>FK Specialty and Company; positive duration; unique (CompanyId, Code) when supplied.</td></tr>
+      <tr><td>Patients</td><td>Id, CompanyId, FirstName(100), LastName(100), BirthDate, Gender(1), DocumentId(50), Email(200), Phone(30), BloodType(20), Allergies</td><td>FK Company; add unique (CompanyId, DocumentId).</td></tr>
+      <tr><td>Schedulings</td><td>Id, PatientId, SpecialistId, InterventionTypeId, CompanyId, ScheduledAt, Notes(1000), Status</td><td>FKs all restrict; index (SpecialistId, ScheduledAt); status: Scheduled, Completed, Cancelled, Confirmed, Rescheduled.</td></tr>
+      <tr><td>MedicalRecords</td><td>Id, PatientId, InterventionTypeId?, CompanyId, RecordDate, Diagnosis(2000), Treatment, Notes, WeightKg, HeightCm, TemperatureCelsius, SystolicBP, DiastolicBP, HeartRateBpm, OxygenSaturation</td><td>FK Patient, optional InterventionType, Company. Prefer retention-safe delete policy.</td></tr>
+      <tr><td>Prescriptions</td><td>Id, PatientId, MedicalRecordId?, SpecialistId, CompanyId, PrescriptionDate, Notes(2000)</td><td>FK Patient, optional MedicalRecord, Specialist, Company.</td></tr>
+      <tr><td>PrescriptionItems</td><td>Id, PrescriptionId, MedicationName(200), Dosage(100), Frequency(100), DurationDays, Instructions(500)</td><td>FK Prescription; cascade delete; DurationDays &gt; 0.</td></tr>
+    </tbody></table></div>
+    <div class="callout warning"><strong>Appointment integrity:</strong> the current index on <code>(SpecialistId, ScheduledAt)</code> is not unique and cannot prevent overlapping variable-duration interventions. Before insert/reschedule, load appointments for the specialist in the requested interval and reject any intersection: <code>existing.Start &lt; requested.End AND requested.Start &lt; existing.End</code>.</div>
+  </section>
+  <section id="security">
+    <h2>5. Security and Tenancy</h2>
+    <ol><li>Create a BCrypt password hash; never persist or log a plain password.</li><li>On login, verify the user and produce a short-lived signed JWT containing subject/user ID, username, role, and allowed company IDs.</li><li>Client stores the token in session storage, attaches <code>Authorization: Bearer &lt;token&gt;</code>, and attaches the selected <code>X-Company-Id</code>.</li><li>Middleware validates the requested company against membership claims, resolves request-scoped <code>ICompanyContext</code>, and returns 403 for unassigned companies.</li><li>Services derive company from context, filter all queries by it, and validate referenced IDs belong to it. Controllers must not bind CompanyId from request DTOs.</li><li>Authorize writes by policy and ownership. Log actor, company, action, entity, and correlation ID without medical data or tokens.</li></ol>
+    <p>Use HTTPS, secret storage for the JWT signing key and connection string, token-expiry handling, login rate limits, and production CORS allowlists. Medical data also calls for audit trails, backups, retention policy, least privilege, and jurisdiction-specific privacy controls.</p>
+  </section>
+  <section id="api">
+    <h2>6. REST API Contract</h2><p>Base URL in local development: <code>http://localhost:5084</code>. All routes except login and health require JWT. Tenant routes require an active company context.</p>
+    <div class="table-scroll"><table><thead><tr><th>Resource</th><th>Endpoints</th><th>Access</th></tr></thead><tbody>
+      <tr><td>Auth / health</td><td><code>POST /auth/login</code>; <code>GET /health</code>; <code>GET /health/db</code></td><td>Public</td></tr>
+      <tr><td>Companies</td><td><code>GET /companies/mine</code>; <code>GET/POST /companies</code>; <code>GET/PUT/DELETE /companies/{id}</code></td><td>Mine: signed in. Administrative CRUD: Admin.</td></tr>
+      <tr><td>Areas, specialties, intervention types</td><td><code>GET/POST /areas</code>, <code>GET/PUT/DELETE /areas/{id}</code>; same convention for <code>/specialties</code> and <code>/intervention-types</code></td><td>Reads signed in; mutations Admin.</td></tr>
+      <tr><td>Specialists / availability</td><td>CRUD <code>/specialists</code>; <code>GET /specialists/{id}/availability</code>; <code>GET /specialists/{id}/slots</code>; <code>POST /specialist-availability</code>; <code>DELETE /specialist-availability/{id}</code></td><td>Catalogue CRUD/Admin; availability mutation Admin currently. Rebuild should permit specialist self-management.</td></tr>
+      <tr><td>Users</td><td><code>GET/POST /users</code>; <code>GET/PUT/DELETE /users/{id}</code></td><td>Admin</td></tr>
+      <tr><td>Patients</td><td><code>GET /patients?search=</code>; <code>GET/POST /patients</code>; <code>GET/PUT/DELETE /patients/{id}</code></td><td>Read/create/update authenticated currently; delete Admin. Rebuild using the role policy above.</td></tr>
+      <tr><td>Scheduling</td><td><code>GET /scheduling</code>; patient/specialist filtered GETs; <code>POST /scheduling</code>; <code>PATCH /scheduling/{id}/status</code>; <code>PATCH /scheduling/{id}/reschedule</code>; delete</td><td>Admin, Receptionist, Specialist; add ownership checks for Specialist.</td></tr>
+      <tr><td>Medical records</td><td>Collection, patient filtered, item GET/POST/PUT/DELETE routes</td><td><span class="critical">Current API: any authenticated user. Required: Admin or assigned Specialist.</span></td></tr>
+      <tr><td>Prescriptions</td><td>Collection, patient filtered, item GET/POST/DELETE routes</td><td><span class="critical">Current API: any authenticated user. Required: Admin or assigned Specialist.</span></td></tr>
+    </tbody></table></div>
+    <p class="small">For a clean rewrite use conventional collection/item routing. Return 201 plus Location for creates, 204 deletes, 400 validation, 401 unauthenticated, 403 forbidden, 404 tenant-scoped not found, and 409 scheduling conflicts.</p>
+  </section>
+  <section id="use-cases">
+    <h2>7. Use Cases and Rules</h2>
+    <div class="table-scroll"><table><thead><tr><th>Use case</th><th>Actor</th><th>Flow and rules</th></tr></thead><tbody>
+      <tr><td>Sign in and select company</td><td>All users</td><td>Submit credentials, receive JWT and allowed companies, choose an allowed company, then navigate to the role dashboard. Clear token/context on logout or expiry.</td></tr>
+      <tr><td>Manage organization</td><td>Admin</td><td>Create company, then areas, specialties, intervention types, and specialists in parent-first order. Reject cross-company references.</td></tr>
+      <tr><td>Manage users</td><td>Admin</td><td>Create user, assign global role and one or more companies. Link a Specialist user to exactly one active specialist profile when applicable.</td></tr>
+      <tr><td>Set availability</td><td>Admin / Specialist</td><td>Create weekly start/end windows. Reject malformed values, reversed ranges, and overlapping windows for one specialist/day.</td></tr>
+      <tr><td>Register patient</td><td>Admin / Receptionist</td><td>Capture demographics/contact, allergies and blood type. Validate age/date, gender enum, and unique company document ID.</td></tr>
+      <tr><td>Book appointment</td><td>Admin / Receptionist</td><td>Select patient, professional, intervention and local date/time. Confirm tenant ownership, active professional, availability, and duration-based conflict absence. Create Scheduled.</td></tr>
+      <tr><td>Change appointment</td><td>Admin / Receptionist / assigned Specialist</td><td>Allow valid transitions: Scheduled to Confirmed/Cancelled/Completed; rescheduling validates availability/conflicts and records Rescheduled.</td></tr>
+      <tr><td>Document care</td><td>Assigned Specialist / Admin</td><td>View tenant-scoped patient history, write diagnosis/treatment/notes and optional intervention/vitals. Include author and audit data in redesign.</td></tr>
+      <tr><td>Issue prescription</td><td>Assigned Specialist / Admin</td><td>Create header linked to patient, optional record, issuer, date and medication lines. Validate specialist/company and positive duration; generate printable output.</td></tr>
+    </tbody></table></div>
+  </section>
+  <section id="frontend">
+    <h2>8. Client Application</h2><p>Use lazy-loaded feature routes protected by <code>authGuard</code>, <code>companyGuard</code>, and a parameterized <code>roleGuard</code>. The shell contains responsive navigation, current-company switcher, theme control, and global toast/error handling.</p>
+    <div class="grid"><div class="card"><h4>Core</h4><p>Configuration, auth, company context, interceptor, models, API services, guards, theme service, shared form/table/toast components.</p></div><div class="card"><h4>Administrative features</h4><p>Companies, areas, specialties, specialists with weekly availability, users, and intervention types. Each feature has list and create/edit form views.</p></div><div class="card"><h4>Operational features</h4><p>Patient list and profile; scheduling list/form/calendar behavior; specialist and patient dashboards; record and prescription views including print layout.</p></div></div>
+    <h3>Client safeguards</h3><ul><li>Hide unsupported controls by role, but rely on API authorization as the decisive check.</li><li>Reload or invalidate tenant data whenever the active company changes.</li><li>Use server validation errors at field level, disable submit during requests, and preserve unsaved form data only deliberately.</li><li>Keep the access token out of local storage; session storage reduces persistence but does not mitigate XSS, so apply CSP and strict input/output handling.</li></ul>
+  </section>
+  <section id="build">
+    <h2>9. Rebuild Steps</h2>
+    <ol><li>Install a supported .NET SDK matching the solution target framework, Node.js LTS, npm, Angular CLI 19, and SQLite. Create private configuration for JWT and connection secrets.</li><li>Create Domain, Application, Infrastructure, Api, and optional ApplyMigration projects. Api references Application/Infrastructure; Infrastructure references Application/Domain; Application references Domain.</li><li>Define entities, enums, DTOs, repository contracts, and use-case services. Add request validation. Do not expose EF entities directly.</li><li>Configure EF Core mappings using this schema, indexes, uniqueness and tenant predicates. Generate an initial migration with <code>dotnet ef migrations add InitialCreate --startup-project ../MedApp.Api</code>.</li><li>Configure password hashing, JWT claims, company context, exception mapping, logging, health checks, Swagger bearer security, rate limiting, CORS, and authorization policies.</li><li>Implement in dependency order: company/membership, catalogue, professionals/availability, patients, scheduling/slots, records, prescriptions. Cover races with a transaction and concurrency strategy.</li><li>Implement controllers and integration tests for auth, roles, cross-tenant IDs, foreign keys, schedule conflicts, and lifecycle behavior.</li><li>Create Angular standalone app. Implement core services/interceptor/guards, shell/company selection, then feature modules in the same dependency order.</li><li>Build typed reactive forms, accessible validation, empty/loading/error states, tables/search/filtering, appointment status controls, timeline, and print stylesheet. Use environments for URLs.</li><li>Seed non-production data only. Deploy migrations separately; configure HTTPS, CORS, secrets, backups and monitoring; run automated and role-based acceptance tests.</li></ol>
+    <h3>Local commands</h3><pre><code># API
+cd medapi
+dotnet restore
+dotnet build .\MedApp.slnx
+dotnet run --project .\MedApp.Api
+
+# Angular client
+cd medapp
+npm ci
+npm run build
+npm start</code></pre>
+    <div class="callout good"><strong>Verified in the reviewed workspace:</strong> <code>dotnet build .\MedApp.slnx</code> and <code>npm run build</code> both complete successfully, subject to the warnings described in the review.</div>
+  </section>
+  <section id="acceptance">
+    <h2>10. Acceptance Checklist</h2><ul><li>Admin can create hierarchy and assign users; non-admin API calls are rejected.</li><li>A user cannot select, read, alter, or infer records from an unassigned company.</li><li>Patient documents and specialist licenses are unique per company; parent/child company mismatches are rejected.</li><li>Slots respect availability and duration; concurrent booking cannot create an overlap.</li><li>Only Admin or properly linked Specialist writes records/prescriptions; every clinical action is audited.</li><li>Expired tokens require sign-in; production accepts only trusted CORS origins and HTTPS.</li><li>API tests and Angular production build pass without security, compiler, CSS, or budget warnings.</li><li>Accessibility covers keyboard operation, labels, focus, feedback, contrast, responsive tables, and printable prescriptions.</li></ul>
+  </section>
+</main>
+</body>
+</html>

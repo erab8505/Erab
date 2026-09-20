@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedApp — Application Functionalities</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #dbeafe;
+      --success: #16a34a;
+      --success-light: #dcfce7;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --neutral: #6b7280;
+      --neutral-light: #f3f4f6;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #ffffff;
+      --bg-section: #f9fafb;
+      --radius: 8px;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: #fff;
+      padding: 48px 40px 40px;
+    }
+    header h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { margin-top: 8px; font-size: 1.05rem; opacity: .85; max-width: 640px; }
+    .header-meta {
+      margin-top: 20px;
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: .875rem;
+      opacity: .8;
+    }
+    .header-meta span { display: flex; align-items: center; gap: 6px; }
+
+    /* ── Layout ── */
+    .wrapper {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--bg-section);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 48px;
+    }
+    .toc h2 { font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); margin-bottom: 16px; }
+    .toc ol  { padding-left: 20px; columns: 2; gap: 32px; }
+    .toc li  { margin-bottom: 6px; }
+    .toc a   { color: var(--primary); text-decoration: none; font-size: .95rem; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Section ── */
+    section {
+      margin-bottom: 56px;
+      scroll-margin-top: 20px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+    .section-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .section-header .section-number {
+      font-size: .8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+    }
+
+    /* Icon color variants */
+    .icon-blue   { background: var(--primary-light); }
+    .icon-green  { background: var(--success-light); }
+    .icon-amber  { background: var(--warning-light); }
+    .icon-red    { background: var(--danger-light);  }
+    .icon-purple { background: #ede9fe; }
+    .icon-teal   { background: #ccfbf1; }
+    .icon-pink   { background: #fce7f3; }
+    .icon-gray   { background: var(--neutral-light); }
+    .icon-indigo { background: #e0e7ff; }
+    .icon-rose   { background: #ffe4e6; }
+    .icon-sky    { background: #e0f2fe; }
+    .icon-lime   { background: #ecfccb; }
+
+    /* ── Cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--bg-section);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card h4 { font-size: .95rem; font-weight: 700; margin-bottom: 8px; }
+    .card p, .card ul { font-size: .875rem; color: var(--text-muted); }
+    .card ul { padding-left: 16px; margin-top: 6px; }
+    .card ul li { margin-bottom: 4px; }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; margin-top: 16px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .875rem;
+    }
+    thead th {
+      background: var(--bg-section);
+      text-align: left;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      border-bottom: 2px solid var(--border);
+    }
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-section); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 600;
+      line-height: 1.6;
+      white-space: nowrap;
+    }
+    .badge-blue   { background: var(--primary-light); color: var(--primary); }
+    .badge-green  { background: var(--success-light); color: var(--success); }
+    .badge-amber  { background: var(--warning-light); color: var(--warning); }
+    .badge-red    { background: var(--danger-light);  color: var(--danger);  }
+    .badge-purple { background: #ede9fe; color: #7c3aed; }
+    .badge-gray   { background: var(--neutral-light); color: var(--neutral); }
+    .badge-teal   { background: #ccfbf1; color: #0f766e; }
+    .badge-indigo { background: #e0e7ff; color: #4338ca; }
+
+    /* ── Steps ── */
+    .steps { list-style: none; counter-reset: step; margin-top: 16px; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .steps li::before {
+      content: counter(step);
+      min-width: 28px; height: 28px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .steps li .step-body { font-size: .9rem; }
+    .steps li .step-body strong { display: block; font-weight: 700; margin-bottom: 2px; }
+    .steps li .step-body span { color: var(--text-muted); }
+
+    /* ── Field list ── */
+    .field-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .field-pill {
+      background: var(--neutral-light);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: .8rem;
+      color: var(--text);
+    }
+    .field-pill.required { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+
+    /* ── Callout ── */
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: var(--primary-light);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 14px 18px;
+      font-size: .9rem;
+      margin-top: 16px;
+      color: #1e3a8a;
+    }
+    .callout.warning { border-color: var(--warning); background: var(--warning-light); color: #78350f; }
+    .callout.success { border-color: var(--success); background: var(--success-light); color: #14532d; }
+
+    /* ── Hierarchy diagram ── */
+    .hierarchy {
+      background: var(--bg-section);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-top: 16px;
+      font-size: .875rem;
+    }
+    .hierarchy ul { list-style: none; padding-left: 24px; }
+    .hierarchy > ul { padding-left: 0; }
+    .hierarchy li { padding: 4px 0; position: relative; }
+    .hierarchy li::before {
+      content: '';
+      position: absolute;
+      left: -16px; top: 50%;
+      width: 12px; height: 1px;
+      background: var(--border);
+    }
+    .hierarchy > ul > li::before { display: none; }
+    .h-node {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 12px;
+    }
+
+    /* ── Role matrix ── */
+    .check    { color: var(--success); font-weight: 700; }
+    .cross    { color: var(--neutral); }
+
+    /* ── Sub-label ── */
+    .sub-label {
+      font-size: .8rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    p.lead {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      max-width: 720px;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 24px 0 10px;
+    }
+
+    @media (max-width: 640px) {
+      .toc ol { columns: 1; }
+      header { padding: 32px 20px 28px; }
+      .wrapper { padding: 28px 16px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ HEADER -->
+<header>
+  <h1>🏥 MedApp — Functionalities Reference</h1>
+  <p>Complete description of all application features, data models, user roles, and workflows.</p>
+  <div class="header-meta">
+    <span>⚙️ Angular 17+ Standalone Components</span>
+    <span>🎨 Signals-based reactivity</span>
+    <span>🔐 Role-based access control</span>
+    <span>📅 March 30, 2026</span>
+  </div>
+</header>
+
+<div class="wrapper">
+
+  <!-- ═══════════════════════════════════════════════════════════ TOC -->
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#architecture">Architecture Overview</a></li>
+      <li><a href="#roles">User Roles &amp; Permissions</a></li>
+      <li><a href="#auth">Authentication</a></li>
+      <li><a href="#company-selection">Company Selection</a></li>
+      <li><a href="#layout">Layout &amp; Navigation</a></li>
+      <li><a href="#dashboard">Dashboard</a></li>
+      <li><a href="#companies">Companies</a></li>
+      <li><a href="#areas">Areas</a></li>
+      <li><a href="#specialties">Specialties</a></li>
+      <li><a href="#specialists">Specialists</a></li>
+      <li><a href="#interventions">Interventions</a></li>
+      <li><a href="#patients">Patients</a></li>
+      <li><a href="#scheduling">Scheduling</a></li>
+      <li><a href="#data-models">Data Models</a></li>
+    </ol>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════ ARCHITECTURE -->
+  <section id="architecture">
+    <div class="section-header">
+      <div class="section-icon icon-gray">⚙️</div>
+      <div>
+        <div class="section-number">Section 1</div>
+        <h2>Architecture Overview</h2>
+      </div>
+    </div>
+    <p class="lead">MedApp is a multi-tenant medical management platform. All data is scoped to a selected company context, and all features enforce role-based access.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>⚡ Framework &amp; State</h4>
+        <ul>
+          <li>Angular 17+ with standalone components</li>
+          <li>Signals (<code>signal()</code>, <code>computed()</code>, <code>effect()</code>) instead of NgRx</li>
+          <li>Lazy-loaded routes via <code>loadComponent</code> / <code>loadChildren</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>🔐 Security</h4>
+        <ul>
+          <li>JWT token stored in session storage</li>
+          <li><code>Bearer</code> header injected by HTTP interceptor</li>
+          <li>Three guards: <code>authGuard</code>, <code>companyGuard</code>, <code>roleGuard</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>🏢 Multi-tenancy</h4>
+        <ul>
+          <li>Every resource belongs to a company</li>
+          <li>Active company set via <code>CompanyContextService</code></li>
+          <li>All lists auto-reload when company changes</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>🎨 UX</h4>
+        <ul>
+          <li>Dark / Light theme toggle (persisted to <code>localStorage</code>)</li>
+          <li>Toast notifications (auto-dismiss at 3.5 s)</li>
+          <li>Responsive layout shell with sidebar + navbar</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Organizational Hierarchy</h3>
+    <div class="hierarchy">
+      <ul>
+        <li>
+          <span class="h-node">🏥 Company</span>
+          <ul>
+            <li>
+              <span class="h-node">🏢 Area</span>
+              <ul>
+                <li>
+                  <span class="h-node">🩺 Specialty</span>
+                  <ul>
+                    <li><span class="h-node">👨‍⚕️ Specialist</span></li>
+                    <li><span class="h-node">📋 Intervention Type</span></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+            <li><span class="h-node">🧑‍🤝‍🧑 Patient</span></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ ROLES -->
+  <section id="roles">
+    <div class="section-header">
+      <div class="section-icon icon-purple">👤</div>
+      <div>
+        <div class="section-number">Section 2</div>
+        <h2>User Roles &amp; Permissions</h2>
+      </div>
+    </div>
+    <p class="lead">Every user is assigned one of three roles. Access to each feature is controlled by route guards.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th><span class="badge badge-purple">Admin</span></th>
+            <th><span class="badge badge-blue">Receptionist</span></th>
+            <th><span class="badge badge-teal">Specialist</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Dashboard</td><td class="check">✓ (Admin view)</td><td class="check">✓ (Patient view)</td><td class="check">✓ (Patient view)</td></tr>
+          <tr><td>Companies</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+          <tr><td>Areas</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+          <tr><td>Specialties</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+          <tr><td>Specialists</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+          <tr><td>Specialist Availability</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+          <tr><td>Interventions</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+          <tr><td>Patients</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+          <tr><td>Scheduling</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout" style="margin-top:20px;">
+      <strong>Company context requirement:</strong> All features except login and company selection require an active company to be selected. The <code>companyGuard</code> enforces this automatically.
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ AUTH -->
+  <section id="auth">
+    <div class="section-header">
+      <div class="section-icon icon-blue">🔑</div>
+      <div>
+        <div class="section-number">Section 3</div>
+        <h2>Authentication</h2>
+      </div>
+    </div>
+    <p class="lead">Handles login, session management, and post-login routing based on the user's role and company access.</p>
+
+    <h3>Login Flow</h3>
+    <ul class="steps">
+      <li>
+        <div class="step-body">
+          <strong>Enter credentials</strong>
+          <span>Username and password are submitted via the login form.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Token issued</strong>
+          <span>A session token is stored in <code>sessionStorage</code>; the current user is held in a signal.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Role-based redirect</strong>
+          <span><strong>Admin:</strong> → <code>/admin/select-company</code> &nbsp;|&nbsp; <strong>Non-admin (1 company):</strong> auto-sets context → <code>/dashboard</code> &nbsp;|&nbsp; <strong>Non-admin (multiple companies):</strong> → <code>/select-company</code></span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Authenticated requests</strong>
+          <span>The HTTP interceptor attaches <code>Authorization: Bearer &lt;token&gt;</code> to every outgoing request.</span>
+        </div>
+      </li>
+    </ul>
+
+    <h3>Logout</h3>
+    <p style="font-size:.9rem;color:var(--text-muted);">Available from the navbar. Clears the session token, the company context, and redirects to <code>/login</code>.</p>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════ COMPANY SELECTION -->
+  <section id="company-selection">
+    <div class="section-header">
+      <div class="section-icon icon-amber">🏢</div>
+      <div>
+        <div class="section-number">Section 4</div>
+        <h2>Company Selection</h2>
+      </div>
+    </div>
+    <p class="lead">Before accessing any feature, a user must select the company they are operating within.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>Non-Admin Selection <span class="badge badge-blue">Receptionist / Specialist</span></h4>
+        <p>A card picker is shown listing all companies the user belongs to. Selecting one sets the company context and redirects to the dashboard.</p>
+        <p style="margin-top:8px;font-size:.8rem;">If the user only has access to one company, this screen is skipped and the context is set automatically.</p>
+      </div>
+      <div class="card">
+        <h4>Admin Selection &amp; Management <span class="badge badge-purple">Admin only</span></h4>
+        <p>A full company management table with search and filter. Admins can:</p>
+        <ul>
+          <li>Create a new company</li>
+          <li>Edit an existing company</li>
+          <li>Delete a company</li>
+          <li>Select a company to work in</li>
+        </ul>
+        <p style="margin-top:8px;font-size:.8rem;">Create/Edit actions open an inline modal form.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ LAYOUT -->
+  <section id="layout">
+    <div class="section-header">
+      <div class="section-icon icon-gray">🗂️</div>
+      <div>
+        <div class="section-number">Section 5</div>
+        <h2>Layout &amp; Navigation</h2>
+      </div>
+    </div>
+    <p class="lead">All authenticated pages share a consistent shell composed of a top navbar and a collapsible sidebar.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>Navbar</h4>
+        <ul>
+          <li>Displays active company name</li>
+          <li>Shows current user's role badge</li>
+          <li>Dark / Light theme toggle</li>
+          <li>"Switch Company" button (admin or multi-company users)</li>
+          <li>Logout button</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Sidebar — Admin</h4>
+        <ul>
+          <li>Dashboard</li>
+          <li>Patients</li>
+          <li>Scheduling</li>
+          <li>Areas</li>
+          <li>Specialties</li>
+          <li>Specialists</li>
+          <li>Interventions</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Sidebar — Receptionist / Specialist</h4>
+        <ul>
+          <li>Dashboard</li>
+          <li>Patients</li>
+          <li>Scheduling</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Toast Notifications</h4>
+        <p>Fixed bottom-right notification area. Toasts auto-dismiss after 3.5 seconds or can be clicked to dismiss. Supports three types:</p>
+        <ul>
+          <li><span class="badge badge-green">success</span></li>
+          <li><span class="badge badge-red">error</span></li>
+          <li><span class="badge badge-amber">warning</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ DASHBOARD -->
+  <section id="dashboard">
+    <div class="section-header">
+      <div class="section-icon icon-indigo">📊</div>
+      <div>
+        <div class="section-number">Section 6</div>
+        <h2>Dashboard</h2>
+      </div>
+    </div>
+    <p class="lead">The dashboard adapts its content based on the user's role.</p>
+
+    <h3>Admin Dashboard</h3>
+    <p style="font-size:.9rem;color:var(--text-muted);margin-bottom:14px;">Displays an interactive, collapsible tree of the full organizational structure for the selected company.</p>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Organizational Tree</h4>
+        <p>Renders <strong>Company → Areas → Specialties → (Specialists group &amp; Intervention Types group)</strong> as a collapsible hierarchy.</p>
+        <p class="sub-label">All data is loaded in parallel via <code>forkJoin</code>.</p>
+      </div>
+      <div class="card">
+        <h4>Inline Actions</h4>
+        <ul>
+          <li><strong>Edit</strong> any node → navigates to the corresponding edit form</li>
+          <li><strong>Delete</strong> any node → calls the appropriate service delete method</li>
+        </ul>
+        <p class="sub-label">Delete is blocked if the node has children.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top:28px;">Patient / Receptionist Dashboard</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Patient Statistics</h4>
+        <p>Three stat cards showing:</p>
+        <ul>
+          <li>Total patients registered</li>
+          <li>Male patients count</li>
+          <li>Female patients count</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Patient List</h4>
+        <p>Quick-view table of all patients with computed age column. Each row has a "View" button navigating to the full patient profile.</p>
+      </div>
+      <div class="card">
+        <h4>Quick Actions</h4>
+        <ul>
+          <li>"+ New Patient" button to register a new patient</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ COMPANIES -->
+  <section id="companies">
+    <div class="section-header">
+      <div class="section-icon icon-amber">🏛️</div>
+      <div>
+        <div class="section-number">Section 7</div>
+        <h2>Companies</h2>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><span class="badge badge-purple">Admin only</span> &nbsp; Route: <code>/companies</code></div>
+    <p class="lead">Manage the companies registered in the platform. Each company is an independent organizational tenant.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Route</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">List</span></td><td><code>/companies</code></td><td>Table showing name, tax ID, address, phone, email, and active status badge.</td></tr>
+          <tr><td><span class="badge badge-green">Create</span></td><td><code>/companies/new</code></td><td>Form to register a new company.</td></tr>
+          <tr><td><span class="badge badge-amber">Edit</span></td><td><code>/companies/:id/edit</code></td><td>Pre-fills the form with existing data for update.</td></tr>
+          <tr><td><span class="badge badge-red">Delete</span></td><td>Action in list</td><td>Removes the company record.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Form Fields</h3>
+    <div class="field-list">
+      <span class="field-pill required">Name *</span>
+      <span class="field-pill required">Tax ID *</span>
+      <span class="field-pill">Address</span>
+      <span class="field-pill">Phone</span>
+      <span class="field-pill">Email (validated)</span>
+      <span class="field-pill">Active (checkbox)</span>
+      <span class="field-pill">Description</span>
+    </div>
+    <p class="sub-label" style="margin-top:10px;">* Required fields shown in blue</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ AREAS -->
+  <section id="areas">
+    <div class="section-header">
+      <div class="section-icon icon-teal">🏢</div>
+      <div>
+        <div class="section-number">Section 8</div>
+        <h2>Areas</h2>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><span class="badge badge-purple">Admin only</span> &nbsp; Route: <code>/areas</code></div>
+    <p class="lead">Areas are the top-level organizational units within a company (e.g., Cardiology Wing, Outpatient Block). All areas are scoped to the currently selected company.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Route</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">List</span></td><td><code>/areas</code></td><td>Table of all areas for the current company. Auto-reloads when company context changes.</td></tr>
+          <tr><td><span class="badge badge-green">Create</span></td><td><code>/areas/new</code></td><td>Register a new area under the current company.</td></tr>
+          <tr><td><span class="badge badge-amber">Edit</span></td><td><code>/areas/:id/edit</code></td><td>Update the name or description of an existing area.</td></tr>
+          <tr><td><span class="badge badge-red">Delete</span></td><td>Action in list</td><td>Removes the area.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Form Fields</h3>
+    <div class="field-list">
+      <span class="field-pill required">Name *</span>
+      <span class="field-pill">Description</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ SPECIALTIES -->
+  <section id="specialties">
+    <div class="section-header">
+      <div class="section-icon icon-sky">🩺</div>
+      <div>
+        <div class="section-number">Section 9</div>
+        <h2>Specialties</h2>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><span class="badge badge-purple">Admin only</span> &nbsp; Route: <code>/specialties</code></div>
+    <p class="lead">Specialties sit below areas in the hierarchy. Each specialty belongs to one area and groups related specialists and intervention types.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Route</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">List</span></td><td><code>/specialties</code></td><td>Table displays specialty name + resolved area name.</td></tr>
+          <tr><td><span class="badge badge-green">Create</span></td><td><code>/specialties/new</code></td><td>Register a new specialty linked to an area.</td></tr>
+          <tr><td><span class="badge badge-amber">Edit</span></td><td><code>/specialties/:id/edit</code></td><td>Update specialty details or reassign to a different area.</td></tr>
+          <tr><td><span class="badge badge-red">Delete</span></td><td>Action in list</td><td>Removes the specialty.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Form Fields</h3>
+    <div class="field-list">
+      <span class="field-pill required">Name *</span>
+      <span class="field-pill required">Area (dropdown) *</span>
+      <span class="field-pill">Description</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ SPECIALISTS -->
+  <section id="specialists">
+    <div class="section-header">
+      <div class="section-icon icon-green">👨‍⚕️</div>
+      <div>
+        <div class="section-number">Section 10</div>
+        <h2>Specialists</h2>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><span class="badge badge-purple">Admin only</span> &nbsp; Route: <code>/specialists</code></div>
+    <p class="lead">Manage the medical professionals associated with the company. Each specialist belongs to one specialty and can have a configurable weekly availability schedule.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Route</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">List</span></td><td><code>/specialists</code></td><td>Table with full name, license number, resolved specialty name, email, and active badge.</td></tr>
+          <tr><td><span class="badge badge-green">Create</span></td><td><code>/specialists/new</code></td><td>Register a new specialist.</td></tr>
+          <tr><td><span class="badge badge-amber">Edit</span></td><td><code>/specialists/:id/edit</code></td><td>Update specialist details.</td></tr>
+          <tr><td><span class="badge badge-indigo">Availability</span></td><td><code>/specialists/:id/availability</code></td><td>Manage the specialist's weekly schedule.</td></tr>
+          <tr><td><span class="badge badge-red">Delete</span></td><td>Action in list</td><td>Removes the specialist record.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Form Fields</h3>
+    <div class="field-list">
+      <span class="field-pill required">First Name *</span>
+      <span class="field-pill required">Last Name *</span>
+      <span class="field-pill required">License Number *</span>
+      <span class="field-pill required">Specialty (dropdown) *</span>
+      <span class="field-pill required">Email *</span>
+      <span class="field-pill">Phone</span>
+      <span class="field-pill">Active (checkbox)</span>
+    </div>
+
+    <h3>Weekly Availability Schedule</h3>
+    <p style="font-size:.9rem;color:var(--text-muted);margin-bottom:14px;">A 7-day grid (Sunday – Saturday) where administrators define the time intervals during which a specialist is available.</p>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Add Interval</h4>
+        <p>Each day has an inline "from / to" time picker. Submitting creates a new availability interval chip on that day.</p>
+      </div>
+      <div class="card">
+        <h4>View Intervals</h4>
+        <p>Occupied days display colored chips for each configured time interval.</p>
+      </div>
+      <div class="card">
+        <h4>Delete Interval</h4>
+        <p>Each chip has an × button to remove that specific time interval. To modify a slot, delete it and re-add with the corrected times.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:16px;">
+      The availability schedule feeds directly into the scheduling wizard's slot picker. The system generates 30-minute booking slots and excludes already-booked times in real time.
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ INTERVENTIONS -->
+  <section id="interventions">
+    <div class="section-header">
+      <div class="section-icon icon-rose">📋</div>
+      <div>
+        <div class="section-number">Section 11</div>
+        <h2>Interventions</h2>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><span class="badge badge-purple">Admin only</span> &nbsp; Route: <code>/interventions</code></div>
+    <p class="lead">Interventions are medical procedure types catalogued under a specialty. They are referenced when booking appointments and creating medical records.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Route</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">List</span></td><td><code>/interventions</code></td><td>Table with name, CPT code, specialty, estimated duration, anesthesia/hospitalization flags, and active badge.</td></tr>
+          <tr><td><span class="badge badge-green">Create</span></td><td><code>/interventions/new</code></td><td>Register a new intervention type.</td></tr>
+          <tr><td><span class="badge badge-amber">Edit</span></td><td><code>/interventions/:id/edit</code></td><td>Update intervention details.</td></tr>
+          <tr><td><span class="badge badge-red">Delete</span></td><td>Action in list</td><td>Removes the intervention type.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Form Fields</h3>
+    <div class="field-list">
+      <span class="field-pill required">Name *</span>
+      <span class="field-pill required">Specialty (dropdown) *</span>
+      <span class="field-pill required">Description *</span>
+      <span class="field-pill required">Estimated Duration (minutes) *</span>
+      <span class="field-pill">CPT Code</span>
+      <span class="field-pill">Requires Anesthesia (checkbox)</span>
+      <span class="field-pill">Requires Hospitalization (checkbox)</span>
+      <span class="field-pill">Active (checkbox)</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════ PATIENTS -->
+  <section id="patients">
+    <div class="section-header">
+      <div class="section-icon icon-pink">🧑‍🤝‍🧑</div>
+      <div>
+        <div class="section-number">Section 12</div>
+        <h2>Patients</h2>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><span class="badge badge-purple">Admin</span> <span class="badge badge-blue">Receptionist</span> <span class="badge badge-teal">Specialist</span> &nbsp; Route: <code>/patients</code></div>
+    <p class="lead">The patients module is the clinical hub of the application. It covers patient registration, a full clinical profile, medical record keeping, and prescription management.</p>
+
+    <h3>Patient List</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Action</th><th>Route</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-blue">List</span></td><td><code>/patients</code></td><td>Table with document ID, date of birth, gender, blood type badge, phone. Actions: View, Schedule, Edit, Delete.</td></tr>
+          <tr><td><span class="badge badge-green">Create</span></td><td><code>/patients/new</code></td><td>Register a new patient.</td></tr>
+          <tr><td><span class="badge badge-amber">Edit</span></td><td><code>/patients/:id/edit</code></td><td>Update patient demographics.</td></tr>
+          <tr><td><span class="badge badge-red">Delete</span></td><td>Action in list</td><td>Removes the patient record.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Patient Registration Form Fields</h3>
+    <div class="field-list">
+      <span class="field-pill required">First Name *</span>
+      <span class="field-pill required">Last Name *</span>
+      <span class="field-pill required">Document ID *</span>
+      <span class="field-pill required">Date of Birth *</span>
+      <span class="field-pill required">Gender (M / F / Other) *</span>
+      <span class="field-pill">Blood Type</span>
+      <span class="field-pill">Email</span>
+      <span class="field-pill">Phone</span>
+      <span class="field-pill">Allergies</span>
+    </div>
+
+    <h3 style="margin-top:28px;">Patient Profile — 4 Tabs</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>1 · Personal Info</h4>
+        <ul>
+          <li>Full demographic grid</li>
+          <li>Computed age from date of birth</li>
+          <li>Blood type badge</li>
+          <li>Allergies badge</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>2 · Appointments</h4>
+        <ul>
+          <li>Table of all past and upcoming appointments</li>
+          <li>Each row: date, time, specialist name, intervention, status badge</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>3 · Medical Notes</h4>
+        <ul>
+          <li>List of medical records with diagnosis, treatment, and notes</li>
+          <li>Inline form to add a new medical note (date, intervention, diagnosis, treatment, notes)</li>
+          <li>Attach a prescription directly to a medical note via modal</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>4 · Prescriptions</h4>
+        <ul>
+          <li>All prescriptions linked to a medical record</li>
+          <li>Each row: specialist name, date, medication list</li>
+          <li>Actions: <strong>Print</strong> (opens printable page) and <strong>Delete</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:28px;">Prescription Print</h3>
+    <p style="font-size:.9rem;color:var(--text-muted);margin-bottom:14px;">Route: <code>/patients/:id/prescriptions/:rxId/print</code></p>
+    <div class="card">
+      <h4>Printable Prescription Document</h4>
+      <p>A dedicated print-ready page containing:</p>
+      <ul>
+        <li>Company letterhead (name, address, contact)</li>
+        <li>Prescribing specialist's name and specialty</li>
+        <li>Patient's full demographics</li>
+        <li>Prescription date</li>
+        <li>Medication table: name, dosage, frequency, duration (days), and instructions</li>
+        <li>General prescription notes</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ SCHEDULING -->
+  <section id="scheduling">
+    <div class="section-header">
+      <div class="section-icon icon-lime">📅</div>
+      <div>
+        <div class="section-number">Section 13</div>
+        <h2>Scheduling</h2>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;"><span class="badge badge-purple">Admin</span> <span class="badge badge-blue">Receptionist</span> <span class="badge badge-teal">Specialist</span> &nbsp; Route: <code>/scheduling</code></div>
+    <p class="lead">Manage appointment bookings. A 6-step guided wizard ensures all required information is collected before confirming a booking.</p>
+
+    <h3>Appointment List</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Column / Action</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td>Patient</td><td>Full name</td></tr>
+          <tr><td>Specialist</td><td>Full name</td></tr>
+          <tr><td>Intervention</td><td>Procedure name</td></tr>
+          <tr><td>Date &amp; Time</td><td>Scheduled date and start time</td></tr>
+          <tr><td>Status</td><td><span class="badge badge-blue">scheduled</span> <span class="badge badge-green">completed</span> <span class="badge badge-red">cancelled</span></td></tr>
+          <tr><td>Mark as Done</td><td>Transitions status from <em>scheduled</em> → <em>completed</em>. Visible only on scheduled rows.</td></tr>
+          <tr><td>Cancel</td><td>Transitions status from <em>scheduled</em> → <em>cancelled</em>. Visible only on scheduled rows.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warning">Completed and cancelled appointments are not editable or deletable — only the status can be transitioned while an appointment is in <em>scheduled</em> state.</div>
+
+    <h3 style="margin-top:28px;">6-Step Booking Wizard</h3>
+    <ul class="steps">
+      <li>
+        <div class="step-body">
+          <strong>Select Patient</strong>
+          <span>Searchable card list by name or document ID. If accessed via the "Schedule" button on the Patient List, the patient is pre-selected and this step is skipped.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Select Area</strong>
+          <span>Searchable card list of areas scoped to the current company.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Select Specialty</strong>
+          <span>Filtered to specialties within the chosen area. Searchable.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Select Procedure (Intervention)</strong>
+          <span>Filtered to interventions under the chosen specialty. Searchable by name or CPT code.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Select Specialist</strong>
+          <span>Filtered to specialists belonging to the chosen specialty. Loaded asynchronously. Searchable.</span>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Select Date &amp; Time</strong>
+          <span>Date picker (minimum date = today). Once a date is selected, 30-minute availability slots are generated from the specialist's schedule with already-booked slots excluded. Unavailable slots are shown but disabled.</span>
+        </div>
+      </li>
+    </ul>
+    <div class="callout success">At every step, a breadcrumb context bar displays previous selections with "Change" buttons to go back and update a choice — automatically clearing all downstream selections.</div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ DATA MODELS -->
+  <section id="data-models">
+    <div class="section-header">
+      <div class="section-icon icon-gray">🗄️</div>
+      <div>
+        <div class="section-number">Section 14</div>
+        <h2>Data Models</h2>
+      </div>
+    </div>
+    <p class="lead">All entities and their key fields.</p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h4>User</h4>
+        <ul>
+          <li><code>id</code>, <code>username</code>, <code>email</code></li>
+          <li><code>role</code>: <code>admin | specialist | receptionist</code></li>
+          <li><code>companyIds[]</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Company</h4>
+        <ul>
+          <li><code>id</code>, <code>name</code>, <code>taxId</code></li>
+          <li><code>address</code>, <code>phone</code>, <code>email</code></li>
+          <li><code>active</code>, <code>description?</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Area</h4>
+        <ul>
+          <li><code>id</code>, <code>name</code></li>
+          <li><code>companyId</code>, <code>description</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Specialty</h4>
+        <ul>
+          <li><code>id</code>, <code>name</code></li>
+          <li><code>companyId</code>, <code>areaId</code></li>
+          <li><code>description</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Specialist</h4>
+        <ul>
+          <li><code>id</code>, <code>firstName</code>, <code>lastName</code></li>
+          <li><code>licenseNumber</code>, <code>specialtyId</code>, <code>companyId</code></li>
+          <li><code>email</code>, <code>phone</code>, <code>active</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>SpecialistAvailability</h4>
+        <ul>
+          <li><code>id</code>, <code>specialistId</code></li>
+          <li><code>dayOfWeek</code> (0–6, Sun–Sat)</li>
+          <li><code>startTime</code>, <code>endTime</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Intervention</h4>
+        <ul>
+          <li><code>id</code>, <code>name</code>, <code>code</code> (CPT)</li>
+          <li><code>companyId</code>, <code>specialtyId</code></li>
+          <li><code>estimatedDurationMinutes</code></li>
+          <li><code>requiresAnesthesia</code>, <code>requiresHospitalization</code></li>
+          <li><code>active</code>, <code>description</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Patient</h4>
+        <ul>
+          <li><code>id</code>, <code>firstName</code>, <code>lastName</code></li>
+          <li><code>documentId</code>, <code>dateOfBirth</code></li>
+          <li><code>gender</code>: <code>'M' | 'F' | 'O'</code></li>
+          <li><code>companyId</code>, <code>email</code>, <code>phone</code></li>
+          <li><code>bloodType</code>, <code>allergies</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Scheduling</h4>
+        <ul>
+          <li><code>id</code>, <code>companyId</code></li>
+          <li><code>patientId</code>, <code>specialistId</code>, <code>interventionId</code></li>
+          <li><code>scheduledDate</code>, <code>scheduledTime</code></li>
+          <li><code>durationMinutes</code>, <code>notes</code></li>
+          <li><code>status</code>: <code>scheduled | completed | cancelled</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>MedicalRecord</h4>
+        <ul>
+          <li><code>id</code>, <code>companyId</code>, <code>patientId</code></li>
+          <li><code>interventionId</code>, <code>date</code></li>
+          <li><code>diagnosis</code>, <code>treatment</code>, <code>notes</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Prescription</h4>
+        <ul>
+          <li><code>id</code>, <code>companyId</code>, <code>patientId</code></li>
+          <li><code>specialistId</code>, <code>medicalRecordId?</code></li>
+          <li><code>date</code>, <code>notes</code></li>
+          <li><code>items[]</code> → <code>PrescriptionItem</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>PrescriptionItem</h4>
+        <ul>
+          <li><code>medicationName</code>, <code>dosage</code></li>
+          <li><code>frequency</code>, <code>durationDays</code></li>
+          <li><code>instructions</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /wrapper -->
+
+</body>
+</html>
