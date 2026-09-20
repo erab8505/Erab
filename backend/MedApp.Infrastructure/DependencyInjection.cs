@@ -32,6 +32,8 @@ public static class DependencyInjection
             });
         });
 
+        services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<MedAppDbContext>());
+
         // Security & Services
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();

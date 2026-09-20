@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MedApp.Infrastructure.Data;
 
-public class MedAppDbContext : DbContext
+public class MedAppDbContext : DbContext, IApplicationDbContext
 {
     private readonly ICompanyContext? _companyContext;
 

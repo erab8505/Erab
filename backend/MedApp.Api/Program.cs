@@ -1,5 +1,6 @@
 using MedApp.Api.Middleware;
 using MedApp.Api.Swagger;
+using MedApp.Application;
 using MedApp.Infrastructure;
 using MedApp.Infrastructure.Data;
 using Microsoft.OpenApi.Models;
@@ -48,7 +49,8 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<TenantHeaderOperationFilter>();
 });
 
-// Infrastructure Services (EF Core MSSQL, JWT Auth, Policies, Multi-tenancy)
+// Application & Infrastructure Services
+builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // CORS for Angular client

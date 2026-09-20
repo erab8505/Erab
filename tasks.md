@@ -9,7 +9,7 @@ This document contains the actionable, step-by-step task breakdown for building 
 - **Phase 1: Environment & Scaffolding** `[4/4]`
 - **Phase 2: Domain Entities & Database Migrations (MSSQL)** `[5/5]`
 - **Phase 3: Authentication, Context & Security** `[5/5]`
-- **Phase 4: Application Layer & Scheduling Engine** `[0/5]`
+- **Phase 4: Application Layer & Scheduling Engine** `[5/5]`
 - **Phase 5: REST API Controllers & Integration Tests** `[0/5]`
 - **Phase 6: Angular Core Architecture & Shell Layout** `[0/6]`
 - **Phase 7: Administration Features (Frontend)** `[0/6]`
@@ -128,7 +128,7 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 4: Application Layer & Scheduling Engine
 
-- [ ] **TASK-15: Organization & Catalogue Services**
+- [x] **TASK-15: Organization & Catalogue Services**
   - **Description**: Implement DTOs, FluentValidation rules, and services for:
     - `CompanyService`
     - `AreaService` & `SpecialtyService`
@@ -137,15 +137,15 @@ This document contains the actionable, step-by-step task breakdown for building 
     - Referential integrity validations (e.g. ensuring `Area` belongs to the active `Company` when creating a `Specialty`).
   - **Dependencies**: TASK-07, TASK-12.
 
-- [ ] **TASK-16: User Management Service**
+- [x] **TASK-16: User Management Service**
   - **Description**: Implement `UserService` for creating/updating users, assigning roles, linking optional `SpecialistId`, and managing `UserCompanies` memberships.
   - **Dependencies**: TASK-10, TASK-15.
 
-- [ ] **TASK-17: Patient Service**
+- [x] **TASK-17: Patient Service**
   - **Description**: Implement `PatientService` supporting tenant-scoped search, registration, demographic validation, unique document ID per company, and age computation.
   - **Dependencies**: TASK-08, TASK-15.
 
-- [ ] **TASK-18: Scheduling & Dynamic Slot Engine**
+- [x] **TASK-18: Scheduling & Dynamic Slot Engine**
   - **Description**: Implement `SchedulingService`:
     - Dynamic slot generation: takes `specialistId` and `date`, inspects `SpecialistAvailability` for that weekday, slices into 30-min intervals, and excludes booked/overlapping intervals.
     - Booking creation with conflict detection:
@@ -153,7 +153,7 @@ This document contains the actionable, step-by-step task breakdown for building 
     - Rescheduling & Status transition rules (`Scheduled` -> `Confirmed`, `Completed`, `Cancelled`, `Rescheduled`).
   - **Dependencies**: TASK-15, TASK-17.
 
-- [ ] **TASK-19: Clinical Records & Prescription Services**
+- [x] **TASK-19: Clinical Records & Prescription Services**
   - **Description**: Implement `MedicalRecordService` and `PrescriptionService`:
     - Vital signs capture (BP, pulse, temp, O2 sat, weight, height)
     - Multi-item prescription management (medication name, dosage, frequency, duration, instructions)
