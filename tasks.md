@@ -11,10 +11,10 @@ This document contains the actionable, step-by-step task breakdown for building 
 - **Phase 3: Authentication, Context & Security** `[5/5]`
 - **Phase 4: Application Layer & Scheduling Engine** `[5/5]`
 - **Phase 5: REST API Controllers & Integration Tests** `[5/5]`
-- **Phase 6: Angular Core Architecture & Shell Layout** `[0/6]`
-- **Phase 7: Administration Features (Frontend)** `[0/6]`
-- **Phase 8: Clinical & Operational Features (Frontend)** `[0/6]`
-- **Phase 9: Quality, Accessibility & E2E Validation** `[0/4]`
+- **Phase 6: Angular Core Architecture & Shell Layout** `[6/6]`
+- **Phase 7: Administration Features (Frontend)** `[6/6]`
+- **Phase 8: Clinical & Operational Features (Frontend)** `[6/6]`
+- **Phase 9: Quality, Accessibility & E2E Validation** `[4/4]`
 
 ---
 
@@ -198,7 +198,7 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 6: Angular Core Architecture & Layout Shell
 
-- [ ] **TASK-25: Core State Services (Signals-Based)**
+- [x] **TASK-25: Core State Services (Signals-Based)**
   - **Description**: Implement standalone injectable services in `src/app/core/services`:
     - `AuthService`: `currentUser = signal(...)`, `isAuthenticated = computed(...)`, JWT decoding, login/logout.
     - `CompanyContextService`: `activeCompany = signal(...)`, `assignedCompanies = signal(...)`, tenant switching.
@@ -206,34 +206,34 @@ This document contains the actionable, step-by-step task breakdown for building 
     - `ToastService`: Reactive toast alerts (success, error, warning) with auto-dismiss at 3.5s.
   - **Dependencies**: TASK-03.
 
-- [ ] **TASK-26: Functional Interceptors & Guards**
+- [x] **TASK-26: Functional Interceptors & Guards**
   - **Description**: Implement in `src/app/core`:
     - `authAndTenantInterceptor`: Injects `Authorization: Bearer <token>` and `X-Company-Id: <id>`.
     - `errorInterceptor`: Catches 401/403/500 and emits toasts.
     - `authGuard`, `companyGuard`, `roleGuard`.
   - **Dependencies**: TASK-25.
 
-- [ ] **TASK-27: Application Shell & Navigation Layout**
+- [x] **TASK-27: Application Shell & Navigation Layout**
   - **Description**: Create standalone `ShellComponent` containing:
     - Top Navbar: Active company name, user role badge, theme toggle, switch company button, logout button.
     - Responsive Sidebar: Role-filtered navigation links (Admin sees full catalogue; Receptionist/Specialist see Dashboard, Patients, Scheduling).
     - Bottom-right Toast container component.
   - **Dependencies**: TASK-26.
 
-- [ ] **TASK-28: Authentication & Company Selection Views**
+- [x] **TASK-28: Authentication & Company Selection Views**
   - **Description**: Implement:
     - `LoginComponent` (`/login`): Reactive form with validation and error display.
     - `SelectCompanyComponent` (`/select-company`): Company card grid for multi-company users.
     - `AdminSelectCompanyComponent` (`/admin/select-company`): Searchable company table with direct switch and manage buttons.
   - **Dependencies**: TASK-27.
 
-- [ ] **TASK-29: Role-Adaptive Dashboard Component**
+- [x] **TASK-29: Role-Adaptive Dashboard Component**
   - **Description**: Implement `DashboardComponent` (`/dashboard`):
     - Admin View: Collapsible organization tree (`Company -> Area -> Specialty -> Specialists / Interventions`) loaded in parallel via `forkJoin`.
     - Receptionist/Specialist View: Patient metrics cards (Total, Male, Female) and quick patient lookup table.
   - **Dependencies**: TASK-28.
 
-- [ ] **TASK-30: Reusable Shared UI Components**
+- [x] **TASK-30: Reusable Shared UI Components**
   - **Description**: Implement shared standalone components in `src/app/shared`:
     - `ModalComponent` (accessible dialog with focus trap and backdrop)
     - `DataTableComponent` (search, pagination, column sorting)
@@ -245,32 +245,32 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 7: Administration Features (Frontend)
 
-- [ ] **TASK-31: Company Management Module**
+- [x] **TASK-31: Company Management Module**
   - **Description**: Implement `CompanyListComponent` and modal `CompanyFormComponent` for `/companies`. Form includes Name, Tax ID, Address, Phone, Email, Active checkbox, Description.
   - **Dependencies**: TASK-27, TASK-30.
 
-- [ ] **TASK-32: Areas & Specialties Management**
+- [x] **TASK-32: Areas & Specialties Management**
   - **Description**: Implement `/areas` and `/specialties` views:
     - Area list & create/edit form.
     - Specialty list & create/edit form with Area dropdown scoped to active company.
   - **Dependencies**: TASK-30, TASK-31.
 
-- [ ] **TASK-33: Specialists Directory**
+- [x] **TASK-33: Specialists Directory**
   - **Description**: Implement `/specialists` view with list, search, create/edit form (First/Last name, License Number, Specialty dropdown, Email, Phone, Active).
   - **Dependencies**: TASK-32.
 
-- [ ] **TASK-34: 7-Day Specialist Availability Grid**
+- [x] **TASK-34: 7-Day Specialist Availability Grid**
   - **Description**: Implement `SpecialistAvailabilityComponent` (`/specialists/:id/availability`):
     - 7-day visual calendar grid (Sunday - Saturday)
     - Add time interval (From / To time pickers) with validation (`StartHour < EndHour`)
     - Day chips for configured intervals with instant delete action.
   - **Dependencies**: TASK-33.
 
-- [ ] **TASK-35: Intervention Types Catalogue**
+- [x] **TASK-35: Intervention Types Catalogue**
   - **Description**: Implement `/interventions` with list, CPT code, Specialty dropdown, Duration in minutes, Anesthesia/Hospitalization checkboxes, Active toggle.
   - **Dependencies**: TASK-32.
 
-- [ ] **TASK-36: User Accounts & Company Membership**
+- [x] **TASK-36: User Accounts & Company Membership**
   - **Description**: Implement `/users` view with user list, create/edit form (Username, Password, Role selector, Specialist profile linking, Multi-company assignment checkboxes).
   - **Dependencies**: TASK-31, TASK-33.
 
@@ -278,13 +278,13 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 8: Clinical & Operational Features (Frontend)
 
-- [ ] **TASK-37: Patient Directory & Registration**
+- [x] **TASK-37: Patient Directory & Registration**
   - **Description**: Implement `/patients` and `/patients/new`, `/patients/:id/edit`:
     - Patient table with search, Document ID, DOB, computed age, Gender, Blood Type badge.
     - Reactive registration form with demographic and clinical fields (allergies, contact info).
   - **Dependencies**: TASK-30.
 
-- [ ] **TASK-38: Patient 4-Tab Profile**
+- [x] **TASK-38: Patient 4-Tab Profile**
   - **Description**: Implement `PatientDetailComponent` (`/patients/:id`):
     - Tab 1: Personal Information & Demographics.
     - Tab 2: Appointments list with status badges and quick action buttons.
@@ -292,7 +292,7 @@ This document contains the actionable, step-by-step task breakdown for building 
     - Tab 4: Prescriptions list with Print and Delete actions.
   - **Dependencies**: TASK-37.
 
-- [ ] **TASK-39: 6-Step Appointment Booking Wizard**
+- [x] **TASK-39: 6-Step Appointment Booking Wizard**
   - **Description**: Implement `BookingWizardComponent` (`/scheduling/new`):
     - Step 1: Select Patient (searchable, auto-selected if launched from patient profile).
     - Step 2: Select Area.
@@ -303,20 +303,20 @@ This document contains the actionable, step-by-step task breakdown for building 
     - Contextual breadcrumb header with "Change" buttons resetting downstream steps.
   - **Dependencies**: TASK-34, TASK-35, TASK-37.
 
-- [ ] **TASK-40: Scheduling Directory & Status Transitions**
+- [x] **TASK-40: Scheduling Directory & Status Transitions**
   - **Description**: Implement `SchedulingListComponent` (`/scheduling`):
     - Filterable table by date range, specialist, status.
     - Action buttons: Mark as Done (`completed`), Cancel (`cancelled`).
     - Reschedule modal with new date/slot picker.
   - **Dependencies**: TASK-39.
 
-- [ ] **TASK-41: Prescription Issuance Modal & Management**
+- [x] **TASK-41: Prescription Issuance Modal & Management**
   - **Description**: Implement Prescription creation modal inside Patient Profile:
     - Select prescribing specialist and optional medical record.
     - Dynamic multi-item FormArray: Medication name, dosage, frequency, duration (days), instructions.
   - **Dependencies**: TASK-38.
 
-- [ ] **TASK-42: Prescription Print Page**
+- [x] **TASK-42: Prescription Print Page**
   - **Description**: Implement dedicated printable view (`/patients/:id/prescriptions/:rxId/print`):
     - Clean `@media print` CSS layout.
     - Clinic letterhead (Company name, Tax ID, address, contact).
@@ -327,15 +327,15 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 9: Quality, Accessibility & Acceptance Validation
 
-- [ ] **TASK-43: CSS Optimization & Budget Compliance**
+- [x] **TASK-43: CSS Optimization & Budget Compliance**
   - **Description**: Fix any nested CSS issues, remove unused imports, ensure all component stylesheets strictly meet the <4kB budget or configure explicit budgets in `angular.json`.
   - **Dependencies**: TASK-27 through TASK-42.
 
-- [ ] **TASK-44: Accessibility (A11y) & Usability Audit**
+- [x] **TASK-44: Accessibility (A11y) & Usability Audit**
   - **Description**: Validate keyboard navigation (`Tab`, `Enter`, `Escape`), ARIA labels on icon buttons, focus trap in modal dialogs, and contrast ratios conforming to WCAG AA.
   - **Dependencies**: TASK-43.
 
-- [ ] **TASK-45: End-to-End Acceptance Test Verification**
+- [x] **TASK-45: End-to-End Acceptance Test Verification**
   - **Description**: Execute and verify all 17 functional acceptance tasks against the MSSQL backend:
     - Foundation: F-01 (Auth), F-02 (Company Context), F-03 (Shell), F-04 (Dashboard)
     - Administration: A-01 (Companies), A-02 (Areas/Specialties), A-03 (Specialists/Availability), A-04 (Interventions), A-05 (Users)
@@ -343,6 +343,6 @@ This document contains the actionable, step-by-step task breakdown for building 
     - Scheduling: S-01 (Booking Wizard), S-02 (Scheduling List), S-03 (Status & Reschedule), S-04 (Delete Appointment).
   - **Dependencies**: TASK-24, TASK-44.
 
-- [ ] **TASK-46: Build & Production Readiness Verification**
+- [x] **TASK-46: Build & Production Readiness Verification**
   - **Description**: Verify clean production builds for both backend (`dotnet build -c Release`) and frontend (`npm run build --configuration production`) with zero compiler warnings or lint errors.
   - **Dependencies**: TASK-45.
