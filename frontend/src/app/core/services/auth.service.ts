@@ -1,4 +1,4 @@
-﻿import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
@@ -60,12 +60,13 @@ export class AuthService {
   }
 
   private handleAuthSuccess(data: LoginResponseDto): void {
+    const companies = data.assignedCompanies || data.companies || [];
     const session: UserSession = {
       username: data.username,
       role: data.role,
       specialistId: data.specialistId,
       token: data.token,
-      companyIds: data.companies.map(c => c.id)
+      companyIds: companies.map(c => c.id)
     };
 
     localStorage.setItem(this.tokenKey, data.token);

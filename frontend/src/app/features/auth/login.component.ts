@@ -1,4 +1,4 @@
-﻿import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -152,6 +152,10 @@ import { ThemeService } from '../../core/services/theme.service';
       box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
       margin-bottom: 1rem;
     }
+    .brand-badge svg {
+      width: 2rem;
+      height: 2rem;
+    }
     .login-title {
       font-size: 1.5rem;
       font-weight: 700;
@@ -177,6 +181,11 @@ import { ThemeService } from '../../core/services/theme.service';
       margin-bottom: 1.25rem;
       border: 1px solid #fecaca;
     }
+    .error-alert svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      flex-shrink: 0;
+    }
     .login-form {
       display: flex;
       flex-direction: column;
@@ -201,6 +210,8 @@ import { ThemeService } from '../../core/services/theme.service';
     .input-icon {
       position: absolute;
       left: 0.875rem;
+      width: 1.25rem;
+      height: 1.25rem;
       color: #94a3b8;
       pointer-events: none;
     }
@@ -238,6 +249,10 @@ import { ThemeService } from '../../core/services/theme.service';
       align-items: center;
       padding: 0.25rem;
     }
+    .toggle-password-btn svg {
+      width: 1.125rem;
+      height: 1.125rem;
+    }
     .toggle-password-btn:hover { color: #475569; }
     .field-error {
       font-size: 0.75rem;
@@ -259,6 +274,10 @@ import { ThemeService } from '../../core/services/theme.service';
       justify-content: center;
       gap: 0.5rem;
       transition: all 0.15s;
+    }
+    .submit-btn svg {
+      width: 1.125rem;
+      height: 1.125rem;
     }
     .submit-btn:hover:not(:disabled) {
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
@@ -320,11 +339,20 @@ export class LoginComponent {
         if (response.success && response.data) {
           this.toastService.success(`Bienvenido, ${response.data.username}`);
 
-          const companies = response.data.companies || [];
+          const companies = response.data.assignedCompanies || response.data.companies || [];
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+
           if (companies.length === 1) {
             this.companyService.setActiveCompany(companies[0]);
-            const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
             this.router.navigateByUrl(returnUrl);
+          } else if (companies.length > 1) {
+            // Check if there is already an active company that matches one of the assigned ones
+            const currentActive = this.companyService.activeCompany();
+            if (currentActive && companies.some(c => c.id === currentActive.id)) {
+              this.router.navigateByUrl(returnUrl);
+            } else {
+              this.router.navigate(['/select-company']);
+            }
           } else {
             this.router.navigate(['/select-company']);
           }
@@ -332,7 +360,7 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'Usuario o contraseña incorrectos.');
+        this.errorMessage.set(err.error?.message || err.message || 'Usuario o contraseña incorrectos.');
       }
     });
   }

@@ -1,4 +1,4 @@
-﻿export type UserRole = 'Admin' | 'Receptionist' | 'Specialist';
+export type UserRole = 'Admin' | 'Receptionist' | 'Specialist';
 export type Gender = 'M' | 'F' | 'O';
 export type AppointmentStatus = 'Scheduled' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rescheduled';
 
@@ -16,10 +16,12 @@ export interface LoginRequestDto {
 
 export interface LoginResponseDto {
   token: string;
+  userId?: string;
   username: string;
   role: UserRole;
   specialistId?: string | null;
-  companies: CompanyDto[];
+  assignedCompanies?: CompanyDto[];
+  companies?: CompanyDto[];
 }
 
 export interface UserSession {
@@ -131,7 +133,8 @@ export interface PatientDto {
   firstName: string;
   lastName: string;
   fullName: string;
-  dateOfBirth: string;
+  birthDate?: string;
+  dateOfBirth?: string;
   age: number;
   gender: Gender;
   bloodType?: string | null;
@@ -143,13 +146,16 @@ export interface PatientDto {
 
 export interface SchedulingDto {
   id: string;
+  companyId?: string;
   patientId: string;
   patientName: string;
-  patientDocument: string;
+  patientDocument?: string;
+  patientDocumentId?: string;
   specialistId: string;
   specialistName: string;
   interventionTypeId: string;
-  interventionName: string;
+  interventionName?: string;
+  interventionTypeName?: string;
   scheduledAt: string;
   durationMinutes: number;
   status: AppointmentStatus;
@@ -165,27 +171,51 @@ export interface TimeSlotDto {
 
 export interface MedicalRecordDto {
   id: string;
+  companyId?: string;
   patientId: string;
-  patientName: string;
-  specialistId: string;
-  specialistName: string;
-  consultationDate: string;
-  reasonForVisit: string;
-  symptoms?: string | null;
+  patientName?: string;
+  interventionTypeId?: string | null;
+  interventionTypeName?: string | null;
+  recordDate: string;
   diagnosis: string;
-  treatmentPlan: string;
-  bloodPressure?: string | null;
-  heartRateBpm?: number | null;
-  temperatureCelsius?: number | null;
-  respiratoryRateBpm?: number | null;
-  oxygenSaturationPct?: number | null;
+  treatment?: string | null;
+  notes?: string | null;
   weightKg?: number | null;
   heightCm?: number | null;
-  bodyMassIndex?: number | null;
+  temperatureCelsius?: number | null;
+  systolicBP?: number | null;
+  diastolicBP?: number | null;
+  heartRateBpm?: number | null;
+  oxygenSaturation?: number | null;
+  createdAt?: string;
+}
+
+export interface CreateMedicalRecordDto {
+  patientId: string;
+  interventionTypeId?: string | null;
+  recordDate?: string;
+  diagnosis: string;
+  treatment?: string | null;
+  notes?: string | null;
+  weightKg?: number | null;
+  heightCm?: number | null;
+  temperatureCelsius?: number | null;
+  systolicBP?: number | null;
+  diastolicBP?: number | null;
+  heartRateBpm?: number | null;
+  oxygenSaturation?: number | null;
 }
 
 export interface PrescriptionItemDto {
   id: string;
+  medicationName: string;
+  dosage: string;
+  frequency: string;
+  durationDays: number;
+  instructions?: string | null;
+}
+
+export interface CreatePrescriptionItemDto {
   medicationName: string;
   dosage: string;
   frequency: string;
@@ -203,4 +233,13 @@ export interface PrescriptionDto {
   prescriptionDate: string;
   notes?: string | null;
   items: PrescriptionItemDto[];
+}
+
+export interface CreatePrescriptionDto {
+  patientId: string;
+  medicalRecordId?: string | null;
+  specialistId: string;
+  prescriptionDate?: string;
+  notes?: string | null;
+  items: CreatePrescriptionItemDto[];
 }

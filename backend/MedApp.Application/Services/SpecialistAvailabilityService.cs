@@ -11,14 +11,19 @@ namespace MedApp.Application.Services;
 public class SpecialistAvailabilityService : ISpecialistAvailabilityService
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public SpecialistAvailabilityService(IApplicationDbContext context)
+    public SpecialistAvailabilityService(IApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<List<SpecialistAvailabilityDto>> GetAvailabilityBySpecialistAsync(Guid specialistId)
     {
+        if (_currentUserService.IsSpecialist && specialistId != _currentUserService.SpecialistId)
+            throw new ForbiddenAccessException("No tiene autorización para consultar la disponibilidad de otros especialistas.");
+
         return await _context.SpecialistAvailabilities
             .Where(sa => sa.SpecialistId == specialistId)
             .OrderBy(sa => sa.DayOfWeek)
@@ -31,6 +36,9 @@ public class SpecialistAvailabilityService : ISpecialistAvailabilityService
 
     public async Task<SpecialistAvailabilityDto> AddAvailabilityAsync(CreateSpecialistAvailabilityDto dto)
     {
+        if (_currentUserService.IsSpecialist && dto.SpecialistId != _currentUserService.SpecialistId)
+            throw new ForbiddenAccessException("No tiene autorización para configurar disponibilidad para otros especialistas.");
+
         var specialist = await _context.Specialists.FindAsync(dto.SpecialistId);
         if (specialist == null)
             throw new NotFoundException("Especialista", dto.SpecialistId);
@@ -77,6 +85,9 @@ public class SpecialistAvailabilityService : ISpecialistAvailabilityService
         if (availability == null)
             throw new NotFoundException("Disponibilidad", id);
 
+        if (_currentUserService.IsSpecialist && availability.SpecialistId != _currentUserService.SpecialistId)
+            throw new ForbiddenAccessException("No tiene autorización para eliminar la disponibilidad de otros especialistas.");
+
         _context.SpecialistAvailabilities.Remove(availability);
         await _context.SaveChangesAsync();
         return true;
@@ -84,6 +95,9 @@ public class SpecialistAvailabilityService : ISpecialistAvailabilityService
 
     public async Task<List<TimeSlotDto>> GetAvailableSlotsAsync(Guid specialistId, DateOnly date)
     {
+        if (_currentUserService.IsSpecialist && specialistId != _currentUserService.SpecialistId)
+            throw new ForbiddenAccessException("No tiene autorización para consultar los turnos de otros especialistas.");
+
         var specialist = await _context.Specialists.FindAsync(specialistId);
         if (specialist == null)
             throw new NotFoundException("Especialista", specialistId);
@@ -140,7 +154,7 @@ public class SpecialistAvailabilityService : ISpecialistAvailabilityService
 
                 var isAvailable = !isPast && !isBooked;
 
-                slots.Add(new TimeSlotDto(slotTimeStr, isAvailable));
+                slots.Add(new TimeSlotDto(slotDateTimeUtc, slotEndDateTimeUtc, isAvailable));
 
                 current = current.Add(TimeSpan.FromMinutes(30));
             }

@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
     @if (isOpen) {
       <div 
         class="modal-backdrop"
+        [style.zIndex]="zIndex ?? null"
         (click)="onBackdropClick($event)"
         role="dialog"
         [attr.aria-label]="title"
@@ -125,6 +126,39 @@ import { CommonModule } from '@angular/common';
       border-bottom-left-radius: 0.75rem;
       border-bottom-right-radius: 0.75rem;
     }
+    @media print {
+      .modal-backdrop {
+        position: static !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        overflow: visible !important;
+        width: 100% !important;
+        height: auto !important;
+        inset: auto !important;
+      }
+      .modal-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        max-height: none !important;
+        background: transparent !important;
+      }
+      .modal-header,
+      .modal-footer,
+      .modal-close-btn {
+        display: none !important;
+      }
+      .modal-body {
+        padding: 0 !important;
+        overflow: visible !important;
+      }
+    }
   `]
 })
 export class ModalComponent {
@@ -134,6 +168,7 @@ export class ModalComponent {
   @Input() size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'md';
   @Input() showFooter = true;
   @Input() closeOnBackdrop = true;
+  @Input() zIndex?: number;
 
   @Output() closed = new EventEmitter<void>();
 

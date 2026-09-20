@@ -21,6 +21,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public Guid ReceptionistUserId { get; } = Guid.Parse("11111111-0000-0000-0000-000000000002");
     public Guid SpecialistUserId { get; } = Guid.Parse("11111111-0000-0000-0000-000000000003");
     public Guid SpecialistProfileId { get; } = Guid.Parse("33333333-0000-0000-0000-000000000001");
+    public Guid Specialist2UserId { get; } = Guid.Parse("11111111-0000-0000-0000-000000000004");
+    public Guid Specialist2ProfileId { get; } = Guid.Parse("33333333-0000-0000-0000-000000000002");
+    public Guid Specialist1SchedulingId { get; } = Guid.Parse("66666666-0000-0000-0000-000000000001");
+    public Guid Specialist2SchedulingId { get; } = Guid.Parse("66666666-0000-0000-0000-000000000002");
     public Guid Patient1Id { get; } = Guid.Parse("44444444-0000-0000-0000-000000000001");
     public Guid Patient2Id { get; } = Guid.Parse("44444444-0000-0000-0000-000000000002");
     public Guid InterventionId { get; } = Guid.Parse("55555555-0000-0000-0000-000000000001");
@@ -96,8 +100,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         };
         context.Specialties.Add(spec1);
 
-        // Specialist in Company 1
-        var specialistProfile = new Specialist
+        // Specialist 1 in Company 1
+        var specialistProfile1 = new Specialist
         {
             Id = SpecialistProfileId,
             CompanyId = Company1Id,
@@ -107,10 +111,22 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             LicenseNumber = "MED-CARD-9912",
             IsActive = true
         };
-        context.Specialists.Add(specialistProfile);
 
-        // Specialist Availability for Monday (Day 1)
-        var availability = new SpecialistAvailability
+        // Specialist 2 in Company 1
+        var specialistProfile2 = new Specialist
+        {
+            Id = Specialist2ProfileId,
+            CompanyId = Company1Id,
+            SpecialtyId = spec1.Id,
+            FirstName = "Ana",
+            LastName = "Martínez",
+            LicenseNumber = "MED-CARD-8833",
+            IsActive = true
+        };
+        context.Specialists.AddRange(specialistProfile1, specialistProfile2);
+
+        // Specialist Availabilities for Monday (Day 1)
+        var availability1 = new SpecialistAvailability
         {
             Id = Guid.NewGuid(),
             SpecialistId = SpecialistProfileId,
@@ -118,7 +134,15 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             StartHour = "08:00",
             EndHour = "12:00"
         };
-        context.SpecialistAvailabilities.Add(availability);
+        var availability2 = new SpecialistAvailability
+        {
+            Id = Guid.NewGuid(),
+            SpecialistId = Specialist2ProfileId,
+            DayOfWeek = 1, // Monday
+            StartHour = "13:00",
+            EndHour = "17:00"
+        };
+        context.SpecialistAvailabilities.AddRange(availability1, availability2);
 
         // Intervention Type
         var intervention = new InterventionType
@@ -158,6 +182,33 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         };
         context.Patients.AddRange(patient1, patient2);
 
+        // Schedulings (Appointments)
+        var scheduling1 = new Scheduling
+        {
+            Id = Specialist1SchedulingId,
+            CompanyId = Company1Id,
+            PatientId = Patient1Id,
+            SpecialistId = SpecialistProfileId,
+            InterventionTypeId = InterventionId,
+            ScheduledAt = DateTimeOffset.UtcNow.AddDays(1),
+            DurationMinutes = 30,
+            Status = AppointmentStatus.Scheduled,
+            Notes = "Cita con Especialista 1"
+        };
+        var scheduling2 = new Scheduling
+        {
+            Id = Specialist2SchedulingId,
+            CompanyId = Company1Id,
+            PatientId = Patient1Id,
+            SpecialistId = Specialist2ProfileId,
+            InterventionTypeId = InterventionId,
+            ScheduledAt = DateTimeOffset.UtcNow.AddDays(2),
+            DurationMinutes = 30,
+            Status = AppointmentStatus.Scheduled,
+            Notes = "Cita con Especialista 2"
+        };
+        context.Schedulings.AddRange(scheduling1, scheduling2);
+
         // Users
         var admin = new User
         {
@@ -176,7 +227,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         };
         receptionist.UserCompanies.Add(new UserCompany { UserId = ReceptionistUserId, CompanyId = Company1Id });
 
-        var specialistUser = new User
+        var specialistUser1 = new User
         {
             Id = SpecialistUserId,
             Username = "specialist_test",
@@ -184,9 +235,19 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Role = UserRole.Specialist,
             SpecialistId = SpecialistProfileId
         };
-        specialistUser.UserCompanies.Add(new UserCompany { UserId = SpecialistUserId, CompanyId = Company1Id });
+        specialistUser1.UserCompanies.Add(new UserCompany { UserId = SpecialistUserId, CompanyId = Company1Id });
 
-        context.Users.AddRange(admin, receptionist, specialistUser);
+        var specialistUser2 = new User
+        {
+            Id = Specialist2UserId,
+            Username = "specialist2_test",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Spec2Test123!"),
+            Role = UserRole.Specialist,
+            SpecialistId = Specialist2ProfileId
+        };
+        specialistUser2.UserCompanies.Add(new UserCompany { UserId = Specialist2UserId, CompanyId = Company1Id });
+
+        context.Users.AddRange(admin, receptionist, specialistUser1, specialistUser2);
         context.SaveChanges();
     }
 }

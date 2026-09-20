@@ -11,11 +11,16 @@ public class SpecialistService : ISpecialistService
 {
     private readonly IApplicationDbContext _context;
     private readonly ICompanyContext _companyContext;
+    private readonly ICurrentUserService _currentUserService;
 
-    public SpecialistService(IApplicationDbContext context, ICompanyContext companyContext)
+    public SpecialistService(
+        IApplicationDbContext context,
+        ICompanyContext companyContext,
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _companyContext = companyContext;
+        _currentUserService = currentUserService;
     }
 
     private Guid CurrentCompanyId => _companyContext.CompanyId
@@ -26,6 +31,16 @@ public class SpecialistService : ISpecialistService
         var query = _context.Specialists
             .Include(s => s.Specialty)
             .AsQueryable();
+
+        // If the logged-in user is a specialist, strictly return only their own specialist profile
+        if (_currentUserService.IsSpecialist)
+        {
+            if (!_currentUserService.SpecialistId.HasValue)
+            {
+                return new List<SpecialistDto>();
+            }
+            query = query.Where(s => s.Id == _currentUserService.SpecialistId.Value);
+        }
 
         if (specialtyId.HasValue)
         {
@@ -49,6 +64,9 @@ public class SpecialistService : ISpecialistService
 
     public async Task<SpecialistDto> GetSpecialistByIdAsync(Guid id)
     {
+        if (_currentUserService.IsSpecialist && id != _currentUserService.SpecialistId)
+            throw new NotFoundException("Especialista", id);
+
         var s = await _context.Specialists
             .Include(sp => sp.Specialty)
             .FirstOrDefaultAsync(sp => sp.Id == id);

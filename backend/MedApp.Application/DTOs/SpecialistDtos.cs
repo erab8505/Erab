@@ -12,7 +12,10 @@ public record SpecialistDto(
     string? Phone,
     bool IsActive,
     DateTimeOffset CreatedAt
-);
+)
+{
+    public string FullName => $"{FirstName} {LastName}".Trim();
+}
 
 public record CreateSpecialistDto(
     Guid SpecialtyId,

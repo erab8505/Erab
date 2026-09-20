@@ -63,6 +63,7 @@ public class SchedulingController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reschedule")]
+    [HttpPut("{id:guid}/reschedule")]
     [ProducesResponseType(typeof(ApiResponse<SchedulingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]

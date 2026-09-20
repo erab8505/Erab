@@ -275,12 +275,20 @@ interface TreeArea extends AreaDto {
                 <tbody>
                   @for (p of patientsList().slice(0, 5); track p.id) {
                     <tr class="border-b hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                      <td class="p-3 font-medium">{{ p.documentId }}</td>
-                      <td class="p-3">{{ p.fullName }}</td>
-                      <td class="p-3">{{ p.age }} años ({{ p.gender }})</td>
-                      <td class="p-3">{{ p.phone || 'N/A' }}</td>
+                      <td class="p-3 font-medium">
+                        <span class="doc-pill">
+                          🆔 {{ p.documentId }}
+                        </span>
+                      </td>
+                      <td class="p-3">
+                        <a [routerLink]="['/patients', p.id]" class="font-semibold text-sky-600 dark:text-sky-400 hover:underline">
+                          {{ p.fullName || (p.firstName + ' ' + p.lastName) }}
+                        </a>
+                      </td>
+                      <td class="p-3 text-slate-700 dark:text-slate-300">{{ p.age }} años ({{ p.gender }})</td>
+                      <td class="p-3 text-slate-600 dark:text-slate-400">{{ p.phone || 'N/A' }}</td>
                       <td class="p-3 text-right">
-                        <a [routerLink]="['/patients', p.id]" class="text-blue-600 hover:underline font-medium">Ver Historial</a>
+                        <a [routerLink]="['/patients', p.id]" class="btn btn-secondary btn-sm">Ver Expediente</a>
                       </td>
                     </tr>
                   }
@@ -510,7 +518,10 @@ export class DashboardComponent implements OnInit {
       schedulings: this.http.get<ApiResponse<SchedulingDto[]>>(`${environment.apiUrl}/scheduling`)
     }).subscribe({
       next: (res) => {
-        const patients = res.patients.data || [];
+        const patients = (res.patients.data || []).map(p => ({
+          ...p,
+          fullName: p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim()
+        }));
         const schedulings = res.schedulings.data || [];
 
         this.patientsList.set(patients);

@@ -1,4 +1,4 @@
-﻿import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../core/services/auth.service';
@@ -229,10 +229,11 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       width: 2rem;
       height: 2rem;
       border-radius: 0.5rem;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      background: linear-gradient(135deg, var(--primary-color, #0284c7), #0369a1);
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
     }
     .brand-name {
       font-size: 1.25rem;
@@ -253,7 +254,7 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
     .switch-company-link {
       background: transparent;
       border: none;
-      color: #2563eb;
+      color: var(--primary-color, #0284c7);
       font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
@@ -287,13 +288,14 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       width: 2.25rem;
       height: 2.25rem;
       border-radius: 9999px;
-      background-color: #3b82f6;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
       color: white;
       font-weight: 600;
       font-size: 0.875rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.3);
     }
     .user-name {
       font-size: 0.875rem;
@@ -318,15 +320,19 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       background: #fee2e2;
       border-color: #fca5a5;
     }
+    :host-context(.dark) .logout-btn:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
     .app-body {
       display: flex;
       flex: 1;
     }
     .app-sidebar {
-      width: 16rem;
+      width: 16.5rem;
       background: var(--card-bg, #ffffff);
       border-right: 1px solid var(--border-color, #e2e8f0);
-      padding: 1.25rem 0.75rem;
+      padding: 1.25rem 0.875rem;
       display: flex;
       flex-direction: column;
     }
@@ -335,7 +341,7 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
         position: fixed;
         top: 4rem;
         bottom: 0;
-        left: -16rem;
+        left: -16.5rem;
         z-index: 40;
         transition: left 0.2s ease-in-out;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
@@ -361,7 +367,7 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.625rem 0.75rem;
+      padding: 0.625rem 0.875rem;
       border-radius: 0.5rem;
       color: var(--text-muted, #64748b);
       text-decoration: none;
@@ -374,17 +380,17 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       color: var(--text-color, #0f172a);
     }
     .nav-item.active {
-      background-color: #eff6ff;
-      color: #2563eb;
+      background-color: var(--primary-light, #e0f2fe);
+      color: var(--primary-color, #0284c7);
       font-weight: 600;
     }
     :host-context(.dark) .nav-item.active {
-      background-color: rgba(37, 99, 235, 0.15);
-      color: #60a5fa;
+      background-color: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
     }
     .app-main {
       flex: 1;
-      padding: 1.5rem;
+      padding: 1.75rem 2rem;
       max-width: 100%;
       overflow-x: hidden;
     }

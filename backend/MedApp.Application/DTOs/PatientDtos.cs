@@ -16,7 +16,11 @@ public record PatientDto(
     string? BloodType,
     string? Allergies,
     DateTimeOffset CreatedAt
-);
+)
+{
+    public string FullName => $"{FirstName} {LastName}".Trim();
+    public string DateOfBirth => BirthDate.ToString("yyyy-MM-dd");
+}
 
 public record CreatePatientDto(
     string FirstName,

@@ -183,7 +183,7 @@ export interface TableColumn<T = any> {
       width: 100%;
       padding: 0.5rem 2rem 0.5rem 2.25rem;
       font-size: 0.875rem;
-      border: 1px solid var(--border-color, #cbd5e1);
+      border: 1px solid var(--border-input, #cbd5e1);
       border-radius: 0.5rem;
       background: var(--bg-input, #ffffff);
       color: var(--text-color, #0f172a);
@@ -191,8 +191,8 @@ export interface TableColumn<T = any> {
       transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
     .search-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      border-color: var(--primary-color, #0284c7);
+      box-shadow: 0 0 0 2px var(--primary-glow);
     }
     .clear-search-btn {
       position: absolute;
@@ -262,7 +262,7 @@ export interface TableColumn<T = any> {
     }
     .pagination-btn {
       padding: 0.375rem 0.75rem;
-      border: 1px solid var(--border-color, #cbd5e1);
+      border: 1px solid var(--border-input, #cbd5e1);
       border-radius: 0.375rem;
       background: var(--card-bg, #ffffff);
       color: var(--text-color, #334155);
@@ -272,7 +272,7 @@ export interface TableColumn<T = any> {
     }
     .pagination-btn:hover:not(:disabled) {
       background: var(--bg-hover, #f1f5f9);
-      border-color: #94a3b8;
+      border-color: var(--text-muted, #94a3b8);
     }
     .pagination-btn:disabled {
       opacity: 0.5;

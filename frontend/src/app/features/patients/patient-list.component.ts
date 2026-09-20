@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -38,19 +38,27 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
         <ng-template #cellTemplate let-item let-col="column">
           @switch (col.key) {
             @case ('documentId') {
-              <span class="font-semibold text-slate-900 dark:text-slate-100">{{ item.documentId }}</span>
+              <div class="doc-pill">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+                </svg>
+                <span>{{ item.documentId || item['document'] || item['id'] }}</span>
+              </div>
             }
             @case ('fullName') {
-              <a [routerLink]="['/patients', item.id]" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                {{ item.fullName }}
+              <a [routerLink]="['/patients', item.id]" class="group inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline">
+                <span class="w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-xs">
+                  {{ (item.firstName?.[0] || item.fullName?.[0] || 'P').toUpperCase() }}
+                </span>
+                <span class="font-semibold text-sm">{{ item.fullName || (item.firstName + ' ' + item.lastName) }}</span>
               </a>
             }
             @case ('age') {
-              <span>{{ item.age }} años ({{ item.gender }})</span>
+              <span class="text-slate-700 dark:text-slate-300 font-medium">{{ item.age }} años ({{ item.gender }})</span>
             }
             @case ('bloodType') {
               @if (item.bloodType) {
-                <span class="text-xs bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 font-bold px-2 py-0.5 rounded">
+                <span class="text-xs bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 font-bold px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
                   🩸 {{ item.bloodType }}
                 </span>
               } @else {
@@ -235,7 +243,11 @@ export class PatientListComponent implements OnInit {
     this.http.get<ApiResponse<PatientDto[]>>(`${environment.apiUrl}/patients`).subscribe({
       next: (res) => {
         this.loading.set(false);
-        this.patients.set(res.data || []);
+        const list = (res.data || []).map(p => ({
+          ...p,
+          fullName: p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim()
+        }));
+        this.patients.set(list);
       },
       error: () => this.loading.set(false)
     });

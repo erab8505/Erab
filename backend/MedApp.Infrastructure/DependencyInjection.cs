@@ -37,6 +37,7 @@ public static class DependencyInjection
         // Security & Services
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         // JWT Authentication Configuration
         var secret = configuration["Jwt:Secret"] ?? "MedAppSuperSecretKeyForDevelopmentAndTestingPurposesOnly2026!";

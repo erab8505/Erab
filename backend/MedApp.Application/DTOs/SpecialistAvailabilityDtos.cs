@@ -16,6 +16,7 @@ public record CreateSpecialistAvailabilityDto(
 );
 
 public record TimeSlotDto(
-    string Time,
-    bool Available
+    DateTimeOffset StartTime,
+    DateTimeOffset EndTime,
+    bool IsAvailable
 );

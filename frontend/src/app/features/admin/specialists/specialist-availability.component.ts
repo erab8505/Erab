@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -137,6 +137,7 @@ interface DayConfig {
       border-radius: 0.25rem;
     }
     .delete-interval-btn:hover { background-color: #fee2e2; }
+    :host-context(.dark) .delete-interval-btn:hover { background-color: rgba(239, 68, 68, 0.2); }
   `]
 })
 export class SpecialistAvailabilityComponent implements OnInit {

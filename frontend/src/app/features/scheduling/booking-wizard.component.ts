@@ -77,13 +77,26 @@ import { ToastService } from '../../core/services/toast.service';
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
             @for (pat of filteredPatients(); track pat.id) {
               <div 
-                class="patient-card cursor-pointer p-3 border rounded-lg hover:border-blue-500 transition-colors"
-                [class.border-blue-600]="selectedPatient()?.id === pat.id"
-                [class.bg-blue-50]="selectedPatient()?.id === pat.id"
+                class="patient-card cursor-pointer p-3 border rounded-lg hover:border-sky-500 transition-colors"
+                [class.border-sky-600]="selectedPatient()?.id === pat.id"
+                [class.bg-sky-50]="selectedPatient()?.id === pat.id"
+                [class.dark:bg-sky-900/30]="selectedPatient()?.id === pat.id"
+                [class.dark:border-sky-400]="selectedPatient()?.id === pat.id"
                 (click)="selectPatient(pat)">
-                <div class="font-bold text-sm text-slate-900 dark:text-slate-100">{{ pat.fullName }}</div>
-                <div class="text-xs text-slate-500">Doc: {{ pat.documentId }} | Edad: {{ pat.age }} años</div>
-                <div class="text-xs text-slate-500 mt-1">Tel: {{ pat.phone || 'N/A' }}</div>
+                <div class="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                  <span class="w-5 h-5 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 text-xs flex items-center justify-center font-bold flex-shrink-0">
+                    {{ (pat.firstName[0] || pat.fullName[0] || 'P').toUpperCase() }}
+                  </span>
+                  <span>{{ pat.fullName || (pat.firstName + ' ' + pat.lastName) }}</span>
+                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                  <span class="doc-pill">
+                    Doc: {{ pat.documentId }}
+                  </span>
+                  <span>•</span>
+                  <span>{{ pat.age }} años</span>
+                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tel: {{ pat.phone || 'N/A' }}</div>
               </div>
             }
           </div>
@@ -100,10 +113,12 @@ import { ToastService } from '../../core/services/toast.service';
                 class="option-card cursor-pointer p-4 border rounded-lg hover:border-blue-500 transition-all text-center"
                 [class.border-blue-600]="selectedArea()?.id === area.id"
                 [class.bg-blue-50]="selectedArea()?.id === area.id"
+                [class.dark:bg-blue-900/30]="selectedArea()?.id === area.id"
+                [class.dark:border-blue-400]="selectedArea()?.id === area.id"
                 (click)="selectArea(area)">
                 <div class="text-2xl mb-1">🏥</div>
                 <div class="font-bold text-slate-900 dark:text-slate-100">{{ area.name }}</div>
-                <div class="text-xs text-slate-500 mt-1">{{ area.description || 'Sin descripción' }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ area.description || 'Sin descripción' }}</div>
               </div>
             }
           </div>
@@ -120,10 +135,12 @@ import { ToastService } from '../../core/services/toast.service';
                 class="option-card cursor-pointer p-4 border rounded-lg hover:border-blue-500 transition-all text-center"
                 [class.border-blue-600]="selectedSpecialty()?.id === spec.id"
                 [class.bg-blue-50]="selectedSpecialty()?.id === spec.id"
+                [class.dark:bg-blue-900/30]="selectedSpecialty()?.id === spec.id"
+                [class.dark:border-blue-400]="selectedSpecialty()?.id === spec.id"
                 (click)="selectSpecialty(spec)">
                 <div class="text-2xl mb-1">⚕️</div>
                 <div class="font-bold text-slate-900 dark:text-slate-100">{{ spec.name }}</div>
-                <div class="text-xs text-slate-500 mt-1">{{ spec.description || 'Especialidad clínica' }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ spec.description || 'Especialidad clínica' }}</div>
               </div>
             }
           </div>
@@ -140,13 +157,15 @@ import { ToastService } from '../../core/services/toast.service';
                 class="option-card cursor-pointer p-4 border rounded-lg hover:border-blue-500 transition-all"
                 [class.border-blue-600]="selectedIntervention()?.id === it.id"
                 [class.bg-blue-50]="selectedIntervention()?.id === it.id"
+                [class.dark:bg-blue-900/30]="selectedIntervention()?.id === it.id"
+                [class.dark:border-blue-400]="selectedIntervention()?.id === it.id"
                 (click)="selectIntervention(it)">
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-sm text-slate-900 dark:text-slate-100">{{ it.name }}</span>
-                  <span class="text-xs font-semibold bg-slate-100 px-2 py-0.5 rounded">⏱️ {{ it.durationMinutes }}m</span>
+                  <span class="text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">⏱️ {{ it.durationMinutes }}m</span>
                 </div>
                 @if (it.code) {
-                  <span class="text-xs text-slate-500 block mt-1">Código: {{ it.code }}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400 block mt-1">Código: {{ it.code }}</span>
                 }
               </div>
             }
@@ -164,10 +183,12 @@ import { ToastService } from '../../core/services/toast.service';
                 class="option-card cursor-pointer p-4 border rounded-lg hover:border-blue-500 transition-all"
                 [class.border-blue-600]="selectedSpecialist()?.id === doc.id"
                 [class.bg-blue-50]="selectedSpecialist()?.id === doc.id"
+                [class.dark:bg-blue-900/30]="selectedSpecialist()?.id === doc.id"
+                [class.dark:border-blue-400]="selectedSpecialist()?.id === doc.id"
                 (click)="selectSpecialist(doc)">
                 <div class="font-bold text-sm text-slate-900 dark:text-slate-100">👨‍⚕️ {{ doc.fullName }}</div>
-                <div class="text-xs text-slate-500">Licencia: {{ doc.licenseNumber }}</div>
-                <div class="text-xs text-slate-500">Email: {{ doc.email || 'N/A' }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Licencia: {{ doc.licenseNumber }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Email: {{ doc.email || 'N/A' }}</div>
               </div>
             }
           </div>
@@ -281,13 +302,20 @@ import { ToastService } from '../../core/services/toast.service';
       white-space: nowrap;
     }
     .step-crumb.active {
-      background-color: #eff6ff;
-      color: #2563eb;
+      background-color: var(--primary-light, #eff6ff);
+      color: var(--primary-color, #2563eb);
       font-weight: 600;
+    }
+    :host-context(.dark) .step-crumb.active {
+      background-color: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
     }
     .step-crumb.completed {
       cursor: pointer;
       color: #059669;
+    }
+    :host-context(.dark) .step-crumb.completed {
+      color: #34d399;
     }
     .step-num {
       width: 1.25rem;
@@ -301,9 +329,11 @@ import { ToastService } from '../../core/services/toast.service';
       align-items: center;
       justify-content: center;
     }
-    .step-crumb.active .step-num { background: #2563eb; }
-    .step-crumb.completed .step-num { background: #059669; }
-    .crumb-separator { color: #cbd5e1; font-size: 0.75rem; }
+    :host-context(.dark) .step-num { color: #0b1120; }
+    .step-crumb.active .step-num { background: var(--primary-color, #2563eb); color: #ffffff; }
+    .step-crumb.completed .step-num { background: #059669; color: #ffffff; }
+    :host-context(.dark) .step-crumb.completed .step-num { background: #34d399; color: #0b1120; }
+    .crumb-separator { color: var(--border-color, #cbd5e1); font-size: 0.75rem; }
 
     .slot-available {
       background: #f0fdf4;
@@ -315,6 +345,16 @@ import { ToastService } from '../../core/services/toast.service';
       background: #dcfce7;
       border-color: #86efac;
     }
+    :host-context(.dark) .slot-available {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+    :host-context(.dark) .slot-available:hover {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #34d399;
+    }
+
     .slot-occupied {
       background: #f1f5f9;
       border-color: #e2e8f0;
@@ -322,10 +362,17 @@ import { ToastService } from '../../core/services/toast.service';
       cursor: not-allowed;
       opacity: 0.6;
     }
+    :host-context(.dark) .slot-occupied {
+      background: #1e293b;
+      border-color: #334155;
+      color: #64748b;
+    }
+
     .slot-selected {
-      background: #2563eb !important;
-      border-color: #1d4ed8 !important;
-      color: white !important;
+      background: var(--primary-color, #0284c7) !important;
+      border-color: var(--primary-hover, #0369a1) !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 0 2px var(--primary-glow);
     }
   `]
 })
@@ -401,7 +448,11 @@ export class BookingWizardComponent implements OnInit {
       specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`)
     }).subscribe({
       next: (res) => {
-        this.patients.set(res.patients.data || []);
+        const pats = (res.patients.data || []).map(p => ({
+          ...p,
+          fullName: p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim()
+        }));
+        this.patients.set(pats);
         this.areas.set(res.areas.data || []);
         this.specialties.set(res.specialties.data || []);
         this.interventions.set(res.interventions.data || []);
@@ -481,7 +532,9 @@ export class BookingWizardComponent implements OnInit {
   formatSlotTime(isoString: string): string {
     if (!isoString) return '';
     const date = new Date(isoString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   }
 
   confirmBooking(): void {

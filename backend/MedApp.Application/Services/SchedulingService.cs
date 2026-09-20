@@ -12,11 +12,16 @@ public class SchedulingService : ISchedulingService
 {
     private readonly IApplicationDbContext _context;
     private readonly ICompanyContext _companyContext;
+    private readonly ICurrentUserService _currentUserService;
 
-    public SchedulingService(IApplicationDbContext context, ICompanyContext companyContext)
+    public SchedulingService(
+        IApplicationDbContext context,
+        ICompanyContext companyContext,
+        ICurrentUserService currentUserService)
     {
         _context = context;
         _companyContext = companyContext;
+        _currentUserService = currentUserService;
     }
 
     private Guid CurrentCompanyId => _companyContext.CompanyId
@@ -45,7 +50,16 @@ public class SchedulingService : ISchedulingService
             query = query.Where(s => s.ScheduledAt <= toDate.Value);
         }
 
-        if (specialistId.HasValue)
+        // If the logged-in user is a specialist, strictly force their own SpecialistId
+        if (_currentUserService.IsSpecialist)
+        {
+            if (!_currentUserService.SpecialistId.HasValue)
+            {
+                return new List<SchedulingDto>();
+            }
+            query = query.Where(s => s.SpecialistId == _currentUserService.SpecialistId.Value);
+        }
+        else if (specialistId.HasValue)
         {
             query = query.Where(s => s.SpecialistId == specialistId.Value);
         }
@@ -92,6 +106,9 @@ public class SchedulingService : ISchedulingService
         if (s == null)
             throw new NotFoundException("Cita médica", id);
 
+        if (_currentUserService.IsSpecialist && s.SpecialistId != _currentUserService.SpecialistId)
+            throw new NotFoundException("Cita médica", id);
+
         return new SchedulingDto(
             s.Id,
             s.CompanyId,
@@ -112,6 +129,14 @@ public class SchedulingService : ISchedulingService
 
     public async Task<SchedulingDto> CreateSchedulingAsync(CreateSchedulingDto dto)
     {
+        if (_currentUserService.IsSpecialist)
+        {
+            if (!_currentUserService.SpecialistId.HasValue || dto.SpecialistId != _currentUserService.SpecialistId.Value)
+            {
+                throw new ForbiddenAccessException("Un especialista solo puede agendar citas para su propio perfil profesional.");
+            }
+        }
+
         var patient = await _context.Patients.FindAsync(dto.PatientId);
         if (patient == null || patient.CompanyId != CurrentCompanyId)
             throw new NotFoundException($"El paciente ({dto.PatientId}) no existe en la empresa activa.");
@@ -187,6 +212,9 @@ public class SchedulingService : ISchedulingService
         if (scheduling == null)
             throw new NotFoundException("Cita médica", id);
 
+        if (_currentUserService.IsSpecialist && scheduling.SpecialistId != _currentUserService.SpecialistId)
+            throw new ForbiddenAccessException("No tiene autorización para modificar el estado de citas de otros especialistas.");
+
         scheduling.Status = dto.Status;
         await _context.SaveChangesAsync();
 
@@ -218,6 +246,9 @@ public class SchedulingService : ISchedulingService
 
         if (scheduling == null)
             throw new NotFoundException("Cita médica", id);
+
+        if (_currentUserService.IsSpecialist && scheduling.SpecialistId != _currentUserService.SpecialistId)
+            throw new ForbiddenAccessException("No tiene autorización para reagendar citas de otros especialistas.");
 
         var reqStart = dto.NewScheduledAt;
         var duration = dto.DurationMinutes > 0 ? dto.DurationMinutes : scheduling.DurationMinutes;
