@@ -10,7 +10,7 @@ This document contains the actionable, step-by-step task breakdown for building 
 - **Phase 2: Domain Entities & Database Migrations (MSSQL)** `[5/5]`
 - **Phase 3: Authentication, Context & Security** `[5/5]`
 - **Phase 4: Application Layer & Scheduling Engine** `[5/5]`
-- **Phase 5: REST API Controllers & Integration Tests** `[0/5]`
+- **Phase 5: REST API Controllers & Integration Tests** `[5/5]`
 - **Phase 6: Angular Core Architecture & Shell Layout** `[0/6]`
 - **Phase 7: Administration Features (Frontend)** `[0/6]`
 - **Phase 8: Clinical & Operational Features (Frontend)** `[0/6]`
@@ -164,11 +164,11 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 5: REST API Controllers & Integration Tests
 
-- [ ] **TASK-20: Authentication & Health Controllers**
+- [x] **TASK-20: Authentication & Health Controllers**
   - **Description**: Implement `AuthController` (`POST /api/auth/login`) and `HealthController` (`GET /api/health`, `GET /api/health/db` checking MSSQL connectivity).
   - **Dependencies**: TASK-10, TASK-13.
 
-- [ ] **TASK-21: Administrative API Controllers**
+- [x] **TASK-21: Administrative API Controllers**
   - **Description**: Implement controllers:
     - `CompaniesController` (`/api/companies`, `/api/companies/mine`)
     - `AreasController` (`/api/areas`)
@@ -179,15 +179,15 @@ This document contains the actionable, step-by-step task breakdown for building 
     - `UsersController` (`/api/users`)
   - **Dependencies**: TASK-15, TASK-16.
 
-- [ ] **TASK-22: Patient & Scheduling Controllers**
+- [x] **TASK-22: Patient & Scheduling Controllers**
   - **Description**: Implement `PatientsController` (`/api/patients`) and `SchedulingController` (`/api/scheduling`, `/api/scheduling/{id}/status`, `/api/scheduling/{id}/reschedule`).
   - **Dependencies**: TASK-17, TASK-18.
 
-- [ ] **TASK-23: Clinical API Controllers (Secured)**
+- [x] **TASK-23: Clinical API Controllers (Secured)**
   - **Description**: Implement `MedicalRecordsController` (`/api/medical-records`) and `PrescriptionsController` (`/api/prescriptions`) with `[Authorize(Policy = "RequireClinicalRole")]`.
   - **Dependencies**: TASK-19.
 
-- [ ] **TASK-24: Automated Backend Integration Tests**
+- [x] **TASK-24: Automated Backend Integration Tests**
   - **Description**: Implement automated integration tests using `WebApplicationFactory` and SQL Server LocalDB / Testcontainers / in-memory context:
     - Tenant isolation: User A in Company 1 cannot query Company 2 entities.
     - Clinical authorization: Receptionist receives `403` on `/api/medical-records`.

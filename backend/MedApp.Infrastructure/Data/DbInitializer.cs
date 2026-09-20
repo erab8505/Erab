@@ -11,7 +11,14 @@ public static class DbInitializer
     {
         try
         {
-            await context.Database.MigrateAsync();
+            if (context.Database.IsRelational())
+            {
+                await context.Database.MigrateAsync();
+            }
+            else
+            {
+                await context.Database.EnsureCreatedAsync();
+            }
 
             // Seed default company if none exists
             var company = await context.Companies.IgnoreQueryFilters().FirstOrDefaultAsync();

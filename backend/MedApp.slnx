@@ -3,4 +3,5 @@
   <Project Path="MedApp.Application/MedApp.Application.csproj" />
   <Project Path="MedApp.Domain/MedApp.Domain.csproj" />
   <Project Path="MedApp.Infrastructure/MedApp.Infrastructure.csproj" />
+  <Project Path="MedApp.Tests/MedApp.Tests.csproj" />
 </Solution>
