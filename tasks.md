@@ -7,7 +7,7 @@ This document contains the actionable, step-by-step task breakdown for building 
 ## Task Progress Summary
 
 - **Phase 1: Environment & Scaffolding** `[4/4]`
-- **Phase 2: Domain Entities & Database Migrations (MSSQL)** `[0/5]`
+- **Phase 2: Domain Entities & Database Migrations (MSSQL)** `[5/5]`
 - **Phase 3: Authentication, Context & Security** `[0/5]`
 - **Phase 4: Application Layer & Scheduling Engine** `[0/5]`
 - **Phase 5: REST API Controllers & Integration Tests** `[0/5]`
@@ -58,14 +58,14 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 2: Domain Entities & Database Migrations (MSSQL)
 
-- [ ] **TASK-05: Implement Base Entity & Domain Enums**
+- [x] **TASK-05: Implement Base Entity & Domain Enums**
   - **Description**: Create `BaseEntity` (`Guid Id`, `DateTime CreatedAt`, `DateTime? UpdatedAt`) and domain enums:
     - `UserRole` (`Admin`, `Receptionist`, `Specialist`)
     - `Gender` (`M`, `F`, `O`)
     - `AppointmentStatus` (`Scheduled`, `Confirmed`, `Completed`, `Cancelled`, `Rescheduled`)
   - **Dependencies**: TASK-01.
 
-- [ ] **TASK-06: Implement Domain Entities**
+- [x] **TASK-06: Implement Domain Entities**
   - **Description**: Define all core entities in `MedApp.Domain`:
     - `Company`, `User`, `UserCompany`
     - `Area`, `Specialty`, `Specialist`, `SpecialistAvailability`
@@ -73,7 +73,7 @@ This document contains the actionable, step-by-step task breakdown for building 
     - `MedicalRecord`, `Prescription`, `PrescriptionItem`
   - **Dependencies**: TASK-05.
 
-- [ ] **TASK-07: Implement EF Core DbContext & MSSQL Entity Configurations**
+- [x] **TASK-07: Implement EF Core DbContext & MSSQL Entity Configurations**
   - **Description**: Configure `MedAppDbContext` in `MedApp.Infrastructure` with `IEntityTypeConfiguration<T>` for all entities targeting SQL Server column types and index filters.
   - **Key Constraints**:
     - Composite PK on `UserCompany (UserId, CompanyId)`
@@ -88,11 +88,11 @@ This document contains the actionable, step-by-step task breakdown for building 
     - Explicit precision for clinical decimals: `WeightKg` decimal(5,2), `HeightCm` decimal(5,2), `TemperatureCelsius` decimal(4,1).
   - **Dependencies**: TASK-06.
 
-- [ ] **TASK-08: Implement Tenant-Scoped Context & Query Filters**
+- [x] **TASK-08: Implement Tenant-Scoped Context & Query Filters**
   - **Description**: Implement `ICompanyContext` and register query filters on all tenant entities (`CompanyId == _companyContext.CompanyId`) to ensure database-level isolation.
   - **Dependencies**: TASK-07.
 
-- [ ] **TASK-09: Create MSSQL EF Migration & Migration Runner**
+- [x] **TASK-09: Create MSSQL EF Migration & Migration Runner**
   - **Description**: Generate initial migration `InitialCreate` with `Microsoft.EntityFrameworkCore.SqlServer` and configure startup to execute `Database.MigrateAsync()` (never `EnsureCreatedAsync()`). Add seed data for default admin.
   - **Dependencies**: TASK-08.
 
