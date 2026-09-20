@@ -33,7 +33,7 @@ public class ClinicalAuthorizationTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
-    public async Task Receptionist_AccessingClinicalEndpoints_Returns403Forbidden()
+    public async Task Receptionist_AccessingMedicalRecords_Returns403Forbidden()
     {
         // Arrange
         var token = await AuthenticateAsync("receptionist_test", "ReceptTest123!");
@@ -54,6 +54,10 @@ public class ClinicalAuthorizationTests : IClassFixture<CustomWebApplicationFact
             patientId, null, DateTimeOffset.UtcNow, "Hipertensión", "Enalapril", null, 75.5m, 172m, 36.5m, 120, 80, 72, 98
         ));
         postRecord.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Act: Can view prescriptions
+        var getPrescriptions = await _client.GetAsync($"/api/prescriptions?patientId={patientId}");
+        getPrescriptions.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // Act: Try to issue prescription
         var postPrescription = await _client.PostAsJsonAsync("/api/prescriptions", new CreatePrescriptionDto(

@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, MedicalRecordDto, PatientDto, PrescriptionDto, SchedulingDto, SpecialistDto } from '../../core/models/models';
 import { AuthService } from '../../core/services/auth.service';
@@ -76,9 +76,11 @@ import { PrescriptionPrintModalComponent } from './components/prescription-print
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'appointments'" (click)="setTab('appointments')">
           🗓️ Citas ({{ appointments().length }})
         </button>
-        <button type="button" class="tab-btn" [class.active]="activeTab() === 'records'" (click)="setTab('records')">
-          🩺 Historia Clínica ({{ medicalRecords().length }})
-        </button>
+        @if (authService.isAdmin() || authService.isSpecialist()) {
+          <button type="button" class="tab-btn" [class.active]="activeTab() === 'records'" (click)="setTab('records')">
+            🩺 Historia Clínica ({{ medicalRecords().length }})
+          </button>
+        }
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'prescriptions'" (click)="setTab('prescriptions')">
           💊 Recetas y Fórmulas ({{ prescriptions().length }})
         </button>
@@ -98,7 +100,7 @@ import { PrescriptionPrintModalComponent } from './components/prescription-print
       }
 
       <!-- TAB 3: NOTAS MÉDICAS / HISTORIA CLÍNICA -->
-      @if (activeTab() === 'records') {
+      @if (activeTab() === 'records' && (authService.isAdmin() || authService.isSpecialist())) {
         <app-patient-records-tab 
           [medicalRecords]="medicalRecords()" 
           [canCreate]="canCreateClinical()"
@@ -214,10 +216,14 @@ export class PatientDetailComponent implements OnInit {
   }
 
   loadAllData(id: string): void {
+    const canViewRecords = this.authService.isAdmin() || this.authService.isSpecialist();
+
     forkJoin({
       patient: this.http.get<ApiResponse<PatientDto>>(`${environment.apiUrl}/patients/${id}`),
       appointments: this.http.get<ApiResponse<SchedulingDto[]>>(`${environment.apiUrl}/scheduling?patientId=${id}`),
-      records: this.http.get<ApiResponse<MedicalRecordDto[]>>(`${environment.apiUrl}/medical-records?patientId=${id}`),
+      records: canViewRecords
+        ? this.http.get<ApiResponse<MedicalRecordDto[]>>(`${environment.apiUrl}/medical-records?patientId=${id}`)
+        : of({ success: true, message: '', data: [] as MedicalRecordDto[], errors: [] }),
       prescriptions: this.http.get<ApiResponse<PrescriptionDto[]>>(`${environment.apiUrl}/prescriptions?patientId=${id}`),
       specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`)
     }).subscribe({

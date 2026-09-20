@@ -121,10 +121,12 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
               </button>
             }
             @if (item.status === 'Confirmed' || item.status === 'Scheduled' || item.status === 0 || item.status === 1 || item.status === '0' || item.status === '1') {
-              <!-- Atender Cita con Registro Clínico Completo -->
-              <button type="button" class="table-action-btn btn-attend" title="Atender Consulta Médica" (click)="openAttendModal(item)">
-                <span>🩺</span> Atender Cita
-              </button>
+              <!-- Atender Cita con Registro Clínico Completo (Solo roles clínicos) -->
+              @if (authService.isAdmin() || authService.isSpecialist()) {
+                <button type="button" class="table-action-btn btn-attend" title="Atender Consulta Médica" (click)="openAttendModal(item)">
+                  <span>🩺</span> Atender Cita
+                </button>
+              }
               <button type="button" class="table-action-btn btn-reschedule" title="Reprogramar Cita" (click)="openRescheduleModal(item)">
                 <span>🔄</span> Reagendar
               </button>
@@ -844,6 +846,9 @@ export class SchedulingListComponent implements OnInit {
 
   // Attend Flow
   openAttendModal(item: SchedulingDto): void {
+    if (!this.authService.isAdmin() && !this.authService.isSpecialist()) {
+      return;
+    }
     this.selectedAppointment.set(item);
     this.pendingPrescriptionItems.set([]);
     this.prescriptionNotes.set('');

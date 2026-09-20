@@ -8,7 +8,7 @@ namespace MedApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Policy = "RequireClinicalRole")]
+[Authorize]
 public class PrescriptionsController : ControllerBase
 {
     private readonly IPrescriptionService _prescriptionService;
@@ -39,6 +39,7 @@ public class PrescriptionsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "RequireClinicalRole")]
     [ProducesResponseType(typeof(ApiResponse<PrescriptionDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -50,6 +51,7 @@ public class PrescriptionsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "RequireClinicalRole")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeletePrescription(Guid id)
