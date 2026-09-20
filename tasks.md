@@ -8,7 +8,7 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 - **Phase 1: Environment & Scaffolding** `[4/4]`
 - **Phase 2: Domain Entities & Database Migrations (MSSQL)** `[5/5]`
-- **Phase 3: Authentication, Context & Security** `[0/5]`
+- **Phase 3: Authentication, Context & Security** `[5/5]`
 - **Phase 4: Application Layer & Scheduling Engine** `[0/5]`
 - **Phase 5: REST API Controllers & Integration Tests** `[0/5]`
 - **Phase 6: Angular Core Architecture & Shell Layout** `[0/6]`
@@ -100,27 +100,27 @@ This document contains the actionable, step-by-step task breakdown for building 
 
 ## Phase 3: Authentication, Context & Security Hardening
 
-- [ ] **TASK-10: Implement Password Hashing & JWT Token Service**
+- [x] **TASK-10: Implement Password Hashing & JWT Token Service**
   - **Description**: Implement `IPasswordHasher` using BCrypt and `ITokenService` generating JWT with claims (`sub`, `name`, `role`, `companyIds`, `specialistId`).
   - **Dependencies**: TASK-02, TASK-06.
 
-- [ ] **TASK-11: Implement Tenant Resolution Middleware**
+- [x] **TASK-11: Implement Tenant Resolution Middleware**
   - **Description**: Create ASP.NET Core middleware to intercept `X-Company-Id` header, validate company membership from JWT claims, and populate scoped `ICompanyContext`. Return `403 Forbidden` if user lacks access to requested company.
   - **Dependencies**: TASK-08, TASK-10.
 
-- [ ] **TASK-12: Implement Authorization Policies & Handlers**
+- [x] **TASK-12: Implement Authorization Policies & Handlers**
   - **Description**: Register ASP.NET Core authorization policies:
     - `RequireAdminRole`: Admin only.
     - `RequireClinicalRole`: Admin or Specialist.
     - `RequireSpecialistSelfOrAdmin`: Enforces that specialists can only manage their own availability, appointments, and prescriptions.
   - **Dependencies**: TASK-10, TASK-11.
 
-- [ ] **TASK-13: Global Exception Handler & Standard Envelope**
+- [x] **TASK-13: Global Exception Handler & Standard Envelope**
   - **Description**: Implement exception handling middleware returning standardized JSON responses:
     `{ "success": boolean, "message": string, "data": T, "errors": string[] }`.
   - **Dependencies**: TASK-01.
 
-- [ ] **TASK-14: Swagger Configuration with Security Schemes**
+- [x] **TASK-14: Swagger Configuration with Security Schemes**
   - **Description**: Configure Swagger / OpenAPI in `MedApp.Api` with Bearer token authentication and `X-Company-Id` header parameter.
   - **Dependencies**: TASK-11, TASK-13.
 

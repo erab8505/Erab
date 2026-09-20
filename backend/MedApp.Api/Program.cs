@@ -1,14 +1,54 @@
+using MedApp.Api.Middleware;
+using MedApp.Api.Swagger;
 using MedApp.Infrastructure;
 using MedApp.Infrastructure.Data;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// Infrastructure Services (EF Core MSSQL, Multi-tenant CompanyContext)
+// Swagger with JWT Bearer and X-Company-Id Header
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "MedApp Multi-Tenant API",
+        Version = "v1",
+        Description = "Enterprise Multi-Tenant Medical Management System API with MSSQL & Angular"
+    });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Format: Bearer {token}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+
+    c.OperationFilter<TenantHeaderOperationFilter>();
+});
+
+// Infrastructure Services (EF Core MSSQL, JWT Auth, Policies, Multi-tenancy)
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // CORS for Angular client
@@ -41,17 +81,25 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
+// Global Exception Handler Middleware (Always First)
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+// Configure Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "MedApp API v1");
+    });
 }
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
+// Authentication & Tenant Resolution
 app.UseAuthentication();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
