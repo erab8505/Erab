@@ -12,11 +12,13 @@ public class StudyOrderService : IStudyOrderService
 {
     private readonly IApplicationDbContext _context;
     private readonly ICompanyContext _companyContext;
+    private readonly ICurrentUserService _currentUserService;
 
-    public StudyOrderService(IApplicationDbContext context, ICompanyContext companyContext)
+    public StudyOrderService(IApplicationDbContext context, ICompanyContext companyContext, ICurrentUserService currentUserService)
     {
         _context = context;
         _companyContext = companyContext;
+        _currentUserService = currentUserService;
     }
 
     public async Task<ApiResponse<List<StudyOrderDto>>> GetAllAsync(Guid? patientId = null, StudyOrderStatus? status = null, CancellationToken cancellationToken = default)
@@ -281,6 +283,30 @@ public class StudyOrderService : IStudyOrderService
 
     public async Task<ApiResponse<StudyOrderDto>> SaveResultsAsync(Guid id, SaveStudyResultsDto dto, CancellationToken cancellationToken = default)
     {
+        if (_currentUserService.IsReceptionist)
+        {
+            return ApiResponse<StudyOrderDto>.Fail("Las recepcionistas no tienen permisos para capturar o validar resultados de estudios. Esta acción solo puede ser realizada por un especialista clínico.");
+        }
+
+        Guid? validatedSpecialistId = _currentUserService.SpecialistId;
+
+        if (!validatedSpecialistId.HasValue && _currentUserService.UserId.HasValue)
+        {
+            var user = await _context.Users
+                .Include(u => u.Specialist)
+                .FirstOrDefaultAsync(u => u.Id == _currentUserService.UserId.Value, cancellationToken);
+
+            if (user?.SpecialistId.HasValue == true)
+            {
+                validatedSpecialistId = user.SpecialistId.Value;
+            }
+        }
+
+        if (!validatedSpecialistId.HasValue && dto.SpecialistId.HasValue && _currentUserService.IsAdmin)
+        {
+            validatedSpecialistId = dto.SpecialistId.Value;
+        }
+
         var order = await _context.StudyOrders
             .Include(o => o.Items)
                 .ThenInclude(i => i.Results)
@@ -289,6 +315,11 @@ public class StudyOrderService : IStudyOrderService
         if (order == null)
         {
             return ApiResponse<StudyOrderDto>.Fail("Orden no encontrada.");
+        }
+
+        if (validatedSpecialistId.HasValue)
+        {
+            order.SpecialistId = validatedSpecialistId.Value;
         }
 
         if (!string.IsNullOrWhiteSpace(dto.GeneralInterpretation))

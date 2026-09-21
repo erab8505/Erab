@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { StudyOrderDto, StudyOrderStatus } from '../../core/models/models';
 import { StudyOrderService } from '../../core/services/study-order.service';
+import { AuthService } from '../../core/services/auth.service';
 import { CompanyContextService } from '../../core/services/company-context.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../shared/components/data-table/data-table.component';
@@ -226,14 +227,16 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
               </button>
             }
 
-            <!-- Capture Results Button -->
-            <button
-              type="button"
-              class="table-action-btn font-bold text-blue-600 dark:text-blue-400"
-              title="Capturar Resultados"
-              (click)="openResultsModal(item)">
-              📝 Resultados
-            </button>
+            <!-- Capture Results Button (Only for Specialists / Admins, not Receptionists) -->
+            @if (!authService.isReceptionist()) {
+              <button
+                type="button"
+                class="table-action-btn font-bold text-blue-600 dark:text-blue-400"
+                title="Capturar Resultados"
+                (click)="openResultsModal(item)">
+                📝 Resultados
+              </button>
+            }
 
             <!-- Report Button (if completed) -->
             @if (item.status === 'Completed' || item.status === 'Delivered') {
@@ -305,6 +308,7 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
 })
 export class StudyOrderListComponent implements OnInit {
   private readonly orderService = inject(StudyOrderService);
+  readonly authService = inject(AuthService);
   readonly companyContext = inject(CompanyContextService);
   private readonly toast = inject(ToastService);
 
@@ -383,6 +387,10 @@ export class StudyOrderListComponent implements OnInit {
   }
 
   openResultsModal(order: StudyOrderDto): void {
+    if (this.authService.isReceptionist()) {
+      this.toast.error('Las recepcionistas no tienen permisos para capturar resultados. Solo un especialista puede realizar esta acción.');
+      return;
+    }
     this.selectedOrder.set(order);
     this.resultsModalOpen.set(true);
   }

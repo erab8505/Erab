@@ -2,6 +2,7 @@ import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal } fr
 import { CommonModule } from '@angular/common';
 import { PatientDto, StudyOrderDto, StudyOrderStatus } from '../../../core/models/models';
 import { StudyOrderService } from '../../../core/services/study-order.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { CompanyContextService } from '../../../core/services/company-context.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { CreateStudyOrderModalComponent } from '../../studies/components/create-study-order-modal.component';
@@ -125,13 +126,15 @@ import { StudyReportModalComponent } from '../../studies/components/study-report
 
               <!-- Actions Bottom Bar -->
               <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  class="btn btn-xs btn-outline-primary"
-                  title="Capturar o editar resultados"
-                  (click)="openResultsModal(order)">
-                  📝 Capturar Resultados
-                </button>
+                @if (!authService.isReceptionist()) {
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-outline-primary"
+                    title="Capturar o editar resultados"
+                    (click)="openResultsModal(order)">
+                    📝 Capturar Resultados
+                  </button>
+                }
 
                 @if (order.status === 'Completed' || order.status === 'Delivered') {
                   <button
@@ -176,6 +179,7 @@ import { StudyReportModalComponent } from '../../studies/components/study-report
 })
 export class PatientStudiesTabComponent implements OnInit, OnChanges {
   private readonly orderService = inject(StudyOrderService);
+  readonly authService = inject(AuthService);
   readonly companyContext = inject(CompanyContextService);
   private readonly toast = inject(ToastService);
 
@@ -234,6 +238,10 @@ export class PatientStudiesTabComponent implements OnInit, OnChanges {
   }
 
   openResultsModal(order: StudyOrderDto): void {
+    if (this.authService.isReceptionist()) {
+      this.toast.error('Las recepcionistas no tienen permisos para capturar resultados. Solo un especialista puede realizar esta acción.');
+      return;
+    }
     this.selectedOrder.set(order);
     this.resultsModalOpen.set(true);
   }

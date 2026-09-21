@@ -533,6 +533,7 @@ export interface SaveParameterResultDto {
 }
 
 export interface SaveStudyResultsDto {
+  specialistId?: string | null;
   generalInterpretation?: string | null;
   results: SaveParameterResultDto[];
 }

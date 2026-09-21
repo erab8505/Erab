@@ -130,9 +130,11 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 
           <!-- Signature Section -->
           <div class="flex justify-end pt-8 mt-6">
-            <div class="text-center w-56 border-t border-slate-900 dark:border-slate-100 pt-1.5">
-              <span class="font-bold text-xs block text-slate-800 dark:text-slate-200">Responsable de Laboratorio</span>
-              <span class="text-[10px] text-slate-500 uppercase block">Firma y Sello Clínico</span>
+            <div class="text-center w-64 border-t border-slate-900 dark:border-slate-100 pt-1.5">
+              <span class="font-bold text-xs block text-slate-800 dark:text-slate-200">
+                {{ order.specialistName ? ('Dr(a). ' + order.specialistName) : 'Responsable de Laboratorio' }}
+              </span>
+              <span class="text-[10px] text-slate-500 uppercase block">Especialista / Firma y Sello Clínico</span>
             </div>
           </div>
         </div>
@@ -320,8 +322,8 @@ export class StudyReportModalComponent {
 
           <div class="footer-sig">
             <div class="sig-box">
-              <div style="font-weight: 700; font-size: 11px;">Responsable de Laboratorio</div>
-              <div style="font-size: 9.5px; color: #64748b;">Firma y Sello Clínico</div>
+              <div style="font-weight: 700; font-size: 11px;">${this.order.specialistName ? ('Dr(a). ' + this.order.specialistName) : 'Responsable de Laboratorio'}</div>
+              <div style="font-size: 9.5px; color: #64748b;">Especialista / Firma y Sello Clínico</div>
             </div>
           </div>
         </body>
@@ -366,7 +368,7 @@ export class StudyReportModalComponent {
     message += `📋 *No. Orden:* ${orderNum}\n`;
     message += `🗓️ *Fecha:* ${dateStr}\n`;
     if (this.order.specialistName) {
-      message += `👨‍⚕️ *Médico:* ${this.order.specialistName}\n`;
+      message += `👨‍⚕️ *Especialista Responsable:* ${this.order.specialistName}\n`;
     }
     if (this.order.clinicalDiagnosis) {
       message += `🩺 *Diagnóstico:* ${this.order.clinicalDiagnosis}\n`;

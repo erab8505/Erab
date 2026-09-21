@@ -63,6 +63,7 @@ public class StudyOrdersController : ControllerBase
     }
 
     [HttpPost("{id:guid}/results")]
+    [Authorize(Roles = "Admin,Specialist")]
     public async Task<ActionResult<ApiResponse<StudyOrderDto>>> SaveResults(Guid id, [FromBody] SaveStudyResultsDto dto, CancellationToken cancellationToken)
     {
         var result = await _orderService.SaveResultsAsync(id, dto, cancellationToken);

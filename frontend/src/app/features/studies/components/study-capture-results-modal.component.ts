@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SaveParameterResultDto, SaveStudyResultsDto, StudyOrderDto, StudyOrderItemDto, StudyOrderResultDto } from '../../../core/models/models';
 import { StudyOrderService } from '../../../core/services/study-order.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 
@@ -50,6 +51,24 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
                 {{ getStatusLabel(order.status) }}
               </span>
             </div>
+          </div>
+
+          <!-- Validating Specialist Info Banner -->
+          <div class="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-xl flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base">👨‍⚕️</span>
+              <div>
+                <span class="font-bold text-slate-800 dark:text-slate-100">
+                  Especialista que valida e informa:
+                </span>
+                <span class="ml-1 text-blue-700 dark:text-blue-300 font-semibold">
+                  {{ authService.username() }} ({{ authService.userRole() }})
+                </span>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">
+              Los resultados quedarán registrados bajo este especialista
+            </span>
           </div>
 
           <!-- Items and Results Matrix -->
@@ -187,6 +206,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 })
 export class StudyCaptureResultsModalComponent implements OnChanges {
   private readonly orderService = inject(StudyOrderService);
+  readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
 
   @Input() isOpen = false;
@@ -243,8 +263,14 @@ export class StudyCaptureResultsModalComponent implements OnChanges {
   saveResults(): void {
     if (!this.order) return;
 
+    if (this.authService.isReceptionist()) {
+      this.toast.error('Las recepcionistas no tienen permisos para capturar o validar resultados de estudios.');
+      return;
+    }
+
     this.saving = true;
     const dto: SaveStudyResultsDto = {
+      specialistId: this.authService.specialistId(),
       generalInterpretation: this.generalNotes,
       results: []
     };

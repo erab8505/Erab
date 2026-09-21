@@ -96,6 +96,7 @@ public class SaveParameterResultDto
 
 public class SaveStudyResultsDto
 {
+    public Guid? SpecialistId { get; set; }
     public string? GeneralInterpretation { get; set; }
     public List<SaveParameterResultDto> Results { get; set; } = new();
 }
