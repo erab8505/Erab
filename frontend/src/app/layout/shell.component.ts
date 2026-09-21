@@ -4,13 +4,12 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from '../core/services/auth.service';
 import { CompanyContextService } from '../core/services/company-context.service';
 import { ThemeService } from '../core/services/theme.service';
-import { BadgeComponent } from '../shared/components/badge/badge.component';
 import { ToastContainerComponent } from '../shared/components/toast/toast-container.component';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, BadgeComponent, ToastContainerComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, ToastContainerComponent],
   template: `
     <div class="app-layout">
       <!-- Top Navbar -->
@@ -75,11 +74,15 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
           </button>
 
           <!-- User Profile & Role -->
-          <div class="user-profile-badge">
-            <div class="user-avatar">{{ userInitials() }}</div>
-            <div class="user-info hidden sm:flex flex-col">
-              <span class="user-name">{{ authService.username() }}</span>
-              <app-badge [variant]="roleBadgeVariant" [text]="roleLabel"></app-badge>
+          <div class="user-profile-badge" [title]="'Usuario activo: ' + authService.username() + ' (' + roleLabel + ')'">
+            <div class="user-avatar" [ngClass]="avatarRoleClass">
+              {{ userInitials() }}
+            </div>
+            <div class="user-info">
+              <div class="user-name-line">
+                <span class="user-name">{{ authService.username() }}</span>
+              </div>
+              <span class="user-role-badge" [ngClass]="rolePillClass">{{ roleLabel }}</span>
             </div>
           </div>
 
@@ -343,39 +346,152 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
     .user-profile-badge {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      background: var(--card-footer-bg, #eff4ff);
-      padding: 0.2rem 0.5rem 0.2rem 0.2rem;
+      gap: 0.625rem;
+      background: var(--card-bg, #ffffff);
+      padding: 0.25rem 0.75rem 0.25rem 0.35rem;
       border-radius: var(--radius-full, 9999px);
-      border: 1px solid var(--border-color, #dce9ff);
+      border: 1.5px solid var(--border-color, #dce9ff);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
     }
-    @media (min-width: 640px) {
-      .user-profile-badge {
-        padding: 0.25rem 0.75rem 0.25rem 0.25rem;
-        gap: 0.625rem;
-      }
+    :host-context(.dark) .user-profile-badge {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    .user-profile-badge:hover {
+      border-color: var(--primary-color, #006194);
+      box-shadow: 0 2px 8px rgba(0, 97, 148, 0.15);
     }
     .user-avatar {
-      width: 1.875rem;
-      height: 1.875rem;
+      width: 2.25rem;
+      height: 2.25rem;
       border-radius: 9999px;
-      background: var(--primary-color, #006194);
-      color: white;
+      color: #ffffff;
       font-family: 'Plus Jakarta Sans', sans-serif;
-      font-weight: 700;
-      font-size: 0.75rem;
+      font-weight: 800;
+      font-size: 0.8125rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 1px 3px var(--primary-glow);
+      flex-shrink: 0;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     }
-    @media (min-width: 640px) {
-      .user-avatar { width: 2rem; height: 2rem; font-size: 0.8125rem; }
+    .avatar-superadmin {
+      background: linear-gradient(135deg, #7c3aed 0%, #b45309 100%);
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.35);
+    }
+    .avatar-admin {
+      background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+      box-shadow: 0 0 10px rgba(29, 78, 216, 0.35);
+    }
+    .avatar-specialist {
+      background: linear-gradient(135deg, #0d9488 0%, #059669 100%);
+      box-shadow: 0 0 10px rgba(13, 148, 136, 0.35);
+    }
+    .avatar-laboratorist {
+      background: linear-gradient(135deg, #d97706 0%, #ea580c 100%);
+      box-shadow: 0 0 10px rgba(217, 119, 6, 0.35);
+    }
+    .avatar-receptionist {
+      background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.35);
+    }
+    .avatar-default {
+      background: #64748b;
+    }
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
+    }
+    .user-name-line {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
     }
     .user-name {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      line-height: 1.2;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-color, #0f172a);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+    }
+    @media (min-width: 640px) {
+      .user-name { max-width: 170px; }
+    }
+    :host-context(.dark) .user-name {
+      color: #f8fafc;
+    }
+    .user-role-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      white-space: nowrap;
+      width: fit-content;
+    }
+    .role-pill-superadmin {
+      background: #f3e8ff;
+      color: #6b21a8;
+      border: 1px solid #d8b4fe;
+    }
+    :host-context(.dark) .role-pill-superadmin {
+      background: rgba(107, 33, 168, 0.25);
+      color: #d8b4fe;
+      border-color: rgba(216, 180, 254, 0.3);
+    }
+    .role-pill-admin {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+    :host-context(.dark) .role-pill-admin {
+      background: rgba(30, 64, 175, 0.25);
+      color: #93c5fd;
+      border-color: rgba(147, 197, 253, 0.3);
+    }
+    .role-pill-specialist {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    :host-context(.dark) .role-pill-specialist {
+      background: rgba(22, 101, 52, 0.25);
+      color: #86efac;
+      border-color: rgba(134, 239, 172, 0.3);
+    }
+    .role-pill-laboratorist {
+      background: #fffbeb;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+    :host-context(.dark) .role-pill-laboratorist {
+      background: rgba(146, 64, 14, 0.25);
+      color: #fcd34d;
+      border-color: rgba(252, 211, 77, 0.3);
+    }
+    .role-pill-receptionist {
+      background: #ecfeff;
+      color: #155e75;
+      border: 1px solid #a5f3fc;
+    }
+    :host-context(.dark) .role-pill-receptionist {
+      background: rgba(21, 94, 117, 0.25);
+      color: #67e8f9;
+      border-color: rgba(103, 232, 249, 0.3);
+    }
+    .role-pill-default {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
     }
     .logout-btn {
       display: flex;
@@ -507,6 +623,30 @@ export class ShellComponent {
     return name.substring(0, 2).toUpperCase();
   });
 
+  get avatarRoleClass(): string {
+    const role = this.authService.userRole();
+    switch (role) {
+      case 'SuperAdmin': return 'avatar-superadmin';
+      case 'Admin': return 'avatar-admin';
+      case 'Specialist': return 'avatar-specialist';
+      case 'Laboratorist': return 'avatar-laboratorist';
+      case 'Receptionist': return 'avatar-receptionist';
+      default: return 'avatar-default';
+    }
+  }
+
+  get rolePillClass(): string {
+    const role = this.authService.userRole();
+    switch (role) {
+      case 'SuperAdmin': return 'role-pill-superadmin';
+      case 'Admin': return 'role-pill-admin';
+      case 'Specialist': return 'role-pill-specialist';
+      case 'Laboratorist': return 'role-pill-laboratorist';
+      case 'Receptionist': return 'role-pill-receptionist';
+      default: return 'role-pill-default';
+    }
+  }
+
   get roleLabel(): string {
     const role = this.authService.userRole();
     switch (role) {
@@ -516,18 +656,6 @@ export class ShellComponent {
       case 'Specialist': return 'Especialista';
       case 'Receptionist': return 'Recepcionista';
       default: return 'Usuario';
-    }
-  }
-
-  get roleBadgeVariant(): 'primary' | 'success' | 'warning' | 'info' {
-    const role = this.authService.userRole();
-    switch (role) {
-      case 'SuperAdmin': return 'primary';
-      case 'Admin': return 'primary';
-      case 'Laboratorist': return 'warning';
-      case 'Specialist': return 'info';
-      case 'Receptionist': return 'success';
-      default: return 'warning';
     }
   }
 
