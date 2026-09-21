@@ -9,6 +9,7 @@ public record UserDto(
     Guid? SpecialistId,
     string? SpecialistName,
     List<Guid> CompanyIds,
+    List<CompanyDto> Companies,
     DateTimeOffset CreatedAt
 );
 

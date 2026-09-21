@@ -23,6 +23,7 @@ public class UserService : IUserService
         return await _context.Users
             .Include(u => u.Specialist)
             .Include(u => u.UserCompanies)
+                .ThenInclude(uc => uc.Company)
             .OrderBy(u => u.Username)
             .Select(u => new UserDto(
                 u.Id,
@@ -31,6 +32,17 @@ public class UserService : IUserService
                 u.SpecialistId,
                 u.Specialist != null ? $"{u.Specialist.FirstName} {u.Specialist.LastName}" : null,
                 u.UserCompanies.Select(uc => uc.CompanyId).ToList(),
+                u.UserCompanies.Select(uc => new CompanyDto(
+                    uc.Company.Id,
+                    uc.Company.Name,
+                    uc.Company.TaxId,
+                    uc.Company.Address,
+                    uc.Company.Phone,
+                    uc.Company.Email,
+                    uc.Company.IsActive,
+                    uc.Company.Description,
+                    uc.Company.CreatedAt
+                )).ToList(),
                 u.CreatedAt
             ))
             .ToListAsync();
@@ -41,6 +53,7 @@ public class UserService : IUserService
         var user = await _context.Users
             .Include(u => u.Specialist)
             .Include(u => u.UserCompanies)
+                .ThenInclude(uc => uc.Company)
             .FirstOrDefaultAsync(u => u.Id == id);
 
         if (user == null)
@@ -53,6 +66,17 @@ public class UserService : IUserService
             user.SpecialistId,
             user.Specialist != null ? $"{user.Specialist.FirstName} {user.Specialist.LastName}" : null,
             user.UserCompanies.Select(uc => uc.CompanyId).ToList(),
+            user.UserCompanies.Select(uc => new CompanyDto(
+                uc.Company.Id,
+                uc.Company.Name,
+                uc.Company.TaxId,
+                uc.Company.Address,
+                uc.Company.Phone,
+                uc.Company.Email,
+                uc.Company.IsActive,
+                uc.Company.Description,
+                uc.Company.CreatedAt
+            )).ToList(),
             user.CreatedAt
         );
     }
@@ -95,15 +119,8 @@ public class UserService : IUserService
         await _context.Users.AddAsync(user);
         await _context.SaveChangesAsync();
 
-        return new UserDto(
-            user.Id,
-            user.Username,
-            user.Role,
-            user.SpecialistId,
-            specialistName,
-            user.UserCompanies.Select(uc => uc.CompanyId).ToList(),
-            user.CreatedAt
-        );
+        // Reload with companies
+        return await GetUserByIdAsync(user.Id);
     }
 
     public async Task<UserDto> UpdateUserAsync(Guid id, UpdateUserDto dto)
@@ -149,15 +166,7 @@ public class UserService : IUserService
 
         await _context.SaveChangesAsync();
 
-        return new UserDto(
-            user.Id,
-            user.Username,
-            user.Role,
-            user.SpecialistId,
-            specialistName,
-            user.UserCompanies.Select(uc => uc.CompanyId).ToList(),
-            user.CreatedAt
-        );
+        return await GetUserByIdAsync(user.Id);
     }
 
     public async Task<bool> DeleteUserAsync(Guid id)

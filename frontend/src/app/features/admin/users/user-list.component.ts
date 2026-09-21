@@ -2,9 +2,10 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse, CompanyDto, SpecialistDto, UserDto, UserRole } from '../../../core/models/models';
+import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../../shared/components/data-table/data-table.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
@@ -21,7 +22,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
           <h1 class="text-2xl font-bold">Gestión de Usuarios y Roles</h1>
           <p class="text-slate-500 text-sm">Control de acceso multi-empresa, roles y perfiles vinculados</p>
         </div>
-        <button type="button" class="btn btn-primary" (click)="openCreateModal()" [disabled]="companies().length === 0">
+        <button type="button" class="btn btn-primary" (click)="openCreateModal()">
           <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
@@ -52,16 +53,21 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
                 </span>
               } @else {
                 <div class="flex flex-wrap gap-1">
-                  @for (c of item.companies; track c.id) {
+                  @for (c of (item.companies || []); track c.id) {
                     <span class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">
                       {{ c.name }}
                     </span>
                   }
+                  @if (!item.companies || item.companies.length === 0) {
+                    <span class="text-xs text-slate-400 italic">Ninguna asignada</span>
+                  }
                 </div>
               }
             }
-            @case ('isActive') {
-              <app-badge [variant]="item.isActive ? 'success' : 'neutral'" [text]="item.isActive ? 'Activo' : 'Inactivo'"></app-badge>
+            @case ('createdAt') {
+              <span class="text-xs text-slate-600 dark:text-slate-400">
+                {{ item.createdAt | date:'mediumDate' }}
+              </span>
             }
             @default {
               {{ item[col.key] || '-' }}
@@ -205,6 +211,7 @@ export class UserListComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
+  readonly authService = inject(AuthService);
 
   readonly users = signal<UserDto[]>([]);
   readonly companies = signal<CompanyDto[]>([]);
@@ -233,10 +240,10 @@ export class UserListComponent implements OnInit {
 
   readonly columns: TableColumn<UserDto>[] = [
     { key: 'username', label: 'Usuario', sortable: true },
-    { key: 'role', label: 'Rol', sortable: true, width: '130px' },
+    { key: 'role', label: 'Rol', sortable: true, width: '150px' },
     { key: 'specialistName', label: 'Especialista Vinculado' },
     { key: 'companies', label: 'Empresas Asignadas' },
-    { key: 'isActive', label: 'Estado', sortable: true, width: '100px' }
+    { key: 'createdAt', label: 'Fecha Alta', sortable: true, width: '130px' }
   ];
 
   readonly form: FormGroup = this.fb.group({
@@ -260,10 +267,26 @@ export class UserListComponent implements OnInit {
 
   loadData(): void {
     this.loading.set(true);
+    const companies$ = this.authService.isSuperAdmin()
+      ? this.http.get<ApiResponse<CompanyDto[]>>(`${environment.apiUrl}/companies`).pipe(
+          catchError(() => of({ success: true, data: [] as CompanyDto[], message: '', errors: [] }))
+        )
+      : this.http.get<ApiResponse<CompanyDto[]>>(`${environment.apiUrl}/companies/mine`).pipe(
+          catchError(() => of({ success: true, data: [] as CompanyDto[], message: '', errors: [] }))
+        );
+
+    const specialists$ = this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`).pipe(
+      catchError(() => of({ success: true, data: [] as SpecialistDto[], message: '', errors: [] }))
+    );
+
+    const users$ = this.http.get<ApiResponse<UserDto[]>>(`${environment.apiUrl}/users`).pipe(
+      catchError(() => of({ success: true, data: [] as UserDto[], message: '', errors: [] }))
+    );
+
     forkJoin({
-      users: this.http.get<ApiResponse<UserDto[]>>(`${environment.apiUrl}/users`),
-      companies: this.http.get<ApiResponse<CompanyDto[]>>(`${environment.apiUrl}/companies`),
-      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`)
+      users: users$,
+      companies: companies$,
+      specialists: specialists$
     }).subscribe({
       next: (res) => {
         this.loading.set(false);
