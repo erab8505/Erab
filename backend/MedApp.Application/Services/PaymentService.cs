@@ -13,15 +13,18 @@ public class PaymentService : IPaymentService
     private readonly IApplicationDbContext _context;
     private readonly ICompanyContext _companyContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditService _auditService;
 
     public PaymentService(
         IApplicationDbContext context,
         ICompanyContext companyContext,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IAuditService auditService)
     {
         _context = context;
         _companyContext = companyContext;
         _currentUserService = currentUserService;
+        _auditService = auditService;
     }
 
     private Guid CurrentCompanyId => _companyContext.CompanyId
@@ -182,6 +185,13 @@ public class PaymentService : IPaymentService
         _context.Payments.Add(payment);
         await _context.SaveChangesAsync();
 
+        await _auditService.LogAsync(
+            "CREATE",
+            "Payments",
+            payment.Id.ToString(),
+            $"Registró cobro de ${payment.Amount:N2} mediante {payment.Method} (Recibo: {payment.InvoiceOrReceiptNumber}, Estado: {payment.Status})"
+        );
+
         return (await GetPaymentByIdAsync(payment.Id))!;
     }
 
@@ -191,6 +201,7 @@ public class PaymentService : IPaymentService
         if (payment == null)
             throw new NotFoundException("Registro de pago no encontrado.");
 
+        var oldStatus = payment.Status;
         payment.Status = dto.Status;
         if (dto.Status == PaymentStatus.Paid && !payment.PaidAt.HasValue)
         {
@@ -205,6 +216,14 @@ public class PaymentService : IPaymentService
         }
 
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            "STATUS_CHANGE",
+            "Payments",
+            payment.Id.ToString(),
+            $"Cambió el estado del pago #{payment.InvoiceOrReceiptNumber} de '{oldStatus}' a '{dto.Status}'"
+        );
+
         return (await GetPaymentByIdAsync(payment.Id))!;
     }
 

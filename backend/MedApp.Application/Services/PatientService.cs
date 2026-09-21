@@ -11,11 +11,16 @@ public class PatientService : IPatientService
 {
     private readonly IApplicationDbContext _context;
     private readonly ICompanyContext _companyContext;
+    private readonly IAuditService _auditService;
 
-    public PatientService(IApplicationDbContext context, ICompanyContext companyContext)
+    public PatientService(
+        IApplicationDbContext context,
+        ICompanyContext companyContext,
+        IAuditService auditService)
     {
         _context = context;
         _companyContext = companyContext;
+        _auditService = auditService;
     }
 
     private Guid CurrentCompanyId => _companyContext.CompanyId
@@ -116,6 +121,13 @@ public class PatientService : IPatientService
         await _context.Patients.AddAsync(patient);
         await _context.SaveChangesAsync();
 
+        await _auditService.LogAsync(
+            "CREATE",
+            "Patients",
+            patient.Id.ToString(),
+            $"Registró al paciente '{patient.FirstName} {patient.LastName}' (Doc: {patient.DocumentId})"
+        );
+
         return new PatientDto(
             patient.Id,
             patient.CompanyId,
@@ -160,6 +172,13 @@ public class PatientService : IPatientService
 
         await _context.SaveChangesAsync();
 
+        await _auditService.LogAsync(
+            "UPDATE",
+            "Patients",
+            patient.Id.ToString(),
+            $"Actualizó los datos del paciente '{patient.FirstName} {patient.LastName}' (Doc: {patient.DocumentId})"
+        );
+
         return new PatientDto(
             patient.Id,
             patient.CompanyId,
@@ -193,8 +212,19 @@ public class PatientService : IPatientService
             throw new ConflictException("No se puede eliminar el paciente porque registra historial clínico, citas o recetas asociadas.");
         }
 
+        var doc = patient.DocumentId;
+        var name = $"{patient.FirstName} {patient.LastName}";
+
         _context.Patients.Remove(patient);
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            "DELETE",
+            "Patients",
+            id.ToString(),
+            $"Eliminó al paciente '{name}' (Doc: {doc})"
+        );
+
         return true;
     }
 }

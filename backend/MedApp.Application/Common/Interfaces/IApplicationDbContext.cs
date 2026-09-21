@@ -28,6 +28,8 @@ public interface IApplicationDbContext
     DbSet<StudyOrder> StudyOrders { get; }
     DbSet<StudyOrderItem> StudyOrderItems { get; }
     DbSet<StudyOrderResult> StudyOrderResults { get; }
+    DbSet<Receptionist> Receptionists { get; }
+    DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

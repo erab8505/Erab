@@ -13,12 +13,18 @@ public class StudyOrderService : IStudyOrderService
     private readonly IApplicationDbContext _context;
     private readonly ICompanyContext _companyContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditService _auditService;
 
-    public StudyOrderService(IApplicationDbContext context, ICompanyContext companyContext, ICurrentUserService currentUserService)
+    public StudyOrderService(
+        IApplicationDbContext context,
+        ICompanyContext companyContext,
+        ICurrentUserService currentUserService,
+        IAuditService auditService)
     {
         _context = context;
         _companyContext = companyContext;
         _currentUserService = currentUserService;
+        _auditService = auditService;
     }
 
     public async Task<ApiResponse<List<StudyOrderDto>>> GetAllAsync(Guid? patientId = null, StudyOrderStatus? status = null, CancellationToken cancellationToken = default)
@@ -255,6 +261,13 @@ public class StudyOrderService : IStudyOrderService
         _context.StudyOrders.Add(order);
         await _context.SaveChangesAsync(cancellationToken);
 
+        await _auditService.LogAsync(
+            "CREATE",
+            "Laboratory",
+            order.Id.ToString(),
+            $"Generó la orden de estudio clínico #{order.OrderNumber} ({string.Join(", ", studies.Select(s => s.Name))})"
+        );
+
         return await GetByIdAsync(order.Id, cancellationToken);
     }
 
@@ -269,6 +282,7 @@ public class StudyOrderService : IStudyOrderService
             return ApiResponse<StudyOrderDto>.Fail("Orden no encontrada.");
         }
 
+        var oldStatus = order.Status;
         order.Status = status;
         foreach (var item in order.Items)
         {
@@ -281,6 +295,13 @@ public class StudyOrderService : IStudyOrderService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _auditService.LogAsync(
+            "STATUS_CHANGE",
+            "Laboratory",
+            order.Id.ToString(),
+            $"Cambió el estado de la orden #{order.OrderNumber} de '{oldStatus}' a '{status}'"
+        );
 
         return await GetByIdAsync(id, cancellationToken);
     }
@@ -392,6 +413,13 @@ public class StudyOrderService : IStudyOrderService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        await _auditService.LogAsync(
+            "SAVE_RESULTS",
+            "Laboratory",
+            order.Id.ToString(),
+            $"Registró y validó resultados analíticos para la orden #{order.OrderNumber} (Responsable: {resolvedLaboratoristName})"
+        );
 
         return await GetByIdAsync(id, cancellationToken);
     }

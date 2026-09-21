@@ -14,23 +14,27 @@ public class UserService : IUserService
     private readonly IPasswordHasher _passwordHasher;
     private readonly ICurrentUserService _currentUserService;
     private readonly ICompanyContext _companyContext;
+    private readonly IAuditService _auditService;
 
     public UserService(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
         ICurrentUserService currentUserService,
-        ICompanyContext companyContext)
+        ICompanyContext companyContext,
+        IAuditService auditService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _currentUserService = currentUserService;
         _companyContext = companyContext;
+        _auditService = auditService;
     }
 
     public async Task<List<UserDto>> GetUsersAsync()
     {
         var query = _context.Users
             .Include(u => u.Specialist)
+            .Include(u => u.Receptionist)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
             .AsQueryable();
@@ -62,6 +66,8 @@ public class UserService : IUserService
                 u.Role,
                 u.SpecialistId,
                 u.Specialist != null ? $"{u.Specialist.FirstName} {u.Specialist.LastName}" : null,
+                u.ReceptionistId,
+                u.Receptionist != null ? $"{u.Receptionist.FirstName} {u.Receptionist.LastName}" : null,
                 u.UserCompanies.Select(uc => uc.CompanyId).ToList(),
                 u.UserCompanies.Select(uc => new CompanyDto(
                     uc.Company.Id,
@@ -83,6 +89,7 @@ public class UserService : IUserService
     {
         var user = await _context.Users
             .Include(u => u.Specialist)
+            .Include(u => u.Receptionist)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
             .FirstOrDefaultAsync(u => u.Id == id);
@@ -120,6 +127,8 @@ public class UserService : IUserService
             user.Role,
             user.SpecialistId,
             user.Specialist != null ? $"{user.Specialist.FirstName} {user.Specialist.LastName}" : null,
+            user.ReceptionistId,
+            user.Receptionist != null ? $"{user.Receptionist.FirstName} {user.Receptionist.LastName}" : null,
             user.UserCompanies.Select(uc => uc.CompanyId).ToList(),
             user.UserCompanies.Select(uc => new CompanyDto(
                 uc.Company.Id,
@@ -147,13 +156,22 @@ public class UserService : IUserService
         if (existsUsername)
             throw new ConflictException($"El nombre de usuario '{dto.Username}' ya está en uso.");
 
-        string? specialistName = null;
-        if (dto.SpecialistId.HasValue)
+        Guid? specialistId = null;
+        if ((dto.Role == UserRole.Specialist || dto.Role == UserRole.Laboratorist) && dto.SpecialistId.HasValue)
         {
             var specialist = await _context.Specialists.FindAsync(dto.SpecialistId.Value);
             if (specialist == null)
                 throw new NotFoundException("Especialista", dto.SpecialistId.Value);
-            specialistName = $"{specialist.FirstName} {specialist.LastName}";
+            specialistId = dto.SpecialistId.Value;
+        }
+
+        Guid? receptionistId = null;
+        if (dto.Role == UserRole.Receptionist && dto.ReceptionistId.HasValue)
+        {
+            var receptionist = await _context.Receptionists.FindAsync(dto.ReceptionistId.Value);
+            if (receptionist == null)
+                throw new NotFoundException("Recepcionista", dto.ReceptionistId.Value);
+            receptionistId = dto.ReceptionistId.Value;
         }
 
         var user = new User
@@ -161,7 +179,8 @@ public class UserService : IUserService
             Username = dto.Username,
             PasswordHash = _passwordHasher.HashPassword(dto.Password),
             Role = dto.Role,
-            SpecialistId = dto.SpecialistId
+            SpecialistId = specialistId,
+            ReceptionistId = receptionistId
         };
 
         var companyIdsToAssign = dto.CompanyIds?.Distinct().ToList() ?? new List<Guid>();
@@ -184,6 +203,14 @@ public class UserService : IUserService
         await _context.Users.AddAsync(user);
         await _context.SaveChangesAsync();
 
+        await _auditService.LogAsync(
+            "CREATE",
+            "Users",
+            user.Id.ToString(),
+            $"Creó el usuario '{user.Username}' con rol '{user.Role}'",
+            new { user.Username, user.Role, SpecialistId = specialistId, ReceptionistId = receptionistId, CompanyIds = companyIdsToAssign }
+        );
+
         // Reload with companies
         return await GetUserByIdAsync(user.Id);
     }
@@ -192,6 +219,7 @@ public class UserService : IUserService
     {
         var user = await _context.Users
             .Include(u => u.Specialist)
+            .Include(u => u.Receptionist)
             .Include(u => u.UserCompanies)
             .FirstOrDefaultAsync(u => u.Id == id);
 
@@ -226,17 +254,27 @@ public class UserService : IUserService
             }
         }
 
-        string? specialistName = null;
-        if (dto.SpecialistId.HasValue)
+        Guid? specialistId = null;
+        if ((dto.Role == UserRole.Specialist || dto.Role == UserRole.Laboratorist) && dto.SpecialistId.HasValue)
         {
             var specialist = await _context.Specialists.FindAsync(dto.SpecialistId.Value);
             if (specialist == null)
                 throw new NotFoundException("Especialista", dto.SpecialistId.Value);
-            specialistName = $"{specialist.FirstName} {specialist.LastName}";
+            specialistId = dto.SpecialistId.Value;
+        }
+
+        Guid? receptionistId = null;
+        if (dto.Role == UserRole.Receptionist && dto.ReceptionistId.HasValue)
+        {
+            var receptionist = await _context.Receptionists.FindAsync(dto.ReceptionistId.Value);
+            if (receptionist == null)
+                throw new NotFoundException("Recepcionista", dto.ReceptionistId.Value);
+            receptionistId = dto.ReceptionistId.Value;
         }
 
         user.Role = dto.Role;
-        user.SpecialistId = dto.SpecialistId;
+        user.SpecialistId = specialistId;
+        user.ReceptionistId = receptionistId;
 
         if (!string.IsNullOrWhiteSpace(dto.Password))
         {
@@ -258,6 +296,14 @@ public class UserService : IUserService
         }
 
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            "UPDATE",
+            "Users",
+            user.Id.ToString(),
+            $"Actualizó el usuario '{user.Username}' (Rol: {user.Role})",
+            new { user.Username, user.Role, SpecialistId = specialistId, ReceptionistId = receptionistId }
+        );
 
         return await GetUserByIdAsync(user.Id);
     }
@@ -299,8 +345,17 @@ public class UserService : IUserService
             }
         }
 
+        var username = user.Username;
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            "DELETE",
+            "Users",
+            id.ToString(),
+            $"Eliminó el usuario '{username}'"
+        );
+
         return true;
     }
 }

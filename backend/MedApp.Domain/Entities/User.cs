@@ -11,5 +11,8 @@ public class User : BaseEntity
     public Guid? SpecialistId { get; set; }
     public Specialist? Specialist { get; set; }
 
+    public Guid? ReceptionistId { get; set; }
+    public Receptionist? Receptionist { get; set; }
+
     public ICollection<UserCompany> UserCompanies { get; set; } = new List<UserCompany>();
 }

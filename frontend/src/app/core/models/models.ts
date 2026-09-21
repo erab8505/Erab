@@ -20,6 +20,7 @@ export interface LoginResponseDto {
   username: string;
   role: UserRole;
   specialistId?: string | null;
+  receptionistId?: string | null;
   assignedCompanies?: CompanyDto[];
   companies?: CompanyDto[];
 }
@@ -28,6 +29,7 @@ export interface UserSession {
   username: string;
   role: UserRole;
   specialistId?: string | null;
+  receptionistId?: string | null;
   token: string;
   companyIds: string[];
 }
@@ -122,9 +124,43 @@ export interface UserDto {
   role: UserRole;
   specialistId?: string | null;
   specialistName?: string | null;
+  receptionistId?: string | null;
+  receptionistName?: string | null;
   isActive: boolean;
   companyIds: string[];
   companies: CompanyDto[];
+}
+
+export interface ReceptionistDto {
+  id: string;
+  companyId: string;
+  companyName: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  identificationNumber?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateReceptionistDto {
+  firstName: string;
+  lastName: string;
+  identificationNumber?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateReceptionistDto {
+  firstName: string;
+  lastName: string;
+  identificationNumber?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive: boolean;
 }
 
 export interface PatientDto {
@@ -540,4 +576,40 @@ export interface SaveStudyResultsDto {
   laboratoristName?: string | null;
   generalInterpretation?: string | null;
   results: SaveParameterResultDto[];
+}
+
+export interface AuditLogDto {
+  id: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  userId?: string | null;
+  username: string;
+  userRole: UserRole;
+  action: string;
+  module: string;
+  entityId?: string | null;
+  description: string;
+  detailsJson?: string | null;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export interface AuditLogFilterDto {
+  fromDate?: string | null;
+  toDate?: string | null;
+  role?: UserRole | null;
+  userId?: string | null;
+  module?: string | null;
+  action?: string | null;
+  search?: string | null;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface PagedAuditLogsDto {
+  items: AuditLogDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
 }

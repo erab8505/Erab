@@ -44,6 +44,11 @@ public class JwtTokenService : ITokenService
             claims.Add(new Claim("specialistId", user.SpecialistId.Value.ToString()));
         }
 
+        if (user.ReceptionistId.HasValue)
+        {
+            claims.Add(new Claim("receptionistId", user.ReceptionistId.Value.ToString()));
+        }
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),

@@ -13,15 +13,18 @@ public class SchedulingService : ISchedulingService
     private readonly IApplicationDbContext _context;
     private readonly ICompanyContext _companyContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditService _auditService;
 
     public SchedulingService(
         IApplicationDbContext context,
         ICompanyContext companyContext,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IAuditService auditService)
     {
         _context = context;
         _companyContext = companyContext;
         _currentUserService = currentUserService;
+        _auditService = auditService;
     }
 
     private Guid CurrentCompanyId => _companyContext.CompanyId
@@ -203,6 +206,13 @@ public class SchedulingService : ISchedulingService
         await _context.Schedulings.AddAsync(scheduling);
         await _context.SaveChangesAsync();
 
+        await _auditService.LogAsync(
+            "CREATE",
+            "Scheduling",
+            scheduling.Id.ToString(),
+            $"Agendó cita para el paciente '{patient.FirstName} {patient.LastName}' con el especialista '{specialist.FirstName} {specialist.LastName}' para el {scheduling.ScheduledAt:yyyy-MM-dd HH:mm}"
+        );
+
         return new SchedulingDto(
             scheduling.Id,
             scheduling.CompanyId,
@@ -235,8 +245,16 @@ public class SchedulingService : ISchedulingService
         if (_currentUserService.IsSpecialist && scheduling.SpecialistId != _currentUserService.SpecialistId)
             throw new ForbiddenAccessException("No tiene autorización para modificar el estado de citas de otros especialistas.");
 
+        var oldStatus = scheduling.Status;
         scheduling.Status = dto.Status;
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            "STATUS_CHANGE",
+            "Scheduling",
+            scheduling.Id.ToString(),
+            $"Cambió el estado de la cita del paciente '{scheduling.Patient.FirstName} {scheduling.Patient.LastName}' de '{oldStatus}' a '{dto.Status}'"
+        );
 
         return new SchedulingDto(
             scheduling.Id,
@@ -287,11 +305,19 @@ public class SchedulingService : ISchedulingService
             throw new ConflictException($"El especialista ya tiene una cita reservada que se solapa con el nuevo horario ({reqStart:HH:mm} - {reqEnd:HH:mm}).");
         }
 
+        var oldDate = scheduling.ScheduledAt;
         scheduling.ScheduledAt = dto.NewScheduledAt;
         scheduling.DurationMinutes = duration;
         scheduling.Status = AppointmentStatus.Scheduled;
 
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            "RESCHEDULE",
+            "Scheduling",
+            scheduling.Id.ToString(),
+            $"Reagendó la cita del paciente '{scheduling.Patient.FirstName} {scheduling.Patient.LastName}' del {oldDate:yyyy-MM-dd HH:mm} al {dto.NewScheduledAt:yyyy-MM-dd HH:mm}"
+        );
 
         return new SchedulingDto(
             scheduling.Id,
@@ -313,12 +339,26 @@ public class SchedulingService : ISchedulingService
 
     public async Task<bool> DeleteSchedulingAsync(Guid id)
     {
-        var scheduling = await _context.Schedulings.FindAsync(id);
+        var scheduling = await _context.Schedulings
+            .Include(s => s.Patient)
+            .FirstOrDefaultAsync(s => s.Id == id);
+
         if (scheduling == null)
             throw new NotFoundException("Cita médica", id);
 
+        var patientName = scheduling.Patient != null ? $"{scheduling.Patient.FirstName} {scheduling.Patient.LastName}" : "N/A";
+        var date = scheduling.ScheduledAt;
+
         _context.Schedulings.Remove(scheduling);
         await _context.SaveChangesAsync();
+
+        await _auditService.LogAsync(
+            "DELETE",
+            "Scheduling",
+            id.ToString(),
+            $"Eliminó la cita del paciente '{patientName}' programada para el {date:yyyy-MM-dd HH:mm}"
+        );
+
         return true;
     }
 }

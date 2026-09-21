@@ -24,6 +24,8 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public string? Username => User?.FindFirstValue(ClaimTypes.Name) ?? User?.FindFirstValue("name") ?? User?.FindFirstValue("unique_name");
+
     public string? Role => User?.FindFirstValue(ClaimTypes.Role) ?? User?.FindFirstValue("role");
 
     public Guid? SpecialistId
@@ -32,6 +34,15 @@ public class CurrentUserService : ICurrentUserService
         {
             var specialistIdStr = User?.FindFirstValue("specialistId");
             return Guid.TryParse(specialistIdStr, out var id) ? id : null;
+        }
+    }
+
+    public Guid? ReceptionistId
+    {
+        get
+        {
+            var receptionistIdStr = User?.FindFirstValue("receptionistId");
+            return Guid.TryParse(receptionistIdStr, out var id) ? id : null;
         }
     }
 

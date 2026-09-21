@@ -63,8 +63,18 @@ export const routes: Routes = [
         canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       {
+        path: 'receptionists',
+        loadComponent: () => import('./features/admin/receptionists/receptionist-list.component').then(m => m.ReceptionistListComponent),
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
+      },
+      {
         path: 'users',
         loadComponent: () => import('./features/admin/users/user-list.component').then(m => m.UserListComponent),
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
+      },
+      {
+        path: 'audit-logs',
+        loadComponent: () => import('./features/admin/audit-logs/audit-log-list.component').then(m => m.AuditLogListComponent),
         canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       // Patient & Clinical Routes

@@ -21,4 +21,6 @@ public class Company : BaseEntity
     public ICollection<Scheduling> Schedulings { get; set; } = new List<Scheduling>();
     public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
     public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
+    public ICollection<Receptionist> Receptionists { get; set; } = new List<Receptionist>();
+    public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 }

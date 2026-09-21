@@ -4,7 +4,7 @@ import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Va
 import { HttpClient } from '@angular/common/http';
 import { catchError, forkJoin, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse, CompanyDto, SpecialistDto, UserDto, UserRole } from '../../../core/models/models';
+import { ApiResponse, CompanyDto, ReceptionistDto, SpecialistDto, UserDto, UserRole } from '../../../core/models/models';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../../shared/components/data-table/data-table.component';
@@ -34,7 +34,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
         [data]="users()" 
         [columns]="columns" 
         [loading]="loading()"
-        placeholder="Buscar por usuario o perfil especialista...">
+        placeholder="Buscar por usuario o perfil vinculado...">
         
         <ng-template #cellTemplate let-item let-col="column">
           @switch (col.key) {
@@ -43,7 +43,13 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
             }
             @case ('specialistName') {
               <span class="text-slate-700 dark:text-slate-300">
-                {{ item.specialistName ? '👨‍⚕️ ' + item.specialistName : 'Ninguno' }}
+                @if (item.specialistName) {
+                  <span>👨‍⚕️ {{ item.specialistName }}</span>
+                } @else if (item.receptionistName) {
+                  <span>📋 {{ item.receptionistName }}</span>
+                } @else {
+                  <span class="text-slate-400 italic">Ninguno</span>
+                }
               </span>
             }
             @case ('companies') {
@@ -95,7 +101,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="form-group">
               <label class="form-label">Nombre de Usuario *</label>
-              <input type="text" formControlName="username" class="form-control" placeholder="Ej. doctor_perez" />
+              <input type="text" formControlName="username" class="form-control" placeholder="Ej. recepcion_central" />
               @if (isFieldInvalid('username')) {
                 <div class="field-error">El nombre de usuario es obligatorio</div>
               }
@@ -141,6 +147,16 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
                   <option value="">Sin vincular a perfil específico</option>
                   @for (doc of labSpecialists(); track doc.id) {
                     <option [value]="doc.id">🔬 {{ doc.fullName }} ({{ doc.specialtyName }})</option>
+                  }
+                </select>
+              </div>
+            } @else if (form.get('role')?.value === 'Receptionist') {
+              <div class="form-group">
+                <label class="form-label">Perfil de Recepcionista Asociado (Opcional)</label>
+                <select formControlName="receptionistId" class="form-select">
+                  <option value="">Sin vincular a perfil específico</option>
+                  @for (rec of receptionists(); track rec.id) {
+                    <option [value]="rec.id">📋 {{ rec.fullName }} {{ rec.identificationNumber ? '(' + rec.identificationNumber + ')' : '' }}</option>
                   }
                 </select>
               </div>
@@ -218,6 +234,7 @@ export class UserListComponent implements OnInit {
   readonly users = signal<UserDto[]>([]);
   readonly companies = signal<CompanyDto[]>([]);
   readonly specialists = signal<SpecialistDto[]>([]);
+  readonly receptionists = signal<ReceptionistDto[]>([]);
   readonly selectedCompanyIds = signal<string[]>([]);
 
   readonly clinicalSpecialists = computed(() => {
@@ -243,7 +260,7 @@ export class UserListComponent implements OnInit {
   readonly columns: TableColumn<UserDto>[] = [
     { key: 'username', label: 'Usuario', sortable: true },
     { key: 'role', label: 'Rol', sortable: true, width: '150px' },
-    { key: 'specialistName', label: 'Especialista Vinculado' },
+    { key: 'specialistName', label: 'Perfil Vinculado' },
     { key: 'companies', label: 'Empresas Asignadas' },
     { key: 'createdAt', label: 'Fecha Alta', sortable: true, width: '130px' }
   ];
@@ -253,6 +270,7 @@ export class UserListComponent implements OnInit {
     password: [''],
     role: ['Receptionist' as UserRole, [Validators.required]],
     specialistId: [''],
+    receptionistId: [''],
     isActive: [true]
   });
 
@@ -264,6 +282,9 @@ export class UserListComponent implements OnInit {
     const r = this.form.get('role')?.value;
     if (r !== 'Specialist' && r !== 'Laboratorist') {
       this.form.patchValue({ specialistId: '' });
+    }
+    if (r !== 'Receptionist') {
+      this.form.patchValue({ receptionistId: '' });
     }
   }
 
@@ -281,6 +302,10 @@ export class UserListComponent implements OnInit {
       catchError(() => of({ success: true, data: [] as SpecialistDto[], message: '', errors: [] }))
     );
 
+    const receptionists$ = this.http.get<ApiResponse<ReceptionistDto[]>>(`${environment.apiUrl}/receptionists`).pipe(
+      catchError(() => of({ success: true, data: [] as ReceptionistDto[], message: '', errors: [] }))
+    );
+
     const users$ = this.http.get<ApiResponse<UserDto[]>>(`${environment.apiUrl}/users`).pipe(
       catchError(() => of({ success: true, data: [] as UserDto[], message: '', errors: [] }))
     );
@@ -288,13 +313,15 @@ export class UserListComponent implements OnInit {
     forkJoin({
       users: users$,
       companies: companies$,
-      specialists: specialists$
+      specialists: specialists$,
+      receptionists: receptionists$
     }).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.users.set(res.users.data || []);
         this.companies.set(res.companies.data || []);
         this.specialists.set(res.specialists.data || []);
+        this.receptionists.set(res.receptionists.data || []);
       },
       error: () => this.loading.set(false)
     });
@@ -341,6 +368,7 @@ export class UserListComponent implements OnInit {
     this.form.reset({
       role: 'Receptionist',
       specialistId: '',
+      receptionistId: '',
       isActive: true
     });
     this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
@@ -356,6 +384,7 @@ export class UserListComponent implements OnInit {
       password: '',
       role: user.role,
       specialistId: user.specialistId || '',
+      receptionistId: user.receptionistId || '',
       isActive: user.isActive
     });
     this.form.get('password')?.clearValidators();
@@ -389,6 +418,7 @@ export class UserListComponent implements OnInit {
       password: val.password || null,
       role: val.role,
       specialistId: val.specialistId || null,
+      receptionistId: val.receptionistId || null,
       isActive: val.isActive,
       companyIds: isSuperAdmin ? [] : this.selectedCompanyIds()
     };

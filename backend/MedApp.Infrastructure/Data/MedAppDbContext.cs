@@ -38,6 +38,8 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
     public DbSet<StudyOrder> StudyOrders => Set<StudyOrder>();
     public DbSet<StudyOrderItem> StudyOrderItems => Set<StudyOrderItem>();
     public DbSet<StudyOrderResult> StudyOrderResults => Set<StudyOrderResult>();
+    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -105,6 +107,12 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
 
         modelBuilder.Entity<StudyOrderResult>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.StudyOrderItem.StudyOrder.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<Receptionist>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<AuditLog>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

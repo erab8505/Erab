@@ -71,6 +71,7 @@ public class AuthService : IAuthService
             user.Username,
             user.Role.ToString(),
             user.SpecialistId,
+            user.ReceptionistId,
             assignedCompanies
         );
     }
