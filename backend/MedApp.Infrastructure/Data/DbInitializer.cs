@@ -113,7 +113,31 @@ public static class DbInitializer
             logger.LogInformation("Dental company seeded: {CompanyName}", dentalCompany.Name);
         }
 
-        // Link admin user to Dental company if not already linked
+        // Seed admin_dental user (Admin role specifically assigned to Dental Company)
+        var dentalAdminUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin_dental");
+        if (dentalAdminUser == null)
+        {
+            dentalAdminUser = new User
+            {
+                Id = Guid.Parse("22222222-2222-2222-2222-222222222223"),
+                Username = "admin_dental",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                Role = UserRole.Admin,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            await context.Users.AddAsync(dentalAdminUser);
+            await context.SaveChangesAsync();
+
+            await context.UserCompanies.AddAsync(new UserCompany
+            {
+                UserId = dentalAdminUser.Id,
+                CompanyId = dentalCompany.Id
+            });
+            await context.SaveChangesAsync();
+            logger.LogInformation("Dental Admin user seeded (username: admin_dental, role: Admin)");
+        }
+        // Link superadmin user to Dental company if not already linked
         var adminUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin");
         if (adminUser != null)
         {

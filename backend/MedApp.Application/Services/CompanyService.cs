@@ -29,7 +29,11 @@ public class CompanyService : ICompanyService
 
     public async Task<List<CompanyDto>> GetMyCompaniesAsync(Guid userId)
     {
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _context.Users
+            .Include(u => u.UserCompanies)
+                .ThenInclude(uc => uc.Company)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+
         if (user == null)
             throw new NotFoundException("Usuario no encontrado.");
 
@@ -38,14 +42,14 @@ public class CompanyService : ICompanyService
             return await GetAllCompaniesAsync();
         }
 
-        return await _context.UserCompanies
-            .Where(uc => uc.UserId == userId && uc.Company.IsActive)
+        return user.UserCompanies
+            .Where(uc => uc.Company != null && uc.Company.IsActive)
             .Select(uc => new CompanyDto(
                 uc.Company.Id, uc.Company.Name, uc.Company.TaxId, uc.Company.Address,
                 uc.Company.Phone, uc.Company.Email, uc.Company.IsActive, uc.Company.Description, uc.Company.CreatedAt
             ))
             .OrderBy(c => c.Name)
-            .ToListAsync();
+            .ToList();
     }
 
     public async Task<CompanyDto> GetCompanyByIdAsync(Guid id)

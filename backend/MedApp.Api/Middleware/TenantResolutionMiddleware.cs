@@ -24,7 +24,7 @@ public class TenantResolutionMiddleware
         if (path.StartsWith("/swagger") ||
             path.StartsWith("/api/health") ||
             path.StartsWith("/api/auth/login") ||
-            path.Equals("/api/companies/mine", StringComparison.OrdinalIgnoreCase))
+            path.StartsWith("/api/companies"))
         {
             await _next(context);
             return;
