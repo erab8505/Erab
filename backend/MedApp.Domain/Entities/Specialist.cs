@@ -12,6 +12,7 @@ public class Specialist : BaseEntity
 
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
+    public string FullName => $"{FirstName} {LastName}".Trim();
     public string LicenseNumber { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? Phone { get; set; }

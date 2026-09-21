@@ -305,3 +305,234 @@ export interface CreatePrescriptionDto {
   notes?: string | null;
   items: CreatePrescriptionItemDto[];
 }
+
+// Clinical Studies & Lab Models
+export type StudyCategory = 'Laboratory' | 'ImagingXRay' | 'Ultrasound' | 'Cardiology' | 'Endoscopy' | 'PathologyBiopsy' | 'Other';
+export type SampleType = 'None' | 'VenousBlood' | 'Serum' | 'Plasma' | 'Urine' | 'Stool' | 'Swab' | 'TissueBiopsy' | 'FluidAspirate' | 'Sputum' | 'Other';
+export type StudyOrderStatus = 'Requested' | 'SampleCollected' | 'InAnalysis' | 'Completed' | 'Delivered' | 'Cancelled';
+export type ParameterValueType = 'Numeric' | 'Qualitative' | 'TextFree';
+
+// ==========================================
+// CLINICAL STUDIES & LABORATORY MODULE (MODULAR)
+// ==========================================
+
+export interface LabParameterDto {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  unit?: string | null;
+  valueType: ParameterValueType;
+  valueTypeName?: string;
+  defaultReferenceMin?: number | null;
+  defaultReferenceMax?: number | null;
+  defaultReferenceText?: string | null;
+  defaultReagentName?: string | null;
+  defaultReagentQuantity?: number | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateLabParameterDto {
+  code: string;
+  name: string;
+  description?: string | null;
+  unit?: string | null;
+  valueType: ParameterValueType;
+  defaultReferenceMin?: number | null;
+  defaultReferenceMax?: number | null;
+  defaultReferenceText?: string | null;
+  defaultReagentName?: string | null;
+  defaultReagentQuantity?: number | null;
+}
+
+export interface UpdateLabParameterDto extends CreateLabParameterDto {
+  isActive: boolean;
+}
+
+export interface LabExamParameterItemDto {
+  id: string;
+  labParameterId: string;
+  parameterCode: string;
+  parameterName: string;
+  unit?: string | null;
+  valueType: ParameterValueType;
+  valueTypeName?: string;
+  sortOrder: number;
+  referenceRangeMin?: number | null;
+  referenceRangeMax?: number | null;
+  referenceText?: string | null;
+  reagentName?: string | null;
+  reagentQuantity?: number | null;
+}
+
+export interface LabExamDto {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  sampleType: SampleType;
+  sampleTypeName?: string;
+  method?: string | null;
+  turnaroundHours?: number | null;
+  isActive: boolean;
+  createdAt: string;
+  parameters: LabExamParameterItemDto[];
+}
+
+export interface CreateLabExamParameterDto {
+  labParameterId: string;
+  sortOrder: number;
+  customReferenceMin?: number | null;
+  customReferenceMax?: number | null;
+  customReferenceText?: string | null;
+}
+
+export interface CreateLabExamDto {
+  code: string;
+  name: string;
+  description?: string | null;
+  sampleType: SampleType;
+  method?: string | null;
+  turnaroundHours?: number | null;
+  parameters: CreateLabExamParameterDto[];
+}
+
+export interface UpdateLabExamDto extends CreateLabExamDto {
+  isActive: boolean;
+}
+
+export interface ClinicalStudyExamItemDto {
+  id: string;
+  labExamId: string;
+  examCode: string;
+  examName: string;
+  sampleType: SampleType;
+  sampleTypeName?: string;
+  method?: string | null;
+  sortOrder: number;
+  parameters: LabExamParameterItemDto[];
+}
+
+export interface ClinicalStudyDto {
+  id: string;
+  companyId?: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  category: StudyCategory;
+  categoryName?: string;
+  basePrice: number;
+  preparationInstructions?: string | null;
+  turnaroundTimeHours?: number | null;
+  isActive: boolean;
+  createdAt: string;
+  exams: ClinicalStudyExamItemDto[];
+}
+
+export interface CreateClinicalStudyExamDto {
+  labExamId: string;
+  sortOrder: number;
+}
+
+export interface CreateClinicalStudyDto {
+  code: string;
+  name: string;
+  description?: string | null;
+  category: StudyCategory;
+  basePrice: number;
+  preparationInstructions?: string | null;
+  turnaroundTimeHours?: number | null;
+  exams: CreateClinicalStudyExamDto[];
+}
+
+export interface UpdateClinicalStudyDto extends CreateClinicalStudyDto {
+  isActive: boolean;
+}
+
+export interface StudyOrderResultDto {
+  id: string;
+  studyOrderItemId: string;
+  labExamId: string;
+  examName: string;
+  labParameterId: string;
+  parameterCode: string;
+  parameterName: string;
+  unit?: string | null;
+  valueType: ParameterValueType;
+  valueTypeName?: string;
+  numericValue?: number | null;
+  textValue?: string | null;
+  referenceRangeMin?: number | null;
+  referenceRangeMax?: number | null;
+  referenceText?: string | null;
+  isOutOfRange: boolean;
+  alertLevel?: 'Normal' | 'High' | 'Low' | 'Critical' | string | null;
+  interpretation?: string | null;
+  technicianNotes?: string | null;
+}
+
+export interface StudyOrderItemDto {
+  id: string;
+  studyOrderId?: string;
+  clinicalStudyId: string;
+  studyCode: string;
+  studyName: string;
+  studyCategory: StudyCategory;
+  studyCategoryName?: string;
+  price: number;
+  status: StudyOrderStatus;
+  observations?: string | null;
+  results: StudyOrderResultDto[];
+}
+
+export interface StudyOrderDto {
+  id: string;
+  orderNumber: string;
+  patientId: string;
+  patientName: string;
+  patientDocumentId?: string | null;
+  patientPhone?: string | null;
+  specialistId?: string | null;
+  specialistName?: string | null;
+  schedulingId?: string | null;
+  status: StudyOrderStatus;
+  statusName?: string;
+  orderDate: string;
+  completedDate?: string | null;
+  clinicalDiagnosis?: string | null;
+  notes?: string | null;
+  totalAmount: number;
+  createdAt: string;
+  paymentId?: string | null;
+  paymentStatus?: string | null;
+  paymentMethod?: string | null;
+  items: StudyOrderItemDto[];
+}
+
+export interface CreateStudyOrderDto {
+  patientId: string;
+  specialistId?: string | null;
+  schedulingId?: string | null;
+  clinicalDiagnosis?: string | null;
+  notes?: string | null;
+  clinicalStudyIds: string[];
+}
+
+export interface UpdateStudyOrderStatusDto {
+  status: StudyOrderStatus;
+}
+
+export interface SaveParameterResultDto {
+  studyOrderItemId: string;
+  labParameterId: string;
+  numericValue?: number | null;
+  textValue?: string | null;
+  interpretation?: string | null;
+  technicianNotes?: string | null;
+}
+
+export interface SaveStudyResultsDto {
+  generalInterpretation?: string | null;
+  results: SaveParameterResultDto[];
+}

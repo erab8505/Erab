@@ -1,4 +1,4 @@
-﻿import { Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { companyGuard } from './core/guards/company.guard';
 import { roleGuard } from './core/guards/role.guard';
@@ -84,6 +84,15 @@ export const routes: Routes = [
       {
         path: 'scheduling/new',
         loadComponent: () => import('./features/scheduling/booking-wizard.component').then(m => m.BookingWizardComponent)
+      },
+      // Clinical Studies & Laboratory Routes
+      {
+        path: 'studies',
+        loadComponent: () => import('./features/studies/study-order-list.component').then(m => m.StudyOrderListComponent)
+      },
+      {
+        path: 'studies/catalog',
+        loadComponent: () => import('./features/studies/clinical-study-list.component').then(m => m.ClinicalStudyListComponent)
       }
     ]
   },

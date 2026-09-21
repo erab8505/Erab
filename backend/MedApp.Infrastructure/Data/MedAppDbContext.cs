@@ -30,6 +30,14 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<PatientDocument> PatientDocuments => Set<PatientDocument>();
+    public DbSet<LabParameter> LabParameters => Set<LabParameter>();
+    public DbSet<LabExam> LabExams => Set<LabExam>();
+    public DbSet<LabExamParameter> LabExamParameters => Set<LabExamParameter>();
+    public DbSet<ClinicalStudy> ClinicalStudies => Set<ClinicalStudy>();
+    public DbSet<ClinicalStudyExam> ClinicalStudyExams => Set<ClinicalStudyExam>();
+    public DbSet<StudyOrder> StudyOrders => Set<StudyOrder>();
+    public DbSet<StudyOrderItem> StudyOrderItems => Set<StudyOrderItem>();
+    public DbSet<StudyOrderResult> StudyOrderResults => Set<StudyOrderResult>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -73,6 +81,30 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
 
         modelBuilder.Entity<PatientDocument>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<LabParameter>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<LabExam>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<LabExamParameter>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.LabExam.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<ClinicalStudy>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<ClinicalStudyExam>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.ClinicalStudy.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<StudyOrder>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<StudyOrderItem>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.StudyOrder.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<StudyOrderResult>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.StudyOrderItem.StudyOrder.CompanyId == _companyContext.CompanyId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

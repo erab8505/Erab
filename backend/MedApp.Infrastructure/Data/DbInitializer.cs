@@ -71,6 +71,9 @@ public static class DbInitializer
 
             // Seed full Dental Organization
             await SeedDentalOrganizationAsync(context, logger);
+
+            // Seed Clinical Studies & Laboratory Module
+            await SeedClinicalStudiesAndLabModuleAsync(context, logger);
         }
         catch (Exception ex)
         {
@@ -979,4 +982,505 @@ public static class DbInitializer
             logger.LogInformation("Dental medical records and prescriptions seeded.");
         }
     }
+
+    private static async Task SeedClinicalStudiesAndLabModuleAsync(MedAppDbContext context, ILogger logger)
+    {
+        var companies = await context.Companies.IgnoreQueryFilters().ToListAsync();
+
+        foreach (var comp in companies)
+        {
+            var companyId = comp.Id;
+
+            // 1. Catálogo Maestro de Parámetros / Analitos
+            if (!await context.LabParameters.IgnoreQueryFilters().AnyAsync(p => p.CompanyId == companyId))
+            {
+                var parameters = new List<LabParameter>
+                {
+                    // Química Sanguínea & Metabolismo
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "GLU", Name = "Glucosa en Ayunas", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 70.0m, DefaultReferenceMax = 100.0m, DefaultReferenceText = "Normal: 70 - 100 mg/dL", DefaultReagentName = "Kit Glucosa GOD-PAP", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "HBA1C", Name = "Hemoglobina Glicosilada (HbA1c)", Unit = "%", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 4.0m, DefaultReferenceMax = 5.6m, DefaultReferenceText = "Normal: < 5.7%, Prediabetes: 5.7 - 6.4%, Diabetes: >= 6.5%", DefaultReagentName = "Cartucho HPLC HbA1c", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "BUN", Name = "Urea / Nitrógeno Ureico (BUN)", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 7.0m, DefaultReferenceMax = 20.0m, DefaultReferenceText = "Normal: 7 - 20 mg/dL", DefaultReagentName = "Reactivo Ureasa GLDH", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "CREAT", Name = "Creatinina Sérica", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 0.6m, DefaultReferenceMax = 1.2m, DefaultReferenceText = "Normal: 0.6 - 1.2 mg/dL", DefaultReagentName = "Reactivo Jaffé Cinético", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "AC-URIC", Name = "Ácido Úrico", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 2.5m, DefaultReferenceMax = 7.0m, DefaultReferenceText = "Hombres: 3.5 - 7.2 mg/dL, Mujeres: 2.6 - 6.0 mg/dL", DefaultReagentName = "Reactivo Uricasa-PAP", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+
+                    // Perfil Lipídico
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "COL-TOT", Name = "Colesterol Total", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 0.0m, DefaultReferenceMax = 200.0m, DefaultReferenceText = "Deseable: < 200 mg/dL, Moderado: 200 - 239 mg/dL", DefaultReagentName = "Kit Colesterol CHOD-PAP", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "TRIG", Name = "Triglicéridos", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 0.0m, DefaultReferenceMax = 150.0m, DefaultReferenceText = "Normal: < 150 mg/dL, Límite: 150 - 199 mg/dL", DefaultReagentName = "Kit Triglicéridos GPO-PAP", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "COL-HDL", Name = "Colesterol HDL (Bueno)", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 40.0m, DefaultReferenceMax = 60.0m, DefaultReferenceText = "Protector: > 50 mg/dL (mujeres), > 40 mg/dL (hombres)", DefaultReagentName = "Reactivo Directo HDL", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "COL-LDL", Name = "Colesterol LDL (Malo)", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 0.0m, DefaultReferenceMax = 100.0m, DefaultReferenceText = "Óptimo: < 100 mg/dL, Límite: 100 - 129 mg/dL", DefaultReagentName = "Reactivo Directo LDL", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "COL-VLDL", Name = "Colesterol VLDL", Unit = "mg/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 2.0m, DefaultReferenceMax = 30.0m, DefaultReferenceText = "Normal: 2.0 - 30.0 mg/dL", DefaultReagentName = "Cálculo Friedewald", DefaultReagentQuantity = 0.0m, CreatedAt = DateTimeOffset.UtcNow },
+
+                    // Biometría Hemática / Hematología
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "HB", Name = "Hemoglobina", Unit = "g/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 12.0m, DefaultReferenceMax = 16.5m, DefaultReferenceText = "Mujeres: 12.0 - 15.5 g/dL, Hombres: 13.5 - 17.5 g/dL", DefaultReagentName = "Reactivo Drabkin", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "HCT", Name = "Hematocrito", Unit = "%", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 36.0m, DefaultReferenceMax = 50.0m, DefaultReferenceText = "Mujeres: 37 - 48%, Hombres: 42 - 52%", DefaultReagentName = "Centrifugación", DefaultReagentQuantity = 0.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "RBC", Name = "Eritrocitos (Glóbulos Rojos)", Unit = "x10^6/uL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 4.0m, DefaultReferenceMax = 5.5m, DefaultReferenceText = "Mujeres: 4.0 - 5.2, Hombres: 4.5 - 5.9 x10^6/uL", DefaultReagentName = "Diluyente Hematológico", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "WBC", Name = "Leucocitos Totales (Glóbulos Blancos)", Unit = "x10^3/uL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 4.5m, DefaultReferenceMax = 11.0m, DefaultReferenceText = "Normal: 4.5 - 11.0 x10^3/uL", DefaultReagentName = "Reactivo Lisante", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "PLT", Name = "Plaquetas", Unit = "x10^3/uL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 150.0m, DefaultReferenceMax = 450.0m, DefaultReferenceText = "Normal: 150 - 450 x10^3/uL", DefaultReagentName = "Reactivo Diluyente", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "VPM", Name = "Volumen Plaquetario Medio (VPM)", Unit = "fL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 7.5m, DefaultReferenceMax = 11.5m, DefaultReferenceText = "Normal: 7.5 - 11.5 fL", DefaultReagentName = "Cálculo Automatizado", DefaultReagentQuantity = 0.0m, CreatedAt = DateTimeOffset.UtcNow },
+
+                    // Urianálisis (EGO)
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-ASP", Name = "Aspecto de la Orina", Unit = null, ValueType = ParameterValueType.Qualitative, DefaultReferenceMin = null, DefaultReferenceMax = null, DefaultReferenceText = "Límpido / Transparente", DefaultReagentName = "Inspección Visual", DefaultReagentQuantity = 0.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-COL", Name = "Color de la Orina", Unit = null, ValueType = ParameterValueType.Qualitative, DefaultReferenceMin = null, DefaultReferenceMax = null, DefaultReferenceText = "Amarillo Ámbar / Paja", DefaultReagentName = "Inspección Visual", DefaultReagentQuantity = 0.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-DEN", Name = "Densidad Urinaria", Unit = null, ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 1.005m, DefaultReferenceMax = 1.030m, DefaultReferenceText = "Normal: 1.005 - 1.030", DefaultReagentName = "Tira Reactiva 10P", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-PH", Name = "pH Urinario", Unit = null, ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 5.0m, DefaultReferenceMax = 8.0m, DefaultReferenceText = "Normal: 5.0 - 7.5", DefaultReagentName = "Tira Reactiva 10P", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-PROT", Name = "Proteínas / Albúmina", Unit = null, ValueType = ParameterValueType.Qualitative, DefaultReferenceMin = null, DefaultReferenceMax = null, DefaultReferenceText = "Negativo", DefaultReagentName = "Tira Reactiva 10P", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-GLU", Name = "Glucosa en Orina", Unit = null, ValueType = ParameterValueType.Qualitative, DefaultReferenceMin = null, DefaultReferenceMax = null, DefaultReferenceText = "Negativo / Normal", DefaultReagentName = "Tira Reactiva 10P", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-LEUC", Name = "Sedimento: Leucocitos", Unit = "x campo", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 0.0m, DefaultReferenceMax = 5.0m, DefaultReferenceText = "0 - 5 por campo de 40x", DefaultReagentName = "Microscopía Óptica", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "EGO-BACT", Name = "Sedimento: Bacterias", Unit = null, ValueType = ParameterValueType.Qualitative, DefaultReferenceMin = null, DefaultReferenceMax = null, DefaultReferenceText = "Escasas / Ausentes", DefaultReagentName = "Microscopía Óptica", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+
+                    // Hormonas Tiroideas
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "TSH", Name = "Hormona Estimulante de Tiroides (TSH)", Unit = "uIU/mL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 0.40m, DefaultReferenceMax = 4.00m, DefaultReferenceText = "Normal: 0.40 - 4.00 uIU/mL", DefaultReagentName = "Kit Quimioluminiscencia TSH", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "T4-LIBRE", Name = "Tiroxina Libre (T4 Libre)", Unit = "ng/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 0.80m, DefaultReferenceMax = 1.80m, DefaultReferenceText = "Normal: 0.80 - 1.80 ng/dL", DefaultReagentName = "Kit Quimioluminiscencia FT4", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "T3-TOT", Name = "Triyodotironina Total (T3 Total)", Unit = "ng/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 80.0m, DefaultReferenceMax = 200.0m, DefaultReferenceText = "Normal: 80 - 200 ng/dL", DefaultReagentName = "Kit Quimioluminiscencia T3", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow }
+                };
+
+                await context.LabParameters.AddRangeAsync(parameters);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Lab parameters seeded for company {CompanyId}.", companyId);
+            }
+
+            // 2. Catálogo Maestro de Exámenes
+            if (!await context.LabExams.IgnoreQueryFilters().AnyAsync(e => e.CompanyId == companyId))
+            {
+                var paramsDict = await context.LabParameters
+                    .IgnoreQueryFilters()
+                    .Where(p => p.CompanyId == companyId)
+                    .ToDictionaryAsync(p => p.Code, p => p.Id);
+
+                var exams = new List<LabExam>
+                {
+                    new LabExam
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EX-BH",
+                        Name = "Biometría Hemática Completa",
+                        Description = "Citometría hemática completa de fórmula roja, serie blanca y recuento plaquetario.",
+                        SampleType = SampleType.VenousBlood,
+                        Method = "Citometría de Flujo & Impedancia Automatizada",
+                        TurnaroundHours = 4,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new LabExam
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EX-QS6",
+                        Name = "Química Sanguínea de 6 Elementos",
+                        Description = "Evaluación de glucosa, función renal (BUN, creatinina, ácido úrico) y perfil lipídico básico.",
+                        SampleType = SampleType.VenousBlood,
+                        Method = "Espectrofotometría Automatizada",
+                        TurnaroundHours = 6,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new LabExam
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EX-LIPID",
+                        Name = "Perfil Lipídico / Perfil de Lípidos",
+                        Description = "Fraccionamiento de colesterol total, triglicéridos, HDL, LDL y VLDL para riesgo cardiovascular.",
+                        SampleType = SampleType.VenousBlood,
+                        Method = "Enzimático Colorimétrico & Directo",
+                        TurnaroundHours = 6,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new LabExam
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EX-EGO",
+                        Name = "Examen General de Orina (EGO / Urianálisis)",
+                        Description = "Análisis físico, químico y microscópico del sedimento urinario.",
+                        SampleType = SampleType.Urine,
+                        Method = "Físico-Químico por Tira y Microscopía de Sedimento",
+                        TurnaroundHours = 2,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new LabExam
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EX-TIROID",
+                        Name = "Perfil Tiroideo Básico (TSH, T4L, T3T)",
+                        Description = "Evaluación funcional de la glándula tiroides mediante inmunoensayo.",
+                        SampleType = SampleType.VenousBlood,
+                        Method = "Inmunoensayo por Quimioluminiscencia (CLIA)",
+                        TurnaroundHours = 12,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new LabExam
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EX-DIAB-CTRL",
+                        Name = "Control Metabólico de Diabetes (Glucosa + HbA1c)",
+                        Description = "Monitoreo glicémico agudo y promedio trimestral.",
+                        SampleType = SampleType.VenousBlood,
+                        Method = "Enzimático & HPLC",
+                        TurnaroundHours = 6,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    }
+                };
+
+                // Link parameters to exams
+                void AddExamParams(LabExam exam, params string[] paramCodes)
+                {
+                    int order = 0;
+                    foreach (var code in paramCodes)
+                    {
+                        if (paramsDict.TryGetValue(code, out var pId))
+                        {
+                            exam.Parameters.Add(new LabExamParameter
+                            {
+                                Id = Guid.NewGuid(),
+                                LabExamId = exam.Id,
+                                LabParameterId = pId,
+                                SortOrder = ++order,
+                                CreatedAt = DateTimeOffset.UtcNow
+                            });
+                        }
+                    }
+                }
+
+                AddExamParams(exams[0], "HB", "HCT", "RBC", "WBC", "PLT", "VPM");
+                AddExamParams(exams[1], "GLU", "BUN", "CREAT", "AC-URIC", "COL-TOT", "TRIG");
+                AddExamParams(exams[2], "COL-TOT", "TRIG", "COL-HDL", "COL-LDL", "COL-VLDL");
+                AddExamParams(exams[3], "EGO-ASP", "EGO-COL", "EGO-DEN", "EGO-PH", "EGO-PROT", "EGO-GLU", "EGO-LEUC", "EGO-BACT");
+                AddExamParams(exams[4], "TSH", "T4-LIBRE", "T3-TOT");
+                AddExamParams(exams[5], "GLU", "HBA1C");
+
+                await context.LabExams.AddRangeAsync(exams);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Lab exams and parameters associations seeded for company {CompanyId}.", companyId);
+            }
+
+            // 3. Catálogo de Estudios / Perfiles Comerciales
+            if (!await context.ClinicalStudies.IgnoreQueryFilters().AnyAsync(s => s.CompanyId == companyId))
+            {
+                var examsDict = await context.LabExams
+                    .IgnoreQueryFilters()
+                    .Where(e => e.CompanyId == companyId)
+                    .ToDictionaryAsync(e => e.Code, e => e.Id);
+
+                var studies = new List<ClinicalStudy>
+                {
+                    new ClinicalStudy
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EST-LIPID",
+                        Name = "Perfil Lipídico Integral",
+                        Description = "Evaluación completa de colesterol, triglicéridos y fracciones para control cardiovascular.",
+                        Category = StudyCategory.Laboratory,
+                        BasePrice = 45.00m,
+                        PreparationInstructions = "Ayuno estricto de 12 horas. Evitar comidas copiosas o alcohol el día previo.",
+                        TurnaroundTimeHours = 6,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new ClinicalStudy
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EST-CHECKUP-BAS",
+                        Name = "Check-Up Preventivo Básico",
+                        Description = "Paquete de rutina: Biometría Hemática + Química Sanguínea 6 elementos + Examen General de Orina.",
+                        Category = StudyCategory.Laboratory,
+                        BasePrice = 95.00m,
+                        PreparationInstructions = "Ayuno de 8 a 12 horas. Recolectar la primera orina de la mañana en recipiente estéril.",
+                        TurnaroundTimeHours = 12,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new ClinicalStudy
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EST-CHECKUP-EXEC",
+                        Name = "Check-Up Ejecutivo Integral",
+                        Description = "Paquete completo integral: Biometría Hemática, Química Sanguínea, Perfil Lipídico, EGO y Perfil Tiroideo.",
+                        Category = StudyCategory.Laboratory,
+                        BasePrice = 160.00m,
+                        PreparationInstructions = "Ayuno de 12 horas. Primera orina de la mañana.",
+                        TurnaroundTimeHours = 24,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new ClinicalStudy
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EST-DIABETES",
+                        Name = "Control de Paciente Diabético",
+                        Description = "Evaluación glicémica dual (Glucosa en ayunas + HbA1c) y urológica.",
+                        Category = StudyCategory.Laboratory,
+                        BasePrice = 65.00m,
+                        PreparationInstructions = "Ayuno de 8 horas antes de la toma de muestra.",
+                        TurnaroundTimeHours = 6,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    },
+                    new ClinicalStudy
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        Code = "EST-BH",
+                        Name = "Biometría Hemática y Fórmula Roja",
+                        Description = "Estudio hematológico completo para descarte de anemias e infecciones.",
+                        Category = StudyCategory.Laboratory,
+                        BasePrice = 25.00m,
+                        PreparationInstructions = "No requiere ayuno prolongado. Hidratación normal.",
+                        TurnaroundTimeHours = 4,
+                        IsActive = true,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    }
+                };
+
+                void AddStudyExams(ClinicalStudy study, params string[] examCodes)
+                {
+                    int order = 0;
+                    foreach (var code in examCodes)
+                    {
+                        if (examsDict.TryGetValue(code, out var eId))
+                        {
+                            study.StudyExams.Add(new ClinicalStudyExam
+                            {
+                                Id = Guid.NewGuid(),
+                                ClinicalStudyId = study.Id,
+                                LabExamId = eId,
+                                SortOrder = ++order,
+                                CreatedAt = DateTimeOffset.UtcNow
+                            });
+                        }
+                    }
+                }
+
+                AddStudyExams(studies[0], "EX-LIPID");
+                AddStudyExams(studies[1], "EX-BH", "EX-QS6", "EX-EGO");
+                AddStudyExams(studies[2], "EX-BH", "EX-QS6", "EX-LIPID", "EX-EGO", "EX-TIROID");
+                AddStudyExams(studies[3], "EX-DIAB-CTRL", "EX-EGO");
+                AddStudyExams(studies[4], "EX-BH");
+
+                await context.ClinicalStudies.AddRangeAsync(studies);
+                await context.SaveChangesAsync();
+                logger.LogInformation("Clinical studies and exam associations seeded for company {CompanyId}.", companyId);
+            }
+
+            // 4. Órdenes de Ejemplo (StudyOrders con Resultados)
+            if (!await context.StudyOrders.IgnoreQueryFilters().AnyAsync(o => o.CompanyId == companyId))
+            {
+                var patient = await context.Patients.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.CompanyId == companyId);
+                var specialist = await context.Specialists.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.CompanyId == companyId);
+                var studyCheckup = await context.ClinicalStudies
+                    .IgnoreQueryFilters()
+                    .Include(s => s.StudyExams)
+                        .ThenInclude(se => se.LabExam)
+                            .ThenInclude(e => e.Parameters)
+                                .ThenInclude(ep => ep.LabParameter)
+                    .FirstOrDefaultAsync(s => s.CompanyId == companyId && s.Code == "EST-CHECKUP-BAS");
+
+                var studyLipid = await context.ClinicalStudies
+                    .IgnoreQueryFilters()
+                    .Include(s => s.StudyExams)
+                        .ThenInclude(se => se.LabExam)
+                            .ThenInclude(e => e.Parameters)
+                                .ThenInclude(ep => ep.LabParameter)
+                    .FirstOrDefaultAsync(s => s.CompanyId == companyId && s.Code == "EST-LIPID");
+
+                if (patient != null && studyCheckup != null)
+                {
+                    // Orden 1: Completada con resultados evaluados (Demostración de alertas)
+                    var orderCompleted = new StudyOrder
+                    {
+                        Id = Guid.NewGuid(),
+                        CompanyId = companyId,
+                        PatientId = patient.Id,
+                        SpecialistId = specialist?.Id,
+                        OrderNumber = $"LAB-{DateTimeOffset.UtcNow.Year}-00001",
+                        Status = StudyOrderStatus.Completed,
+                        OrderDate = DateTimeOffset.UtcNow.AddDays(-2),
+                        CompletedDate = DateTimeOffset.UtcNow.AddDays(-1),
+                        ClinicalDiagnosis = "Chequeo médico anual de rutina y control de glicemia.",
+                        Notes = "Paciente con leve hiperglicemia e hipercolesterolemia. Se recomienda ajuste nutricional y control en 3 meses.",
+                        TotalAmount = studyCheckup.BasePrice
+                    };
+
+                    var itemCheckup = new StudyOrderItem
+                    {
+                        Id = Guid.NewGuid(),
+                        StudyOrderId = orderCompleted.Id,
+                        ClinicalStudyId = studyCheckup.Id,
+                        Price = studyCheckup.BasePrice,
+                        Status = StudyOrderStatus.Completed
+                    };
+
+                    foreach (var se in studyCheckup.StudyExams.OrderBy(x => x.SortOrder))
+                    {
+                        foreach (var ep in se.LabExam.Parameters.OrderBy(x => x.SortOrder))
+                        {
+                            var result = new StudyOrderResult
+                            {
+                                Id = Guid.NewGuid(),
+                                StudyOrderItemId = itemCheckup.Id,
+                                LabExamId = se.LabExamId,
+                                LabParameterId = ep.LabParameterId,
+                                ParameterCode = ep.LabParameter.Code,
+                                ParameterName = ep.LabParameter.Name,
+                                Unit = ep.LabParameter.Unit,
+                                ValueType = ep.LabParameter.ValueType,
+                                ReferenceRangeMin = ep.CustomReferenceMin ?? ep.LabParameter.DefaultReferenceMin,
+                                ReferenceRangeMax = ep.CustomReferenceMax ?? ep.LabParameter.DefaultReferenceMax,
+                                ReferenceText = ep.CustomReferenceText ?? ep.LabParameter.DefaultReferenceText,
+                                IsOutOfRange = false,
+                                AlertLevel = "Normal"
+                            };
+
+                            // Simulated realistic test results
+                            switch (ep.LabParameter.Code)
+                            {
+                                case "GLU":
+                                    result.NumericValue = 108.0m;
+                                    result.IsOutOfRange = true;
+                                    result.AlertLevel = "High";
+                                    result.Interpretation = "Glicemia basal alterada en ayunas";
+                                    break;
+                                case "BUN":
+                                    result.NumericValue = 14.5m;
+                                    break;
+                                case "CREAT":
+                                    result.NumericValue = 0.95m;
+                                    break;
+                                case "AC-URIC":
+                                    result.NumericValue = 5.2m;
+                                    break;
+                                case "COL-TOT":
+                                    result.NumericValue = 218.0m;
+                                    result.IsOutOfRange = true;
+                                    result.AlertLevel = "High";
+                                    result.Interpretation = "Hipercolesterolemia leve";
+                                    break;
+                                case "TRIG":
+                                    result.NumericValue = 138.0m;
+                                    break;
+                                case "HB":
+                                    result.NumericValue = 14.8m;
+                                    break;
+                                case "HCT":
+                                    result.NumericValue = 44.0m;
+                                    break;
+                                case "RBC":
+                                    result.NumericValue = 4.9m;
+                                    break;
+                                case "WBC":
+                                    result.NumericValue = 6.8m;
+                                    break;
+                                case "PLT":
+                                    result.NumericValue = 245.0m;
+                                    break;
+                                case "VPM":
+                                    result.NumericValue = 9.2m;
+                                    break;
+                                case "EGO-ASP":
+                                    result.TextValue = "Límpido";
+                                    break;
+                                case "EGO-COL":
+                                    result.TextValue = "Amarillo Paja";
+                                    break;
+                                case "EGO-DEN":
+                                    result.NumericValue = 1.018m;
+                                    break;
+                                case "EGO-PH":
+                                    result.NumericValue = 6.0m;
+                                    break;
+                                case "EGO-PROT":
+                                    result.TextValue = "Negativo";
+                                    break;
+                                case "EGO-GLU":
+                                    result.TextValue = "Negativo";
+                                    break;
+                                case "EGO-LEUC":
+                                    result.NumericValue = 2.0m;
+                                    break;
+                                case "EGO-BACT":
+                                    result.TextValue = "Ausentes";
+                                    break;
+                                default:
+                                    result.NumericValue = ep.LabParameter.DefaultReferenceMin.HasValue ? (ep.LabParameter.DefaultReferenceMin.Value + ep.LabParameter.DefaultReferenceMax.GetValueOrDefault(ep.LabParameter.DefaultReferenceMin.Value)) / 2 : null;
+                                    break;
+                            }
+
+                            itemCheckup.Results.Add(result);
+                        }
+                    }
+
+                    orderCompleted.Items.Add(itemCheckup);
+                    await context.StudyOrders.AddAsync(orderCompleted);
+
+                    // Orden 2: En Análisis
+                    if (studyLipid != null)
+                    {
+                        var orderInAnalysis = new StudyOrder
+                        {
+                            Id = Guid.NewGuid(),
+                            CompanyId = companyId,
+                            PatientId = patient.Id,
+                            SpecialistId = specialist?.Id,
+                            OrderNumber = $"LAB-{DateTimeOffset.UtcNow.Year}-00002",
+                            Status = StudyOrderStatus.InAnalysis,
+                            OrderDate = DateTimeOffset.UtcNow.AddHours(-3),
+                            ClinicalDiagnosis = "Sospecha de dislipidemia mixta",
+                            Notes = "Muestra sanguínea recibida en tubo con gel separador.",
+                            TotalAmount = studyLipid.BasePrice
+                        };
+
+                        var itemLipid = new StudyOrderItem
+                        {
+                            Id = Guid.NewGuid(),
+                            StudyOrderId = orderInAnalysis.Id,
+                            ClinicalStudyId = studyLipid.Id,
+                            Price = studyLipid.BasePrice,
+                            Status = StudyOrderStatus.InAnalysis
+                        };
+
+                        foreach (var se in studyLipid.StudyExams.OrderBy(x => x.SortOrder))
+                        {
+                            foreach (var ep in se.LabExam.Parameters.OrderBy(x => x.SortOrder))
+                            {
+                                itemLipid.Results.Add(new StudyOrderResult
+                                {
+                                    Id = Guid.NewGuid(),
+                                    StudyOrderItemId = itemLipid.Id,
+                                    LabExamId = se.LabExamId,
+                                    LabParameterId = ep.LabParameterId,
+                                    ParameterCode = ep.LabParameter.Code,
+                                    ParameterName = ep.LabParameter.Name,
+                                    Unit = ep.LabParameter.Unit,
+                                    ValueType = ep.LabParameter.ValueType,
+                                    ReferenceRangeMin = ep.CustomReferenceMin ?? ep.LabParameter.DefaultReferenceMin,
+                                    ReferenceRangeMax = ep.CustomReferenceMax ?? ep.LabParameter.DefaultReferenceMax,
+                                    ReferenceText = ep.CustomReferenceText ?? ep.LabParameter.DefaultReferenceText,
+                                    IsOutOfRange = false,
+                                    AlertLevel = "Normal"
+                                });
+                            }
+                        }
+
+                        orderInAnalysis.Items.Add(itemLipid);
+                        await context.StudyOrders.AddAsync(orderInAnalysis);
+                    }
+
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Sample study orders seeded for company {CompanyId}.", companyId);
+                }
+            }
+        }
+    }
 }
+

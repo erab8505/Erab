@@ -4,6 +4,7 @@ using MedApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MedApp.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(MedAppDbContext))]
-    partial class MedAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260921132427_AddClinicalStudiesAndLaboratoryModule")]
+    partial class AddClinicalStudiesAndLaboratoryModule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -108,36 +111,6 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.ToTable("ClinicalStudies", (string)null);
                 });
 
-            modelBuilder.Entity("MedApp.Domain.Entities.ClinicalStudyExam", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ClinicalStudyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid>("LabExamId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LabExamId");
-
-                    b.HasIndex("ClinicalStudyId", "LabExamId");
-
-                    b.ToTable("ClinicalStudyExams", (string)null);
-                });
-
             modelBuilder.Entity("MedApp.Domain.Entities.Company", b =>
                 {
                     b.Property<Guid>("Id")
@@ -184,6 +157,62 @@ namespace MedApp.Infrastructure.Data.Migrations
                         .HasFilter("[TaxId] IS NOT NULL");
 
                     b.ToTable("Companies", (string)null);
+                });
+
+            modelBuilder.Entity("MedApp.Domain.Entities.ExamParameter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ReagentName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("ReagentUsageQuantity")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("ReferenceRangeMax")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("ReferenceRangeMin")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("ReferenceText")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("StudyExamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ValueType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudyExamId");
+
+                    b.ToTable("ExamParameters", (string)null);
                 });
 
             modelBuilder.Entity("MedApp.Domain.Entities.InterventionType", b =>
@@ -237,166 +266,6 @@ namespace MedApp.Infrastructure.Data.Migrations
                         .HasFilter("[Code] IS NOT NULL");
 
                     b.ToTable("InterventionTypes", (string)null);
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabExam", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Method")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("SampleType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("TurnaroundHours")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId", "Code");
-
-                    b.HasIndex("CompanyId", "Name");
-
-                    b.ToTable("LabExams", (string)null);
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabExamParameter", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<decimal?>("CustomReferenceMax")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal?>("CustomReferenceMin")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("CustomReferenceText")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid>("LabExamId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("LabParameterId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LabParameterId");
-
-                    b.HasIndex("LabExamId", "LabParameterId");
-
-                    b.ToTable("LabExamParameters", (string)null);
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabParameter", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("DefaultReagentName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<decimal?>("DefaultReagentQuantity")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal?>("DefaultReferenceMax")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal?>("DefaultReferenceMin")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("DefaultReferenceText")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Unit")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ValueType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CompanyId", "Code");
-
-                    b.HasIndex("CompanyId", "Name");
-
-                    b.ToTable("LabParameters", (string)null);
                 });
 
             modelBuilder.Entity("MedApp.Domain.Entities.MedicalRecord", b =>
@@ -926,6 +795,45 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.ToTable("Specialties", (string)null);
                 });
 
+            modelBuilder.Entity("MedApp.Domain.Entities.StudyExam", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClinicalStudyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Method")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SampleType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClinicalStudyId");
+
+                    b.ToTable("StudyExams", (string)null);
+                });
+
             modelBuilder.Entity("MedApp.Domain.Entities.StudyOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1045,6 +953,9 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid>("ExamParameterId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Interpretation")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -1052,34 +963,8 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Property<bool>("IsOutOfRange")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("LabExamId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("LabParameterId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal?>("NumericValue")
                         .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("ParameterCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ParameterName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<decimal?>("ReferenceRangeMax")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<decimal?>("ReferenceRangeMin")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("ReferenceText")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<Guid>("StudyOrderItemId")
                         .HasColumnType("uniqueidentifier");
@@ -1092,23 +977,12 @@ namespace MedApp.Infrastructure.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("Unit")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("ValueType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("LabExamId");
-
-                    b.HasIndex("LabParameterId");
+                    b.HasIndex("ExamParameterId");
 
                     b.HasIndex("StudyOrderItemId");
 
@@ -1191,23 +1065,15 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Navigation("Company");
                 });
 
-            modelBuilder.Entity("MedApp.Domain.Entities.ClinicalStudyExam", b =>
+            modelBuilder.Entity("MedApp.Domain.Entities.ExamParameter", b =>
                 {
-                    b.HasOne("MedApp.Domain.Entities.ClinicalStudy", "ClinicalStudy")
-                        .WithMany("StudyExams")
-                        .HasForeignKey("ClinicalStudyId")
+                    b.HasOne("MedApp.Domain.Entities.StudyExam", "StudyExam")
+                        .WithMany("Parameters")
+                        .HasForeignKey("StudyExamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MedApp.Domain.Entities.LabExam", "LabExam")
-                        .WithMany("StudyExams")
-                        .HasForeignKey("LabExamId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ClinicalStudy");
-
-                    b.Navigation("LabExam");
+                    b.Navigation("StudyExam");
                 });
 
             modelBuilder.Entity("MedApp.Domain.Entities.InterventionType", b =>
@@ -1227,47 +1093,6 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Navigation("Company");
 
                     b.Navigation("Specialty");
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabExam", b =>
-                {
-                    b.HasOne("MedApp.Domain.Entities.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Company");
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabExamParameter", b =>
-                {
-                    b.HasOne("MedApp.Domain.Entities.LabExam", "LabExam")
-                        .WithMany("Parameters")
-                        .HasForeignKey("LabExamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MedApp.Domain.Entities.LabParameter", "LabParameter")
-                        .WithMany("ExamParameters")
-                        .HasForeignKey("LabParameterId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("LabExam");
-
-                    b.Navigation("LabParameter");
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabParameter", b =>
-                {
-                    b.HasOne("MedApp.Domain.Entities.Company", "Company")
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("MedApp.Domain.Entities.MedicalRecord", b =>
@@ -1488,6 +1313,17 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("MedApp.Domain.Entities.StudyExam", b =>
+                {
+                    b.HasOne("MedApp.Domain.Entities.ClinicalStudy", "ClinicalStudy")
+                        .WithMany("Exams")
+                        .HasForeignKey("ClinicalStudyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ClinicalStudy");
+                });
+
             modelBuilder.Entity("MedApp.Domain.Entities.StudyOrder", b =>
                 {
                     b.HasOne("MedApp.Domain.Entities.Company", "Company")
@@ -1542,15 +1378,9 @@ namespace MedApp.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("MedApp.Domain.Entities.StudyOrderResult", b =>
                 {
-                    b.HasOne("MedApp.Domain.Entities.LabExam", "LabExam")
+                    b.HasOne("MedApp.Domain.Entities.ExamParameter", "ExamParameter")
                         .WithMany()
-                        .HasForeignKey("LabExamId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MedApp.Domain.Entities.LabParameter", "LabParameter")
-                        .WithMany()
-                        .HasForeignKey("LabParameterId")
+                        .HasForeignKey("ExamParameterId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1560,9 +1390,7 @@ namespace MedApp.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("LabExam");
-
-                    b.Navigation("LabParameter");
+                    b.Navigation("ExamParameter");
 
                     b.Navigation("StudyOrderItem");
                 });
@@ -1603,7 +1431,7 @@ namespace MedApp.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("MedApp.Domain.Entities.ClinicalStudy", b =>
                 {
-                    b.Navigation("StudyExams");
+                    b.Navigation("Exams");
                 });
 
             modelBuilder.Entity("MedApp.Domain.Entities.Company", b =>
@@ -1632,18 +1460,6 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Navigation("MedicalRecords");
 
                     b.Navigation("Schedulings");
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabExam", b =>
-                {
-                    b.Navigation("Parameters");
-
-                    b.Navigation("StudyExams");
-                });
-
-            modelBuilder.Entity("MedApp.Domain.Entities.LabParameter", b =>
-                {
-                    b.Navigation("ExamParameters");
                 });
 
             modelBuilder.Entity("MedApp.Domain.Entities.MedicalRecord", b =>
@@ -1679,6 +1495,11 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Navigation("InterventionTypes");
 
                     b.Navigation("Specialists");
+                });
+
+            modelBuilder.Entity("MedApp.Domain.Entities.StudyExam", b =>
+                {
+                    b.Navigation("Parameters");
                 });
 
             modelBuilder.Entity("MedApp.Domain.Entities.StudyOrder", b =>

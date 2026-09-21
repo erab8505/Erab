@@ -16,6 +16,7 @@ import { PatientPrescriptionsTabComponent } from './components/patient-prescript
 import { PrescriptionModalComponent } from './components/prescription-modal.component';
 import { PrescriptionPrintModalComponent } from './components/prescription-print-modal.component';
 import { PatientDocumentsTabComponent } from './components/patient-documents-tab.component';
+import { PatientStudiesTabComponent } from './components/patient-studies-tab.component';
 
 @Component({
   selector: 'app-patient-detail',
@@ -30,7 +31,8 @@ import { PatientDocumentsTabComponent } from './components/patient-documents-tab
     PatientPrescriptionsTabComponent,
     PrescriptionModalComponent,
     PrescriptionPrintModalComponent,
-    PatientDocumentsTabComponent
+    PatientDocumentsTabComponent,
+    PatientStudiesTabComponent
   ],
   template: `
     <div class="page-container">
@@ -86,8 +88,11 @@ import { PatientDocumentsTabComponent } from './components/patient-documents-tab
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'prescriptions'" (click)="setTab('prescriptions')">
           💊 Recetas y Fórmulas ({{ prescriptions().length }})
         </button>
+        <button type="button" class="tab-btn" [class.active]="activeTab() === 'studies'" (click)="setTab('studies')">
+          🧪 Estudios y Laboratorio
+        </button>
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'documents'" (click)="setTab('documents')">
-          📂 Estudios y Archivos
+          📂 Archivos Adjuntos
         </button>
       </div>
 
@@ -123,7 +128,12 @@ import { PatientDocumentsTabComponent } from './components/patient-documents-tab
         </app-patient-prescriptions-tab>
       }
 
-      <!-- TAB 5: ESTUDIOS Y ARCHIVOS ADJUNTOS -->
+      <!-- TAB 5: ESTUDIOS Y LABORATORIO -->
+      @if (activeTab() === 'studies') {
+        <app-patient-studies-tab [patient]="patient()"></app-patient-studies-tab>
+      }
+
+      <!-- TAB 6: ARCHIVOS ADJUNTOS -->
       @if (activeTab() === 'documents') {
         <app-patient-documents-tab [patientId]="patientId()"></app-patient-documents-tab>
       }
@@ -206,7 +216,7 @@ export class PatientDetailComponent implements OnInit {
   readonly prescriptions = signal<PrescriptionDto[]>([]);
   readonly specialists = signal<SpecialistDto[]>([]);
 
-  readonly activeTab = signal<'info' | 'appointments' | 'records' | 'prescriptions' | 'documents'>('info');
+  readonly activeTab = signal<'info' | 'appointments' | 'records' | 'prescriptions' | 'studies' | 'documents'>('info');
 
   readonly recordModalOpen = signal<boolean>(false);
   readonly savingRecord = signal<boolean>(false);
@@ -251,7 +261,7 @@ export class PatientDetailComponent implements OnInit {
     });
   }
 
-  setTab(tab: 'info' | 'appointments' | 'records' | 'prescriptions' | 'documents'): void {
+  setTab(tab: 'info' | 'appointments' | 'records' | 'prescriptions' | 'studies' | 'documents'): void {
     this.activeTab.set(tab);
   }
 
