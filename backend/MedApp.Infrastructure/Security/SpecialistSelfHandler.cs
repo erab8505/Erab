@@ -22,8 +22,8 @@ public class SpecialistSelfHandler : AuthorizationHandler<SpecialistSelfRequirem
     {
         var role = context.User.FindFirstValue(ClaimTypes.Role) ?? context.User.FindFirstValue("role");
 
-        // Admins always fulfill the requirement
-        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+        // SuperAdmins and Admins always fulfill the requirement
+        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
         {
             context.Succeed(requirement);
             return Task.CompletedTask;

@@ -38,7 +38,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
         <ng-template #cellTemplate let-item let-col="column">
           @switch (col.key) {
             @case ('role') {
-              <app-badge [variant]="getRoleVariant(item.role)" [text]="item.role"></app-badge>
+              <app-badge [variant]="getRoleVariant(item.role)" [text]="getRoleLabel(item.role)"></app-badge>
             }
             @case ('specialistName') {
               <span class="text-slate-700 dark:text-slate-300">
@@ -46,13 +46,19 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
               </span>
             }
             @case ('companies') {
-              <div class="flex flex-wrap gap-1">
-                @for (c of item.companies; track c.id) {
-                  <span class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">
-                    {{ c.name }}
-                  </span>
-                }
-              </div>
+              @if (item.role === 'SuperAdmin') {
+                <span class="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium px-2 py-0.5 rounded">
+                  👑 Acceso Global (Todas)
+                </span>
+              } @else {
+                <div class="flex flex-wrap gap-1">
+                  @for (c of item.companies; track c.id) {
+                    <span class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">
+                      {{ c.name }}
+                    </span>
+                  }
+                </div>
+              }
             }
             @case ('isActive') {
               <app-badge [variant]="item.isActive ? 'success' : 'neutral'" [text]="item.isActive ? 'Activo' : 'Inactivo'"></app-badge>
@@ -102,7 +108,8 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
             <div class="form-group">
               <label class="form-label">Rol del Sistema *</label>
               <select formControlName="role" class="form-select" (change)="onRoleChange()">
-                <option value="Admin">Administrador (Admin)</option>
+                <option value="SuperAdmin">👑 Super Administrador (SuperAdmin - Acceso Global)</option>
+                <option value="Admin">🛡️ Administrador (Admin - Por Empresa/s)</option>
                 <option value="Receptionist">Recepcionista</option>
                 <option value="Specialist">Especialista Médico / Odontológico</option>
                 <option value="Laboratorist">Laboratorista / Personal de Laboratorio</option>
@@ -138,24 +145,34 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
           </div>
 
           <!-- Multi-Company Assignment Checkboxes -->
-          <div class="form-group">
-            <label class="form-label">Empresas Autorizadas * (Seleccione al menos una)</label>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 max-h-40 overflow-y-auto">
-              @for (comp of companies(); track comp.id) {
-                <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    [checked]="isCompanySelected(comp.id)" 
-                    (change)="toggleCompanySelection(comp.id, $event)"
-                    class="w-4 h-4 text-blue-600 rounded" />
-                  <span>{{ comp.name }}</span>
-                </label>
+          @if (form.get('role')?.value === 'SuperAdmin') {
+            <div class="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
+              <span class="text-xl">👑</span>
+              <div>
+                <div class="font-semibold">Acceso Global Automático</div>
+                <div class="text-xs">El Super Administrador tiene permiso para gestionar todas las empresas de la plataforma sin restricciones.</div>
+              </div>
+            </div>
+          } @else {
+            <div class="form-group">
+              <label class="form-label">Empresas Autorizadas * (Seleccione al menos una)</label>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 max-h-40 overflow-y-auto">
+                @for (comp of companies(); track comp.id) {
+                  <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      [checked]="isCompanySelected(comp.id)" 
+                      (change)="toggleCompanySelection(comp.id, $event)"
+                      class="w-4 h-4 text-blue-600 rounded" />
+                    <span>{{ comp.name }}</span>
+                  </label>
+                }
+              </div>
+              @if (selectedCompanyIds().length === 0) {
+                <div class="field-error">Debe asignar al menos una empresa al usuario.</div>
               }
             </div>
-            @if (selectedCompanyIds().length === 0) {
-              <div class="field-error">Debe asignar al menos una empresa al usuario.</div>
-            }
-          </div>
+          }
 
           <div class="flex items-center gap-2 mt-2">
             <input type="checkbox" id="userActive" formControlName="isActive" class="w-4 h-4 text-blue-600 rounded" />
@@ -168,7 +185,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
           <button 
             type="button" 
             class="btn btn-primary" 
-            [disabled]="form.invalid || selectedCompanyIds().length === 0 || saving()" 
+            [disabled]="form.invalid || (form.get('role')?.value !== 'SuperAdmin' && selectedCompanyIds().length === 0) || saving()" 
             (click)="saveUser()">
             @if (saving()) {
               <span class="spinner-sm mr-1.5"></span>
@@ -260,11 +277,23 @@ export class UserListComponent implements OnInit {
 
   getRoleVariant(role: UserRole): 'primary' | 'success' | 'info' | 'warning' {
     switch (role) {
+      case 'SuperAdmin': return 'primary';
       case 'Admin': return 'primary';
       case 'Specialist': return 'info';
       case 'Laboratorist': return 'warning';
       case 'Receptionist': return 'success';
       default: return 'primary';
+    }
+  }
+
+  getRoleLabel(role: UserRole): string {
+    switch (role) {
+      case 'SuperAdmin': return '👑 SuperAdmin';
+      case 'Admin': return '🛡️ Admin';
+      case 'Specialist': return 'Especialista';
+      case 'Laboratorist': return 'Laboratorista';
+      case 'Receptionist': return 'Recepcionista';
+      default: return role;
     }
   }
 
@@ -320,7 +349,8 @@ export class UserListComponent implements OnInit {
   }
 
   saveUser(): void {
-    if (this.form.invalid || this.selectedCompanyIds().length === 0) {
+    const isSuperAdmin = this.form.get('role')?.value === 'SuperAdmin';
+    if (this.form.invalid || (!isSuperAdmin && this.selectedCompanyIds().length === 0)) {
       this.form.markAllAsTouched();
       return;
     }
@@ -335,7 +365,7 @@ export class UserListComponent implements OnInit {
       role: val.role,
       specialistId: val.specialistId || null,
       isActive: val.isActive,
-      companyIds: this.selectedCompanyIds()
+      companyIds: isSuperAdmin ? [] : this.selectedCompanyIds()
     };
 
     if (editing) {

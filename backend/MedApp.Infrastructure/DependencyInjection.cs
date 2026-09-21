@@ -87,8 +87,9 @@ public static class DependencyInjection
         // Authorization Policies
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-            options.AddPolicy("RequireClinicalRole", policy => policy.RequireRole("Admin", "Specialist"));
+            options.AddPolicy("RequireSuperAdminRole", policy => policy.RequireRole("SuperAdmin"));
+            options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("SuperAdmin", "Admin"));
+            options.AddPolicy("RequireClinicalRole", policy => policy.RequireRole("SuperAdmin", "Admin", "Specialist"));
             options.AddPolicy("RequireSpecialistSelfOrAdmin", policy => policy.Requirements.Add(new SpecialistSelfRequirement()));
         });
 

@@ -35,7 +35,9 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
-    public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.OrdinalIgnoreCase);
+    public bool IsSuperAdmin => string.Equals(Role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsAdmin => string.Equals(Role, "Admin", StringComparison.OrdinalIgnoreCase) || IsSuperAdmin;
 
     public bool IsSpecialist => string.Equals(Role, "Specialist", StringComparison.OrdinalIgnoreCase);
 

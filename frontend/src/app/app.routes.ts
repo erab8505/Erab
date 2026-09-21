@@ -35,37 +35,37 @@ export const routes: Routes = [
       {
         path: 'companies',
         loadComponent: () => import('./features/admin/companies/company-list.component').then(m => m.CompanyListComponent),
-        canActivate: [roleGuard(['Admin'])]
+        canActivate: [roleGuard(['SuperAdmin'])]
       },
       {
         path: 'areas',
         loadComponent: () => import('./features/admin/areas/area-list.component').then(m => m.AreaListComponent),
-        canActivate: [roleGuard(['Admin'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       {
         path: 'specialties',
         loadComponent: () => import('./features/admin/specialties/specialty-list.component').then(m => m.SpecialtyListComponent),
-        canActivate: [roleGuard(['Admin'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       {
         path: 'specialists',
         loadComponent: () => import('./features/admin/specialists/specialist-list.component').then(m => m.SpecialistListComponent),
-        canActivate: [roleGuard(['Admin'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       {
         path: 'specialists/:id/availability',
         loadComponent: () => import('./features/admin/specialists/specialist-availability.component').then(m => m.SpecialistAvailabilityComponent),
-        canActivate: [roleGuard(['Admin', 'Specialist'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist'])]
       },
       {
         path: 'interventions',
         loadComponent: () => import('./features/admin/interventions/intervention-list.component').then(m => m.InterventionListComponent),
-        canActivate: [roleGuard(['Admin'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       {
         path: 'users',
         loadComponent: () => import('./features/admin/users/user-list.component').then(m => m.UserListComponent),
-        canActivate: [roleGuard(['Admin'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       // Patient & Clinical Routes
       {
@@ -75,18 +75,18 @@ export const routes: Routes = [
       {
         path: 'patients/:id',
         loadComponent: () => import('./features/patients/patient-detail.component').then(m => m.PatientDetailComponent),
-        canActivate: [roleGuard(['Admin', 'Specialist', 'Receptionist'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist'])]
       },
       // Scheduling Routes
       {
         path: 'scheduling',
         loadComponent: () => import('./features/scheduling/scheduling-list.component').then(m => m.SchedulingListComponent),
-        canActivate: [roleGuard(['Admin', 'Specialist', 'Receptionist'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist'])]
       },
       {
         path: 'scheduling/new',
         loadComponent: () => import('./features/scheduling/booking-wizard.component').then(m => m.BookingWizardComponent),
-        canActivate: [roleGuard(['Admin', 'Specialist', 'Receptionist'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist'])]
       },
       // Clinical Studies & Laboratory Routes
       {
@@ -96,7 +96,7 @@ export const routes: Routes = [
       {
         path: 'studies/catalog',
         loadComponent: () => import('./features/studies/clinical-study-list.component').then(m => m.ClinicalStudyListComponent),
-        canActivate: [roleGuard(['Admin'])]
+        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       }
     ]
   },

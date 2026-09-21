@@ -1,4 +1,4 @@
-export type UserRole = 'Admin' | 'Receptionist' | 'Specialist' | 'Laboratorist';
+export type UserRole = 'SuperAdmin' | 'Admin' | 'Receptionist' | 'Specialist' | 'Laboratorist';
 export type Gender = 'M' | 'F' | 'O';
 export type AppointmentStatus = 'Scheduled' | 'Confirmed' | 'Completed' | 'Cancelled' | 'Rescheduled';
 

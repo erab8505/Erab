@@ -78,4 +78,66 @@ public class TenantIsolationTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
+
+    [Fact]
+    public async Task CompanyAdmin_AccessingUnassignedCompany_Returns403Forbidden()
+    {
+        // Arrange: company_admin_test is assigned ONLY to Company 1, attempts to access Company 2
+        var token = await AuthenticateAsync("company_admin_test", "CompAdmin123!");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Remove("X-Company-Id");
+        _client.DefaultRequestHeaders.Add("X-Company-Id", _factory.Company2Id.ToString());
+
+        // Act
+        var response = await _client.GetAsync("/api/patients");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task CompanyAdmin_AccessingCompaniesCatalog_Returns403Forbidden()
+    {
+        // Arrange: company_admin_test tries to get/manage global companies
+        var token = await AuthenticateAsync("company_admin_test", "CompAdmin123!");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Remove("X-Company-Id");
+
+        // Act
+        var response = await _client.GetAsync("/api/companies");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task SuperAdmin_AccessingAnyCompany_Returns200Ok()
+    {
+        // Arrange: SuperAdmin can access any company without restrictions
+        var token = await AuthenticateAsync("admin_test", "AdminTest123!");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Remove("X-Company-Id");
+        _client.DefaultRequestHeaders.Add("X-Company-Id", _factory.Company2Id.ToString());
+
+        // Act
+        var response = await _client.GetAsync("/api/patients");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task SuperAdmin_AccessingCompaniesCatalog_Returns200Ok()
+    {
+        // Arrange: SuperAdmin can access global companies catalog
+        var token = await AuthenticateAsync("admin_test", "AdminTest123!");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Remove("X-Company-Id");
+
+        // Act
+        var response = await _client.GetAsync("/api/companies");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 }

@@ -37,9 +37,9 @@ public class AuthService : IAuthService
 
         List<CompanyDto> assignedCompanies;
 
-        if (user.Role == UserRole.Admin)
+        if (user.Role == UserRole.SuperAdmin)
         {
-            // Admins can access all active companies
+            // SuperAdmins can access all active companies in the platform
             var allCompanies = await _context.Companies
                 .Where(c => c.IsActive)
                 .OrderBy(c => c.Name)
@@ -51,6 +51,7 @@ public class AuthService : IAuthService
         }
         else
         {
+            // Admins, Specialists, Receptionists and Laboratorists only access their assigned companies
             assignedCompanies = user.UserCompanies
                 .Where(uc => uc.Company.IsActive)
                 .Select(uc => new CompanyDto(

@@ -33,7 +33,7 @@ public class CompanyService : ICompanyService
         if (user == null)
             throw new NotFoundException("Usuario no encontrado.");
 
-        if (user.Role == UserRole.Admin)
+        if (user.Role == UserRole.SuperAdmin)
         {
             return await GetAllCompaniesAsync();
         }

@@ -58,9 +58,9 @@ public class TenantResolutionMiddleware
                 if (context.User.Identity?.IsAuthenticated == true)
                 {
                     var role = context.User.FindFirstValue(ClaimTypes.Role) ?? context.User.FindFirstValue("role");
-                    var isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+                    var isSuperAdmin = string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase);
 
-                    if (!isAdmin)
+                    if (!isSuperAdmin)
                     {
                         var companyIdsClaim = context.User.FindFirstValue("companyIds");
                         var allowedCompanies = new List<Guid>();

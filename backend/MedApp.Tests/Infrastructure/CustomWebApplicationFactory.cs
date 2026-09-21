@@ -18,6 +18,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public Guid Company2Id { get; } = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
     public Guid AdminUserId { get; } = Guid.Parse("11111111-0000-0000-0000-000000000001");
+    public Guid CompanyAdminUserId { get; } = Guid.Parse("11111111-0000-0000-0000-000000000005");
     public Guid ReceptionistUserId { get; } = Guid.Parse("11111111-0000-0000-0000-000000000002");
     public Guid SpecialistUserId { get; } = Guid.Parse("11111111-0000-0000-0000-000000000003");
     public Guid SpecialistProfileId { get; } = Guid.Parse("33333333-0000-0000-0000-000000000001");
@@ -215,8 +216,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = AdminUserId,
             Username = "admin_test",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("AdminTest123!"),
-            Role = UserRole.Admin
+            Role = UserRole.SuperAdmin
         };
+        admin.UserCompanies.Add(new UserCompany { UserId = AdminUserId, CompanyId = Company1Id });
 
         var receptionist = new User
         {
@@ -245,9 +247,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Role = UserRole.Specialist,
             SpecialistId = Specialist2ProfileId
         };
-        specialistUser2.UserCompanies.Add(new UserCompany { UserId = Specialist2UserId, CompanyId = Company1Id });
+        var companyAdmin = new User
+        {
+            Id = CompanyAdminUserId,
+            Username = "company_admin_test",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("CompAdmin123!"),
+            Role = UserRole.Admin
+        };
+        companyAdmin.UserCompanies.Add(new UserCompany { UserId = CompanyAdminUserId, CompanyId = Company1Id });
 
-        context.Users.AddRange(admin, receptionist, specialistUser1, specialistUser2);
+        context.Users.AddRange(admin, companyAdmin, receptionist, specialistUser1, specialistUser2);
         context.SaveChanges();
     }
 }

@@ -47,8 +47,13 @@ export class AuthService {
     return current ? roles.includes(current) : false;
   }
 
+  isSuperAdmin(): boolean {
+    return this.userRole() === 'SuperAdmin';
+  }
+
   isAdmin(): boolean {
-    return this.userRole() === 'Admin';
+    const r = this.userRole();
+    return r === 'Admin' || r === 'SuperAdmin';
   }
 
   isSpecialist(): boolean {

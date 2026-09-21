@@ -42,7 +42,7 @@ public static class DbInitializer
                 logger.LogInformation("Default company seeded: {CompanyName}", company.Name);
             }
 
-            // Seed default admin user if none exists
+            // Seed default superadmin user if none exists
             var adminUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin");
             if (adminUser == null)
             {
@@ -51,7 +51,7 @@ public static class DbInitializer
                     Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
                     Username = "admin",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                    Role = UserRole.Admin,
+                    Role = UserRole.SuperAdmin,
                     CreatedAt = DateTimeOffset.UtcNow
                 };
 
@@ -66,7 +66,13 @@ public static class DbInitializer
                 });
                 await context.SaveChangesAsync();
 
-                logger.LogInformation("Default admin user seeded (username: admin)");
+                logger.LogInformation("Default superadmin user seeded (username: admin)");
+            }
+            else if (adminUser.Role != UserRole.SuperAdmin)
+            {
+                adminUser.Role = UserRole.SuperAdmin;
+                await context.SaveChangesAsync();
+                logger.LogInformation("Default admin user upgraded to SuperAdmin role.");
             }
 
             // Seed full Dental Organization
@@ -676,6 +682,30 @@ public static class DbInitializer
                     await context.SaveChangesAsync();
                 }
                 logger.LogInformation("Laboratorist user (laboratorio_central) created and linked.");
+            }
+
+            // Ensure company-scoped admin user exists for testing
+            var existingAdminDental = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin_dental");
+            if (existingAdminDental == null)
+            {
+                var adminDentalUser = new User
+                {
+                    Id = Guid.Parse("d0000005-0000-0000-0000-000000000000"),
+                    Username = "admin_dental",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                    Role = UserRole.Admin,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+                await context.Users.AddAsync(adminDentalUser);
+                await context.SaveChangesAsync();
+
+                await context.UserCompanies.AddAsync(new UserCompany
+                {
+                    UserId = adminDentalUser.Id,
+                    CompanyId = dentalCompanyId
+                });
+                await context.SaveChangesAsync();
+                logger.LogInformation("Company Admin user (admin_dental) created and linked to dental company.");
             }
         }
 

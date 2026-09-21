@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -216,7 +216,7 @@ export class SelectCompanyComponent implements OnInit {
   readonly companies = signal<CompanyDto[]>([]);
 
   ngOnInit(): void {
-    if (this.authService.isAdmin()) {
+    if (this.authService.isSuperAdmin()) {
       this.companyService.loadAllCompanies().subscribe({
         next: (res) => {
           this.loading.set(false);

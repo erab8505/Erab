@@ -32,7 +32,7 @@ public class CompaniesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = "RequireSuperAdminRole")]
     [ProducesResponseType(typeof(ApiResponse<List<CompanyDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllCompanies()
     {
@@ -51,7 +51,7 @@ public class CompaniesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = "RequireSuperAdminRole")]
     [ProducesResponseType(typeof(ApiResponse<CompanyDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
@@ -73,7 +73,7 @@ public class CompaniesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = "RequireAdminRole")]
+    [Authorize(Policy = "RequireSuperAdminRole")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteCompany(Guid id)
