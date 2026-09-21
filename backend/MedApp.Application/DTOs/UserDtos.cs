@@ -41,6 +41,7 @@ public record LoginResponseDto(
     string Token,
     Guid UserId,
     string Username,
+    string? ProfileName,
     string Role,
     Guid? SpecialistId,
     Guid? ReceptionistId,

@@ -21,7 +21,10 @@ export class AuthService {
   readonly isAuthenticated = computed(() => !!this.token() && !!this.currentUser());
   readonly userRole = computed(() => this.currentUser()?.role ?? null);
   readonly specialistId = computed(() => this.currentUser()?.specialistId ?? null);
+  readonly receptionistId = computed(() => this.currentUser()?.receptionistId ?? null);
   readonly username = computed(() => this.currentUser()?.username ?? '');
+  readonly profileName = computed(() => this.currentUser()?.profileName ?? null);
+  readonly displayName = computed(() => this.currentUser()?.profileName || this.currentUser()?.username || '');
 
   login(credentials: LoginRequestDto): Observable<ApiResponse<LoginResponseDto>> {
     return this.http.post<ApiResponse<LoginResponseDto>>(`${environment.apiUrl}/auth/login`, credentials).pipe(
@@ -72,8 +75,10 @@ export class AuthService {
     const companies = data.assignedCompanies || data.companies || [];
     const session: UserSession = {
       username: data.username,
+      profileName: data.profileName || null,
       role: data.role,
       specialistId: data.specialistId,
+      receptionistId: data.receptionistId,
       token: data.token,
       companyIds: companies.map(c => c.id)
     };

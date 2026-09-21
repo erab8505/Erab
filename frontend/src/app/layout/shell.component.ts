@@ -74,13 +74,13 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
           </button>
 
           <!-- User Profile & Role -->
-          <div class="user-profile-badge" [title]="'Usuario activo: ' + authService.username() + ' (' + roleLabel + ')'">
+          <div class="user-profile-badge" [title]="'Perfil: ' + authService.displayName() + (authService.profileName() ? ' (@' + authService.username() + ')' : '') + ' • ' + roleLabel">
             <div class="user-avatar" [ngClass]="avatarRoleClass">
               {{ userInitials() }}
             </div>
             <div class="user-info">
               <div class="user-name-line">
-                <span class="user-name">{{ authService.username() }}</span>
+                <span class="user-name">{{ authService.displayName() }}</span>
               </div>
               <span class="user-role-badge" [ngClass]="rolePillClass">{{ roleLabel }}</span>
             </div>
@@ -633,7 +633,11 @@ export class ShellComponent {
   readonly mobileMenuOpen = signal<boolean>(false);
 
   readonly userInitials = computed(() => {
-    const name = this.authService.username() || 'U';
+    const name = this.authService.displayName() || this.authService.username() || 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
     return name.substring(0, 2).toUpperCase();
   });
 

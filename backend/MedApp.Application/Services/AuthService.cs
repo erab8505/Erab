@@ -26,6 +26,8 @@ public class AuthService : IAuthService
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
     {
         var user = await _context.Users
+            .Include(u => u.Specialist)
+            .Include(u => u.Receptionist)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
             .FirstOrDefaultAsync(u => u.Username == request.Username);
@@ -33,6 +35,16 @@ public class AuthService : IAuthService
         if (user == null || !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
             throw new UnauthorizedAccessException("Credenciales inválidas. Por favor verifique su usuario y contraseña.");
+        }
+
+        string? profileName = null;
+        if (user.Specialist != null)
+        {
+            profileName = user.Specialist.FullName;
+        }
+        else if (user.Receptionist != null)
+        {
+            profileName = user.Receptionist.FullName;
         }
 
         List<CompanyDto> assignedCompanies;
@@ -69,6 +81,7 @@ public class AuthService : IAuthService
             token,
             user.Id,
             user.Username,
+            profileName,
             user.Role.ToString(),
             user.SpecialistId,
             user.ReceptionistId,

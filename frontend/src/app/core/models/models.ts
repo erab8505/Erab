@@ -18,6 +18,7 @@ export interface LoginResponseDto {
   token: string;
   userId?: string;
   username: string;
+  profileName?: string | null;
   role: UserRole;
   specialistId?: string | null;
   receptionistId?: string | null;
@@ -27,6 +28,7 @@ export interface LoginResponseDto {
 
 export interface UserSession {
   username: string;
+  profileName?: string | null;
   role: UserRole;
   specialistId?: string | null;
   receptionistId?: string | null;
