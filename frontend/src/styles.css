@@ -1,62 +1,75 @@
 /* ==========================================================================
    MEDAPP CLINICAL DESIGN SYSTEM & GLOBAL THEME
-   Modern, ultra-clean healthcare UI palette with polished spacing & typography
+   Material Design 3 Clinical Intelligence Palette with Plus Jakarta Sans & Inter
    ========================================================================== */
 
 :root {
   color-scheme: light;
 
-  /* Primary Clinical Palette */
-  --primary-color: #0284c7;        /* Sky-600 */
-  --primary-hover: #0369a1;        /* Sky-700 */
-  --primary-light: #e0f2fe;        /* Sky-100 */
-  --primary-glow: rgba(2, 132, 199, 0.15);
+  /* Primary Clinical Palette (Material 3) */
+  --primary-color: #006194;        /* Deep Hospital Blue */
+  --primary-hover: #004b73;        /* On-primary fixed variant */
+  --primary-container: #007bb9;
+  --primary-light: #e5eeff;        /* Surface container */
+  --primary-fixed: #cce5ff;
+  --primary-glow: rgba(0, 97, 148, 0.18);
   --primary-text: #ffffff;
 
-  /* Secondary & Specialty Palette */
-  --teal-color: #0d9488;           /* Teal-600 */
-  --teal-light: #ccfbf1;
-  --indigo-color: #6366f1;         /* Indigo-500 */
-  --indigo-light: #e0e7ff;
+  /* Secondary & Specialty Palette (Surgical Teal) */
+  --teal-color: #006a61;           /* Clinical Teal */
+  --teal-light: #86f2e4;           /* Secondary container */
+  --secondary-color: #006a61;
+  --secondary-light: #86f2e4;
+  --secondary-hover: #005049;
+
+  /* Tertiary Palette (Slate / Roster) */
+  --tertiary-color: #545c72;
+  --tertiary-light: #dae2fd;
+  --indigo-color: #545c72;
+  --indigo-light: #dae2fd;
 
   /* Status Colors */
-  --success-color: #10b981;        /* Emerald-500 */
-  --success-hover: #059669;
-  --success-light: #d1fae5;
-  --danger-color: #f43f5e;         /* Rose-500 */
-  --danger-hover: #e11d48;
-  --danger-light: #ffe4e6;
-  --warning-color: #f59e0b;        /* Amber-500 */
-  --warning-hover: #d97706;
+  --success-color: #006a61;        /* Material Teal */
+  --success-hover: #005049;
+  --success-light: #89f5e7;
+  --danger-color: #ba1a1a;         /* Material 3 Error Red */
+  --danger-hover: #93000a;
+  --danger-light: #ffdad6;
+  --warning-color: #d97706;        /* Amber-600 */
+  --warning-hover: #b45309;
   --warning-light: #fef3c7;
-  --info-color: #0ea5e9;           /* Sky-500 */
-  --info-light: #e0f2fe;
+  --info-color: #006194;           /* Primary Blue */
+  --info-light: #cce5ff;
 
-  /* Light Theme Surfaces & Text */
-  --bg-main: #f8fafc;              /* Slate-50 - Clean hospital slate */
-  --card-bg: #ffffff;
-  --card-footer-bg: #f8fafc;
-  --bg-hover: #f1f5f9;             /* Slate-100 */
+  /* Light Theme Surfaces & Text (Material 3 Surface Hierarchy) */
+  --bg-main: #f8f9ff;              /* Surface & Background */
+  --card-bg: #ffffff;              /* Surface Container Lowest */
+  --card-footer-bg: #eff4ff;       /* Surface Container Low */
+  --bg-hover: #e5eeff;             /* Surface Container */
+  --bg-surface-high: #dce9ff;      /* Surface Container High */
+  --bg-surface-highest: #d3e4fe;   /* Surface Container Highest */
   --bg-input: #ffffff;
-  --text-color: #0f172a;           /* Slate-900 */
-  --text-muted: #64748b;           /* Slate-500 */
-  --border-color: #e2e8f0;         /* Slate-200 */
-  --border-input: #cbd5e1;         /* Slate-300 */
-  --table-th-bg: #f8fafc;
-  --table-row-hover: #f8fafc;
+  --text-color: #0b1c30;           /* On-Surface */
+  --text-muted: #545c72;           /* Tertiary / Outline */
+  --text-variant: #3f4850;         /* On-Surface Variant */
+  --border-color: #dce9ff;         /* Surface Container High */
+  --border-input: #bfc7d2;         /* Outline Variant */
+  --table-th-bg: #eff4ff;
+  --table-row-hover: #f1f6ff;
 
   /* Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.06), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+  --shadow-xs: 0 1px 2px 0 rgba(11, 28, 48, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(11, 28, 48, 0.06), 0 1px 2px -1px rgba(11, 28, 48, 0.06);
+  --shadow-md: 0 4px 8px -1px rgba(0, 97, 148, 0.08), 0 2px 4px -2px rgba(11, 28, 48, 0.05);
+  --shadow-lg: 0 10px 18px -3px rgba(0, 97, 148, 0.12), 0 4px 6px -4px rgba(11, 28, 48, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(11, 28, 48, 0.1), 0 8px 10px -6px rgba(11, 28, 48, 0.06);
 
-  /* Radii */
-  --radius-sm: 0.375rem;
+  /* Radii (Tokenized M3 scale) */
+  --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
   --radius-full: 9999px;
 }
 
@@ -64,47 +77,58 @@
   color-scheme: dark;
 
   /* Dark Theme Palette */
-  --primary-color: #38bdf8;        /* Sky-400 */
-  --primary-hover: #0284c7;
-  --primary-light: rgba(56, 189, 248, 0.15);
-  --primary-glow: rgba(56, 189, 248, 0.25);
-  --primary-text: #0b1120;
+  --primary-color: #93ccff;        /* Inverse Primary / Fixed Dim */
+  --primary-hover: #006194;
+  --primary-container: #004b73;
+  --primary-light: rgba(147, 204, 255, 0.15);
+  --primary-fixed: #004b73;
+  --primary-glow: rgba(147, 204, 255, 0.25);
+  --primary-text: #001d31;
 
-  --teal-color: #2dd4bf;
-  --teal-light: rgba(45, 212, 191, 0.15);
-  --indigo-color: #818cf8;
-  --indigo-light: rgba(129, 140, 248, 0.15);
+  --teal-color: #6bd8cb;
+  --teal-light: rgba(107, 216, 203, 0.15);
+  --secondary-color: #6bd8cb;
+  --secondary-light: rgba(107, 216, 203, 0.15);
+  --secondary-hover: #86f2e4;
 
-  --success-color: #34d399;
-  --success-hover: #10b981;
-  --success-light: rgba(52, 211, 153, 0.15);
-  --danger-color: #fb7185;
-  --danger-hover: #f43f5e;
-  --danger-light: rgba(251, 113, 133, 0.15);
-  --warning-color: #fbbf24;
-  --warning-hover: #f59e0b;
-  --warning-light: rgba(251, 191, 36, 0.15);
-  --info-color: #38bdf8;
-  --info-light: rgba(56, 189, 248, 0.15);
+  --tertiary-color: #bec6e0;
+  --tertiary-light: rgba(190, 198, 224, 0.15);
+  --indigo-color: #bec6e0;
+  --indigo-light: rgba(190, 198, 224, 0.15);
+
+  --success-color: #6bd8cb;
+  --success-hover: #86f2e4;
+  --success-light: rgba(107, 216, 203, 0.15);
+  --danger-color: #ffb4ab;
+  --danger-hover: #ba1a1a;
+  --danger-light: rgba(255, 180, 171, 0.15);
+  --warning-color: #fcd34d;
+  --warning-hover: #fbbf24;
+  --warning-light: rgba(252, 211, 77, 0.15);
+  --info-color: #93ccff;
+  --info-light: rgba(147, 204, 255, 0.15);
 
   /* Dark Surfaces & Text */
-  --bg-main: #0b1120;              /* Deep Navy Hospital Slate */
-  --card-bg: #131d31;              /* Clinical Dark Card */
-  --card-footer-bg: #0e1726;
-  --bg-hover: #1e293b;             /* Slate-800 */
-  --bg-input: #0b1120;
-  --text-color: #f8fafc;
-  --text-muted: #94a3b8;           /* Slate-400 */
-  --border-color: #1e293b;         /* Slate-800 */
-  --border-input: #334155;         /* Slate-700 */
-  --table-th-bg: #0e1726;
-  --table-row-hover: #17233b;
+  --bg-main: #0b1c30;              /* Inverse surface */
+  --card-bg: #13253a;              /* Dark surface container */
+  --card-footer-bg: #0f1d2e;
+  --bg-hover: #1b2f48;
+  --bg-surface-high: #213145;
+  --bg-surface-highest: #2a3d54;
+  --bg-input: #0b1c30;
+  --text-color: #f8f9ff;
+  --text-muted: #bec6e0;
+  --text-variant: #cbdbf5;
+  --border-color: #213145;
+  --border-input: #3f4850;
+  --table-th-bg: #0f1d2e;
+  --table-row-hover: #1b2f48;
 
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.65);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.75);
 }
 
 /* ==========================================================================
@@ -122,13 +146,27 @@ html {
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, h5, h6,
+.brand-name,
+.headline-title,
+.modal-title,
+.page-title {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+code, pre, .font-mono, .code-label, .table-code, .badge-code, .time-label {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 /* Custom Scrollbars */
@@ -271,25 +309,25 @@ body {
 
 /* Primary Medical Blue/Sky Button */
 .btn-primary {
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  color: #ffffff;
-  border-color: #0284c7;
-  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.2);
+  background: var(--primary-color);
+  color: var(--primary-text);
+  border-color: var(--primary-color);
+  box-shadow: 0 1px 3px var(--primary-glow);
 }
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0369a1, #075985);
-  border-color: #0369a1;
-  box-shadow: 0 4px 8px rgba(2, 132, 199, 0.3);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  box-shadow: 0 4px 10px var(--primary-glow);
 }
 [data-theme="dark"] .btn-primary, .dark .btn-primary {
-  background: linear-gradient(135deg, #0284c7, #0369a1);
-  color: #ffffff;
-  border-color: #38bdf8;
-  box-shadow: 0 1px 3px rgba(56, 189, 248, 0.3);
+  background: var(--primary-color);
+  color: var(--primary-text);
+  border-color: var(--primary-color);
+  box-shadow: 0 1px 4px var(--primary-glow);
 }
 [data-theme="dark"] .btn-primary:hover:not(:disabled), .dark .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0369a1, #075985);
-  border-color: #7dd3fc;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 /* Secondary Neutral Button */
@@ -301,43 +339,43 @@ body {
 }
 .btn-secondary:hover:not(:disabled) {
   background: var(--bg-hover);
-  border-color: #cbd5e1;
+  border-color: var(--border-input);
 }
 [data-theme="dark"] .btn-secondary:hover:not(:disabled), .dark .btn-secondary:hover:not(:disabled) {
-  border-color: #475569;
+  border-color: var(--border-input);
 }
 
 /* Success Button */
 .btn-success {
-  background: #10b981;
+  background: var(--teal-color);
   color: #ffffff;
-  border-color: #10b981;
+  border-color: var(--teal-color);
 }
 .btn-success:hover:not(:disabled) {
-  background: #059669;
-  border-color: #059669;
+  background: var(--secondary-hover);
+  border-color: var(--secondary-hover);
 }
 
 /* Danger Button */
 .btn-danger {
-  background: #f43f5e;
+  background: var(--danger-color);
   color: #ffffff;
-  border-color: #f43f5e;
+  border-color: var(--danger-color);
 }
 .btn-danger:hover:not(:disabled) {
-  background: #e11d48;
-  border-color: #e11d48;
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
 }
 
 /* Warning Button */
 .btn-warning {
-  background: #f59e0b;
+  background: var(--warning-color);
   color: #ffffff;
-  border-color: #f59e0b;
+  border-color: var(--warning-color);
 }
 .btn-warning:hover:not(:disabled) {
-  background: #d97706;
-  border-color: #d97706;
+  background: var(--warning-hover);
+  border-color: var(--warning-hover);
 }
 
 /* Button Sizes */

@@ -43,7 +43,6 @@ public class PatientService : IPatientService
                 (p.FirstName + " " + p.LastName).ToLower().Contains(q) ||
                 (p.LastName + " " + p.FirstName).ToLower().Contains(q) ||
                 p.DocumentId.ToLower().Contains(q) ||
-                (p.Email != null && p.Email.ToLower().Contains(q)) ||
                 (p.Phone != null && p.Phone.ToLower().Contains(q)));
         }
 

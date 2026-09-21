@@ -226,40 +226,41 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       text-decoration: none;
     }
     .brand-icon {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 0.5rem;
-      background: linear-gradient(135deg, var(--primary-color, #0284c7), #0369a1);
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: var(--radius-lg, 0.75rem);
+      background: var(--primary-color, #006194);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+      box-shadow: 0 2px 6px var(--primary-glow, rgba(0, 97, 148, 0.25));
     }
     .brand-name {
+      font-family: 'Plus Jakarta Sans', sans-serif;
       font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--text-color, #0f172a);
-      letter-spacing: -0.025em;
+      font-weight: 800;
+      color: var(--primary-color, #006194);
+      letter-spacing: -0.03em;
     }
     .company-pill {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: var(--bg-hover, #f1f5f9);
+      background: var(--card-footer-bg, #eff4ff);
       padding: 0.375rem 0.75rem;
-      border-radius: 9999px;
+      border-radius: var(--radius-full, 9999px);
       font-size: 0.8125rem;
-      border: 1px solid var(--border-color, #e2e8f0);
+      border: 1px solid var(--border-color, #dce9ff);
     }
     .switch-company-link {
       background: transparent;
       border: none;
-      color: var(--primary-color, #0284c7);
+      color: var(--secondary-color, #006a61);
       font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
       padding-left: 0.375rem;
-      border-left: 1px solid var(--border-color, #cbd5e1);
+      border-left: 1px solid var(--border-input, #bfc7d2);
     }
     .switch-company-link:hover {
       text-decoration: underline;
@@ -267,8 +268,8 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
     .nav-icon-btn {
       width: 2.25rem;
       height: 2.25rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: var(--radius-lg, 0.75rem);
+      border: 1px solid var(--border-color, #dce9ff);
       background: var(--card-bg, #ffffff);
       cursor: pointer;
       display: flex;
@@ -277,28 +278,33 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       transition: background-color 0.15s;
     }
     .nav-icon-btn:hover {
-      background: var(--bg-hover, #f1f5f9);
+      background: var(--bg-hover, #e5eeff);
     }
     .user-profile-badge {
       display: flex;
       align-items: center;
       gap: 0.625rem;
+      background: var(--card-footer-bg, #eff4ff);
+      padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+      border-radius: var(--radius-full, 9999px);
+      border: 1px solid var(--border-color, #dce9ff);
     }
     .user-avatar {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 2rem;
+      height: 2rem;
       border-radius: 9999px;
-      background: linear-gradient(135deg, #0284c7, #0369a1);
+      background: var(--primary-color, #006194);
       color: white;
-      font-weight: 600;
-      font-size: 0.875rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.8125rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.3);
+      box-shadow: 0 1px 3px var(--primary-glow);
     }
     .user-name {
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       line-height: 1.2;
     }
@@ -307,22 +313,22 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       align-items: center;
       gap: 0.375rem;
       padding: 0.4rem 0.75rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: var(--radius-md, 0.5rem);
+      border: 1px solid var(--border-color, #dce9ff);
       background: var(--card-bg, #ffffff);
-      color: #ef4444;
+      color: var(--danger-color, #ba1a1a);
       cursor: pointer;
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 600;
       transition: all 0.15s;
     }
     .logout-btn:hover {
-      background: #fee2e2;
-      border-color: #fca5a5;
+      background: var(--danger-light, #ffdad6);
+      border-color: var(--danger-color, #ba1a1a);
     }
     :host-context(.dark) .logout-btn:hover {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.3);
+      background: rgba(186, 26, 26, 0.18);
+      border-color: var(--danger-color);
     }
     .app-body {
       display: flex;
@@ -331,7 +337,7 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
     .app-sidebar {
       width: 16.5rem;
       background: var(--card-bg, #ffffff);
-      border-right: 1px solid var(--border-color, #e2e8f0);
+      border-right: 1px solid var(--border-color, #dce9ff);
       padding: 1.25rem 0.875rem;
       display: flex;
       flex-direction: column;
@@ -359,8 +365,8 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       font-size: 0.6875rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted, #94a3b8);
+      letter-spacing: 0.06em;
+      color: var(--text-muted, #545c72);
       padding: 0.75rem 0.75rem 0.25rem 0.75rem;
     }
     .nav-item {
@@ -368,25 +374,26 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       align-items: center;
       gap: 0.75rem;
       padding: 0.625rem 0.875rem;
-      border-radius: 0.5rem;
-      color: var(--text-muted, #64748b);
+      border-radius: var(--radius-lg, 0.75rem);
+      color: var(--text-muted, #545c72);
       text-decoration: none;
       font-size: 0.875rem;
       font-weight: 500;
       transition: all 0.15s ease;
     }
     .nav-item:hover {
-      background-color: var(--bg-hover, #f1f5f9);
-      color: var(--text-color, #0f172a);
+      background-color: var(--bg-hover, #e5eeff);
+      color: var(--text-color, #0b1c30);
     }
     .nav-item.active {
-      background-color: var(--primary-light, #e0f2fe);
-      color: var(--primary-color, #0284c7);
+      background-color: var(--primary-container, #007bb9);
+      color: #ffffff;
       font-weight: 600;
+      box-shadow: 0 2px 4px var(--primary-glow);
     }
     :host-context(.dark) .nav-item.active {
-      background-color: rgba(56, 189, 248, 0.15);
-      color: #38bdf8;
+      background-color: var(--primary-container, #004b73);
+      color: #ffffff;
     }
     .app-main {
       flex: 1;

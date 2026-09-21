@@ -16,25 +16,35 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     :host { display: inline-flex; align-items: center; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.2rem 0.625rem;
+      border-radius: var(--radius-full, 9999px);
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .badge-primary { background-color: var(--primary-light); color: var(--primary-color); }
+    .badge-success { background-color: var(--success-light); color: var(--success-color); }
+    .badge-danger { background-color: var(--danger-light); color: var(--danger-color); }
+    .badge-warning { background-color: var(--warning-light); color: var(--warning-color); }
+    .badge-info { background-color: var(--info-light); color: var(--info-color); }
+    .badge-neutral { background-color: var(--bg-hover); color: var(--text-muted); }
+
     .badge-dot {
       width: 0.375rem;
       height: 0.375rem;
       border-radius: 9999px;
       flex-shrink: 0;
     }
-    .dot-primary { background-color: #2563eb; }
-    .dot-success { background-color: #10b981; }
-    .dot-danger { background-color: #f43f5e; }
-    .dot-warning { background-color: #f59e0b; }
-    .dot-info { background-color: #06b6d4; }
-    .dot-neutral { background-color: #94a3b8; }
-
-    :host-context(.dark) .dot-primary { background-color: #38bdf8; }
-    :host-context(.dark) .dot-success { background-color: #34d399; }
-    :host-context(.dark) .dot-danger { background-color: #fb7185; }
-    :host-context(.dark) .dot-warning { background-color: #fbbf24; }
-    :host-context(.dark) .dot-info { background-color: #2dd4bf; }
-    :host-context(.dark) .dot-neutral { background-color: #64748b; }
+    .dot-primary { background-color: var(--primary-color); }
+    .dot-success { background-color: var(--success-color); }
+    .dot-danger { background-color: var(--danger-color); }
+    .dot-warning { background-color: var(--warning-color); }
+    .dot-info { background-color: var(--info-color); }
+    .dot-neutral { background-color: var(--text-muted); }
   `]
 })
 export class BadgeComponent {
