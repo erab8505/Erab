@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse, MedicalRecordDto, PatientDto, PrescriptionDto, SchedulingDto, SpecialistDto } from '../../core/models/models';
+import { ApiResponse, MedicalRecordDto, PatientDto, PrescriptionDto, SchedulingDto, SpecialistDto, StudyOrderDto } from '../../core/models/models';
 import { AuthService } from '../../core/services/auth.service';
 import { CompanyContextService } from '../../core/services/company-context.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -17,6 +17,7 @@ import { PrescriptionModalComponent } from './components/prescription-modal.comp
 import { PrescriptionPrintModalComponent } from './components/prescription-print-modal.component';
 import { PatientDocumentsTabComponent } from './components/patient-documents-tab.component';
 import { PatientStudiesTabComponent } from './components/patient-studies-tab.component';
+import { CreateStudyOrderModalComponent } from '../studies/components/create-study-order-modal.component';
 
 @Component({
   selector: 'app-patient-detail',
@@ -32,7 +33,8 @@ import { PatientStudiesTabComponent } from './components/patient-studies-tab.com
     PrescriptionModalComponent,
     PrescriptionPrintModalComponent,
     PatientDocumentsTabComponent,
-    PatientStudiesTabComponent
+    PatientStudiesTabComponent,
+    CreateStudyOrderModalComponent
   ],
   template: `
     <div class="page-container">
@@ -65,7 +67,13 @@ import { PatientStudiesTabComponent } from './components/patient-studies-tab.com
           </p>
         </div>
 
-        <div class="header-actions">
+        <div class="header-actions flex items-center gap-2">
+          <button type="button" class="btn btn-outline-primary" (click)="openStudyOrderModal()">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+            </svg>
+            + Orden de Estudio
+          </button>
           <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: patientId() }" class="btn btn-primary">
             🗓️ Agendar Cita
           </a>
@@ -169,6 +177,15 @@ import { PatientStudiesTabComponent } from './components/patient-studies-tab.com
         [companyAddress]="companyContext.activeCompany()?.address ?? null"
         (closed)="closePrintModal()">
       </app-prescription-print-modal>
+
+      <!-- MODAL CREAR ORDEN DE ESTUDIOS -->
+      <app-create-study-order-modal 
+        [isOpen]="studyOrderModalOpen()" 
+        [preselectedPatient]="patient()"
+        [preselectedSpecialistId]="authService.specialistId()"
+        (closed)="closeStudyOrderModal()"
+        (orderCreated)="onStudyOrderCreated($event)">
+      </app-create-study-order-modal>
     </div>
   `,
   styles: [`
@@ -226,6 +243,8 @@ export class PatientDetailComponent implements OnInit {
 
   readonly printModalOpen = signal<boolean>(false);
   readonly selectedRxForPrint = signal<PrescriptionDto | null>(null);
+
+  readonly studyOrderModalOpen = signal<boolean>(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -343,5 +362,18 @@ export class PatientDetailComponent implements OnInit {
   closePrintModal(): void {
     this.printModalOpen.set(false);
     this.selectedRxForPrint.set(null);
+  }
+
+  openStudyOrderModal(): void {
+    this.studyOrderModalOpen.set(true);
+  }
+
+  closeStudyOrderModal(): void {
+    this.studyOrderModalOpen.set(false);
+  }
+
+  onStudyOrderCreated(order: StudyOrderDto): void {
+    this.closeStudyOrderModal();
+    this.setTab('studies');
   }
 }

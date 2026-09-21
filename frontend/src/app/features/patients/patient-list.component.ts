@@ -5,16 +5,17 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subject, Subscription, catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse, Gender, PatientDto } from '../../core/models/models';
+import { ApiResponse, Gender, PatientDto, StudyOrderDto } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../shared/components/data-table/data-table.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { CreateStudyOrderModalComponent } from '../studies/components/create-study-order-modal.component';
 
 @Component({
   selector: 'app-patient-list',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, DataTableComponent, ModalComponent, BadgeComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, DataTableComponent, ModalComponent, BadgeComponent, CreateStudyOrderModalComponent],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -22,12 +23,20 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
           <h1 class="text-2xl font-bold">Directorio de Pacientes</h1>
           <p class="text-slate-500 text-sm">Registro de pacientes, datos demográficos y acceso a expedientes clínicos</p>
         </div>
-        <button type="button" class="btn btn-primary" (click)="openCreateModal()">
-          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          Nuevo Paciente
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" class="btn btn-outline-primary" (click)="openStudyOrderModal(null)">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+            </svg>
+            + Orden de Estudio
+          </button>
+          <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            Nuevo Paciente
+          </button>
+        </div>
       </div>
 
       <app-data-table 
@@ -79,6 +88,9 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 
         <ng-template #actionTemplate let-item>
           <div class="flex items-center justify-end gap-1.5">
+            <button type="button" class="btn btn-secondary btn-sm text-blue-600 dark:text-blue-400 font-semibold" title="Emitir orden de laboratorio / estudio clínico" (click)="openStudyOrderModal(item)">
+              🧪 Estudio
+            </button>
             <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: item.id }" class="btn btn-secondary btn-sm" title="Agendar nueva cita">
               🗓️ Agendar
             </a>
@@ -196,6 +208,14 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
           </button>
         </div>
       </app-modal>
+
+      <!-- Modal Crear Orden de Estudio -->
+      <app-create-study-order-modal
+        [isOpen]="studyOrderModalOpen()"
+        [preselectedPatient]="patientForStudyOrder()"
+        (closed)="closeStudyOrderModal()"
+        (orderCreated)="onStudyOrderCreated($event)">
+      </app-create-study-order-modal>
     </div>
   `,
   styles: [`
@@ -213,6 +233,9 @@ export class PatientListComponent implements OnInit, OnDestroy {
   readonly saving = signal<boolean>(false);
   readonly modalOpen = signal<boolean>(false);
   readonly editingPatient = signal<PatientDto | null>(null);
+
+  readonly studyOrderModalOpen = signal<boolean>(false);
+  readonly patientForStudyOrder = signal<PatientDto | null>(null);
 
   private readonly searchSubject = new Subject<string>();
   private searchSub?: Subscription;
@@ -381,5 +404,19 @@ export class PatientListComponent implements OnInit, OnDestroy {
         error: () => this.saving.set(false)
       });
     }
+  }
+
+  openStudyOrderModal(patient: PatientDto | null = null): void {
+    this.patientForStudyOrder.set(patient);
+    this.studyOrderModalOpen.set(true);
+  }
+
+  closeStudyOrderModal(): void {
+    this.studyOrderModalOpen.set(false);
+    this.patientForStudyOrder.set(null);
+  }
+
+  onStudyOrderCreated(order: StudyOrderDto): void {
+    this.closeStudyOrderModal();
   }
 }
