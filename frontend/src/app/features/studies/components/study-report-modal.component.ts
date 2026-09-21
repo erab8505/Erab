@@ -43,8 +43,8 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
             </div>
           </div>
 
-          <!-- Patient & Doctor Info Grid -->
-          <div class="grid grid-cols-2 gap-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 my-4 text-xs">
+          <!-- Patient, Doctor & Laboratorist Info Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 my-4 text-xs">
             <div>
               <span class="text-[10px] font-bold text-slate-400 uppercase block">Paciente:</span>
               <span class="font-bold text-sm text-slate-800 dark:text-slate-100 block">{{ order.patientName }}</span>
@@ -53,10 +53,16 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 
             <div>
               <span class="text-[10px] font-bold text-slate-400 uppercase block">Médico Solicitante:</span>
-              <span class="font-semibold text-slate-800 dark:text-slate-100 block">👨‍⚕️ {{ order.specialistName || 'Solicitud de Laboratorio' }}</span>
+              <span class="font-semibold text-slate-800 dark:text-slate-100 block">👨‍⚕️ {{ order.specialistName || 'Solicitud Directa de Laboratorio' }}</span>
               @if (order.clinicalDiagnosis) {
-                <span class="text-slate-500 block">Dx Presuntivo: <b>{{ order.clinicalDiagnosis }}</b></span>
+                <span class="text-slate-500 block">Dx: <b>{{ order.clinicalDiagnosis }}</b></span>
               }
+            </div>
+
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase block">Laboratorista / Químico:</span>
+              <span class="font-semibold text-blue-700 dark:text-blue-300 block">🔬 {{ order.laboratoristName || 'Laboratorio Clínico' }}</span>
+              <span class="text-[10px] text-slate-400 block">Validación y Firma Técnica</span>
             </div>
           </div>
 
@@ -129,12 +135,20 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
           }
 
           <!-- Signature Section -->
-          <div class="flex justify-end pt-8 mt-6">
-            <div class="text-center w-64 border-t border-slate-900 dark:border-slate-100 pt-1.5">
+          <div class="flex justify-between items-end pt-8 mt-6 gap-4">
+            @if (order.specialistName) {
+              <div class="text-center w-56 border-t border-slate-900 dark:border-slate-100 pt-1.5">
+                <span class="font-bold text-xs block text-slate-800 dark:text-slate-200">
+                  Dr(a). {{ order.specialistName }}
+                </span>
+                <span class="text-[10px] text-slate-500 uppercase block">Médico Solicitante</span>
+              </div>
+            }
+            <div class="text-center w-64 border-t border-slate-900 dark:border-slate-100 pt-1.5 ml-auto">
               <span class="font-bold text-xs block text-slate-800 dark:text-slate-200">
-                {{ order.specialistName ? ('Dr(a). ' + order.specialistName) : 'Responsable de Laboratorio' }}
+                {{ order.laboratoristName || 'Responsable de Laboratorio Clínico' }}
               </span>
-              <span class="text-[10px] text-slate-500 uppercase block">Especialista / Firma y Sello Clínico</span>
+              <span class="text-[10px] text-slate-500 uppercase block">Laboratorista / Firma y Sello Clínico</span>
             </div>
           </div>
         </div>
@@ -309,6 +323,10 @@ export class StudyReportModalComponent {
               <div class="info-val">👨‍⚕️ ${doctorName}</div>
               ${this.order.clinicalDiagnosis ? `<div style="color: #475569; font-size: 11px;">Dx: <b>${this.order.clinicalDiagnosis}</b></div>` : ''}
             </div>
+            <div style="grid-column: span 2; border-top: 1px dashed #cbd5e1; padding-top: 5px; margin-top: 2px;">
+              <div class="info-label">Laboratorista / Químico Responsable:</div>
+              <div style="font-weight: 700; color: #0284c7; font-size: 12px;">🔬 ${this.order.laboratoristName || 'Laboratorio Clínico Central'}</div>
+            </div>
           </div>
 
           <div>
@@ -321,9 +339,15 @@ export class StudyReportModalComponent {
           </div>` : ''}
 
           <div class="footer-sig">
-            <div class="sig-box">
-              <div style="font-weight: 700; font-size: 11px;">${this.order.specialistName ? ('Dr(a). ' + this.order.specialistName) : 'Responsable de Laboratorio'}</div>
-              <div style="font-size: 9.5px; color: #64748b;">Especialista / Firma y Sello Clínico</div>
+            ${this.order.specialistName ? `
+              <div class="sig-box" style="margin-right: auto;">
+                <div style="font-weight: 700; font-size: 11px;">Dr(a). ${this.order.specialistName}</div>
+                <div style="font-size: 9.5px; color: #64748b;">Médico Solicitante</div>
+              </div>
+            ` : ''}
+            <div class="sig-box" style="margin-left: auto;">
+              <div style="font-weight: 700; font-size: 11px;">${this.order.laboratoristName || 'Responsable de Laboratorio Clínico'}</div>
+              <div style="font-size: 9.5px; color: #64748b;">Laboratorista / Firma y Sello Clínico</div>
             </div>
           </div>
         </body>
@@ -368,7 +392,10 @@ export class StudyReportModalComponent {
     message += `📋 *No. Orden:* ${orderNum}\n`;
     message += `🗓️ *Fecha:* ${dateStr}\n`;
     if (this.order.specialistName) {
-      message += `👨‍⚕️ *Especialista Responsable:* ${this.order.specialistName}\n`;
+      message += `👨‍⚕️ *Médico Solicitante:* ${this.order.specialistName}\n`;
+    }
+    if (this.order.laboratoristName) {
+      message += `🔬 *Laboratorista Responsable:* ${this.order.laboratoristName}\n`;
     }
     if (this.order.clinicalDiagnosis) {
       message += `🩺 *Diagnóstico:* ${this.order.clinicalDiagnosis}\n`;

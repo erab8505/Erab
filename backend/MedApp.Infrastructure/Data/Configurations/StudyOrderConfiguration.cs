@@ -27,6 +27,9 @@ public class StudyOrderConfiguration : IEntityTypeConfiguration<StudyOrder>
         builder.Property(o => o.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(o => o.LaboratoristName)
+            .HasMaxLength(200);
+
         builder.Property(o => o.TotalAmount)
             .HasColumnType("decimal(18,2)")
             .IsRequired();

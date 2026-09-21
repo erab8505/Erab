@@ -66,6 +66,9 @@ public class StudyOrderDto
     public string? Notes { get; set; }
     public decimal TotalAmount { get; set; }
 
+    public Guid? LaboratoristId { get; set; }
+    public string? LaboratoristName { get; set; }
+
     public List<StudyOrderItemDto> Items { get; set; } = new();
 }
 
@@ -97,6 +100,8 @@ public class SaveParameterResultDto
 public class SaveStudyResultsDto
 {
     public Guid? SpecialistId { get; set; }
+    public Guid? LaboratoristId { get; set; }
+    public string? LaboratoristName { get; set; }
     public string? GeneralInterpretation { get; set; }
     public List<SaveParameterResultDto> Results { get; set; } = new();
 }

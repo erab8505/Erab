@@ -53,22 +53,35 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
             </div>
           </div>
 
-          <!-- Validating Laboratorist Info Banner -->
-          <div class="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-xl flex items-center justify-between text-xs">
-            <div class="flex items-center gap-2">
-              <span class="text-base">🔬</span>
-              <div>
-                <span class="font-bold text-slate-800 dark:text-slate-100">
-                  Laboratorista / Químico que valida:
-                </span>
-                <span class="ml-1 text-blue-700 dark:text-blue-300 font-semibold">
-                  {{ authService.username() }} ({{ authService.userRole() }})
-                </span>
+          <!-- Validating Laboratorist Info Banner & Signature Name -->
+          <div class="p-3 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-xl space-y-2 text-xs">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🔬</span>
+                <div>
+                  <span class="font-bold text-slate-800 dark:text-slate-100">
+                    Laboratorista / Químico Responsable:
+                  </span>
+                  <span class="ml-1 text-blue-700 dark:text-blue-300 font-semibold">
+                    {{ authService.username() }} ({{ authService.userRole() }})
+                  </span>
+                </div>
               </div>
+              <span class="text-[10px] text-slate-500 font-mono">
+                Aparecerá como firma oficial en el informe impreso
+              </span>
             </div>
-            <span class="text-[10px] text-slate-400 font-mono">
-              Los resultados quedarán registrados bajo este laboratorista
-            </span>
+
+            <div class="flex items-center gap-2">
+              <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                Firma / Nombre Profesional:
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="laboratoristName"
+                class="form-control text-xs py-1 font-semibold"
+                placeholder="Ej: Lic. Carlos Mendoza - QFB / Reg. LAB-4402" />
+            </div>
           </div>
 
           <!-- Items and Results Matrix -->
@@ -216,10 +229,14 @@ export class StudyCaptureResultsModalComponent implements OnChanges {
 
   saving = false;
   generalNotes = '';
+  laboratoristName = '';
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isOpen'] && this.isOpen && this.order) {
       this.generalNotes = this.order.notes || '';
+      const user = this.authService.username();
+      this.laboratoristName = this.order.laboratoristName || (user ? `Lic. ${user} - Laboratorio Clínico` : 'Responsable de Laboratorio');
+
       // Evaluate ranges for loaded items
       for (const item of this.order.items || []) {
         for (const res of item.results || []) {
@@ -271,6 +288,8 @@ export class StudyCaptureResultsModalComponent implements OnChanges {
     this.saving = true;
     const dto: SaveStudyResultsDto = {
       specialistId: this.authService.specialistId(),
+      laboratoristId: this.authService.specialistId() || undefined,
+      laboratoristName: this.laboratoristName?.trim() || undefined,
       generalInterpretation: this.generalNotes,
       results: []
     };

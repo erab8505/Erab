@@ -153,6 +153,11 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
                 <span class="block text-[10px] text-slate-400 mt-0.5">
                   {{ item.orderDate | date:'dd/MM/yyyy HH:mm' }}
                 </span>
+                @if (item.laboratoristName) {
+                  <span class="block text-[10px] text-blue-600 dark:text-blue-400 font-medium truncate max-w-[170px]" title="Validado por: {{ item.laboratoristName }}">
+                    🔬 {{ item.laboratoristName }}
+                  </span>
+                }
               </div>
             }
             @case ('patientName') {

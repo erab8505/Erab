@@ -56,6 +56,8 @@ public class StudyOrderService : IStudyOrderService
                 PatientPhone = o.Patient.Phone,
                 SpecialistId = o.SpecialistId,
                 SpecialistName = o.Specialist != null ? o.Specialist.FirstName + " " + o.Specialist.LastName : null,
+                LaboratoristId = o.LaboratoristId,
+                LaboratoristName = o.LaboratoristName,
                 SchedulingId = o.SchedulingId,
                 Status = o.Status,
                 OrderDate = o.OrderDate,
@@ -129,6 +131,8 @@ public class StudyOrderService : IStudyOrderService
             PatientPhone = o.Patient.Phone,
             SpecialistId = o.SpecialistId,
             SpecialistName = o.Specialist != null ? o.Specialist.FirstName + " " + o.Specialist.LastName : null,
+            LaboratoristId = o.LaboratoristId,
+            LaboratoristName = o.LaboratoristName,
             SchedulingId = o.SchedulingId,
             Status = o.Status,
             OrderDate = o.OrderDate,
@@ -288,23 +292,33 @@ public class StudyOrderService : IStudyOrderService
             return ApiResponse<StudyOrderDto>.Fail("Solo el personal con rol de Laboratorista tiene permisos para registrar y validar resultados de análisis clínicos.");
         }
 
-        Guid? validatedSpecialistId = _currentUserService.SpecialistId;
+        string? resolvedLaboratoristName = dto.LaboratoristName?.Trim();
+        Guid? resolvedLaboratoristId = dto.LaboratoristId;
 
-        if (!validatedSpecialistId.HasValue && _currentUserService.UserId.HasValue)
+        if (string.IsNullOrWhiteSpace(resolvedLaboratoristName) && _currentUserService.UserId.HasValue)
         {
             var user = await _context.Users
                 .Include(u => u.Specialist)
                 .FirstOrDefaultAsync(u => u.Id == _currentUserService.UserId.Value, cancellationToken);
 
-            if (user?.SpecialistId.HasValue == true)
+            if (user != null)
             {
-                validatedSpecialistId = user.SpecialistId.Value;
+                if (user.Specialist != null)
+                {
+                    resolvedLaboratoristName = user.Specialist.FullName;
+                    resolvedLaboratoristId = user.SpecialistId;
+                }
+                else
+                {
+                    resolvedLaboratoristName = user.Username;
+                    resolvedLaboratoristId = user.Id;
+                }
             }
         }
 
-        if (!validatedSpecialistId.HasValue && dto.SpecialistId.HasValue && _currentUserService.IsAdmin)
+        if (string.IsNullOrWhiteSpace(resolvedLaboratoristName))
         {
-            validatedSpecialistId = dto.SpecialistId.Value;
+            resolvedLaboratoristName = "Responsable de Laboratorio Clínico";
         }
 
         var order = await _context.StudyOrders
@@ -317,9 +331,12 @@ public class StudyOrderService : IStudyOrderService
             return ApiResponse<StudyOrderDto>.Fail("Orden no encontrada.");
         }
 
-        if (validatedSpecialistId.HasValue)
+        order.LaboratoristId = resolvedLaboratoristId;
+        order.LaboratoristName = resolvedLaboratoristName;
+
+        if (!order.SpecialistId.HasValue && dto.SpecialistId.HasValue)
         {
-            order.SpecialistId = validatedSpecialistId.Value;
+            order.SpecialistId = dto.SpecialistId.Value;
         }
 
         if (!string.IsNullOrWhiteSpace(dto.GeneralInterpretation))

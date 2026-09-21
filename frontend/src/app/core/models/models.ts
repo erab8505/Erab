@@ -495,6 +495,8 @@ export interface StudyOrderDto {
   patientPhone?: string | null;
   specialistId?: string | null;
   specialistName?: string | null;
+  laboratoristId?: string | null;
+  laboratoristName?: string | null;
   schedulingId?: string | null;
   status: StudyOrderStatus;
   statusName?: string;
@@ -534,6 +536,8 @@ export interface SaveParameterResultDto {
 
 export interface SaveStudyResultsDto {
   specialistId?: string | null;
+  laboratoristId?: string | null;
+  laboratoristName?: string | null;
   generalInterpretation?: string | null;
   results: SaveParameterResultDto[];
 }

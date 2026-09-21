@@ -1335,6 +1335,7 @@ public static class DbInitializer
                         Status = StudyOrderStatus.Completed,
                         OrderDate = DateTimeOffset.UtcNow.AddDays(-2),
                         CompletedDate = DateTimeOffset.UtcNow.AddDays(-1),
+                        LaboratoristName = "Lic. Carlos Mendoza - QFB / Reg. LAB-4402",
                         ClinicalDiagnosis = "Chequeo médico anual de rutina y control de glicemia.",
                         Notes = "Paciente con leve hiperglicemia e hipercolesterolemia. Se recomienda ajuste nutricional y control en 3 meses.",
                         TotalAmount = studyCheckup.BasePrice
