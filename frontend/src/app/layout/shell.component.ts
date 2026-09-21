@@ -31,7 +31,7 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
               </svg>
             </div>
-            <span class="brand-name">MedApp</span>
+            <span class="brand-name">EraB</span>
           </div>
 
           <!-- Active Company Pill -->
