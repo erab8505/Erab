@@ -1,8 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subject, Subscription, catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, Gender, PatientDto } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
@@ -33,6 +34,8 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
         [data]="patients()" 
         [columns]="columns" 
         [loading]="loading()"
+        [serverSide]="true"
+        (searchChange)="onSearchChange($event)"
         placeholder="Buscar por documento, nombre, teléfono...">
         
         <ng-template #cellTemplate let-item let-col="column">
@@ -48,7 +51,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
             @case ('fullName') {
               <a [routerLink]="['/patients', item.id]" class="group inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline">
                 <span class="w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-xs">
-                  {{ (item.firstName?.[0] || item.fullName?.[0] || 'P').toUpperCase() }}
+                  {{ (item.firstName[0] || item.fullName[0] || 'P').toUpperCase() }}
                 </span>
                 <span class="font-semibold text-sm">{{ item.fullName || (item.firstName + ' ' + item.lastName) }}</span>
               </a>
@@ -200,7 +203,7 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
     .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
   `]
 })
-export class PatientListComponent implements OnInit {
+export class PatientListComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
@@ -210,6 +213,10 @@ export class PatientListComponent implements OnInit {
   readonly saving = signal<boolean>(false);
   readonly modalOpen = signal<boolean>(false);
   readonly editingPatient = signal<PatientDto | null>(null);
+
+  private readonly searchSubject = new Subject<string>();
+  private searchSub?: Subscription;
+  currentSearchTerm = '';
 
   readonly columns: TableColumn<PatientDto>[] = [
     { key: 'documentId', label: 'Documento', sortable: true, width: '130px' },
@@ -235,12 +242,51 @@ export class PatientListComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.setupSearch();
     this.loadPatients();
   }
 
-  loadPatients(): void {
+  ngOnDestroy(): void {
+    this.searchSub?.unsubscribe();
+  }
+
+  setupSearch(): void {
+    this.searchSub = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => {
+        this.loading.set(true);
+        const url = query.trim()
+          ? `${environment.apiUrl}/patients?query=${encodeURIComponent(query.trim())}`
+          : `${environment.apiUrl}/patients`;
+        return this.http.get<ApiResponse<PatientDto[]>>(url).pipe(
+          catchError(() => of({ success: false, message: '', data: [] as PatientDto[], errors: [] }))
+        );
+      })
+    ).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        const list = (res.data || []).map(p => ({
+          ...p,
+          fullName: p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim()
+        }));
+        this.patients.set(list);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  onSearchChange(term: string): void {
+    this.currentSearchTerm = term;
+    this.searchSubject.next(term);
+  }
+
+  loadPatients(query: string = this.currentSearchTerm): void {
     this.loading.set(true);
-    this.http.get<ApiResponse<PatientDto[]>>(`${environment.apiUrl}/patients`).subscribe({
+    const url = query.trim()
+      ? `${environment.apiUrl}/patients?query=${encodeURIComponent(query.trim())}`
+      : `${environment.apiUrl}/patients`;
+    this.http.get<ApiResponse<PatientDto[]>>(url).subscribe({
       next: (res) => {
         this.loading.set(false);
         const list = (res.data || []).map(p => ({

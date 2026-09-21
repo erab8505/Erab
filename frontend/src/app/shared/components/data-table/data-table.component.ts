@@ -295,6 +295,9 @@ export class DataTableComponent<T extends Record<string, any>> {
   @Input() emptyText = 'No se encontraron registros.';
   @Input() loading = false;
   @Input() pageSize = 10;
+  @Input() serverSide = false;
+
+  @Output() searchChange = new EventEmitter<string>();
 
   @ContentChild('cellTemplate') cellTemplate?: TemplateRef<any>;
   @ContentChild('actionTemplate') actionTemplate?: TemplateRef<any>;
@@ -309,7 +312,7 @@ export class DataTableComponent<T extends Record<string, any>> {
     let items = [...this.rawItems()];
     const query = this.searchTerm().trim().toLowerCase();
 
-    if (query) {
+    if (query && !this.serverSide) {
       items = items.filter(item => {
         return Object.values(item).some(val => {
           if (val === null || val === undefined) return false;
@@ -354,11 +357,13 @@ export class DataTableComponent<T extends Record<string, any>> {
   onSearchChange(term: string): void {
     this.searchTerm.set(term);
     this.currentPage.set(1);
+    this.searchChange.emit(term);
   }
 
   clearSearch(): void {
     this.searchTerm.set('');
     this.currentPage.set(1);
+    this.searchChange.emit('');
   }
 
   onSort(col: TableColumn<T>): void {
