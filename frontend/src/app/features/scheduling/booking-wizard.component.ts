@@ -1,9 +1,9 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { Subject, Subscription, catchError, debounceTime, distinctUntilChanged, forkJoin, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, AreaDto, InterventionTypeDto, PatientDto, SchedulingDto, SpecialistDto, SpecialtyDto, TimeSlotDto } from '../../core/models/models';
 import { ToastService } from '../../core/services/toast.service';
@@ -65,41 +65,71 @@ import { ToastService } from '../../core/services/toast.service';
       <!-- STEP 1: SELECT PATIENT -->
       @if (step() === 1) {
         <div class="card p-5 space-y-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold m-0">Paso 1: Seleccionar Paciente</h2>
-            <input 
-              type="text" 
-              [(ngModel)]="patientFilter" 
-              placeholder="Buscar paciente por documento o nombre..." 
-              class="form-control max-w-xs" />
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold m-0">Paso 1: Seleccionar Paciente</h2>
+              <p class="text-xs text-slate-500 m-0">Busque el paciente por documento de identidad, nombre o apellido.</p>
+            </div>
+            <div class="relative w-full sm:w-80">
+              <input 
+                type="text" 
+                [ngModel]="patientSearchText" 
+                (ngModelChange)="onPatientSearch($event)"
+                placeholder="Buscar por documento o nombre..." 
+                class="form-control pl-8 pr-8 w-full" />
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+              @if (loadingPatients()) {
+                <span class="spinner-sm absolute right-2.5 top-1/2 -translate-y-1/2"></span>
+              } @else if (patientSearchText) {
+                <button 
+                  type="button" 
+                  (click)="clearPatientSearch()"
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs cursor-pointer border-0 bg-transparent p-0">
+                  ✕
+                </button>
+              }
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-            @for (pat of filteredPatients(); track pat.id) {
-              <div 
-                class="patient-card cursor-pointer p-3 border rounded-lg hover:border-sky-500 transition-colors"
-                [class.border-sky-600]="selectedPatient()?.id === pat.id"
-                [class.bg-sky-50]="selectedPatient()?.id === pat.id"
-                [class.dark:bg-sky-900/30]="selectedPatient()?.id === pat.id"
-                [class.dark:border-sky-400]="selectedPatient()?.id === pat.id"
-                (click)="selectPatient(pat)">
-                <div class="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <span class="w-5 h-5 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 text-xs flex items-center justify-center font-bold flex-shrink-0">
-                    {{ (pat.firstName[0] || pat.fullName[0] || 'P').toUpperCase() }}
-                  </span>
-                  <span>{{ pat.fullName || (pat.firstName + ' ' + pat.lastName) }}</span>
+          @if (patients().length === 0 && !loadingPatients()) {
+            <div class="p-8 text-center text-slate-400 border border-dashed rounded-lg">
+              <div class="text-2xl mb-2">🔍</div>
+              <p class="font-medium text-slate-600 dark:text-slate-300">No se encontraron pacientes</p>
+              <p class="text-xs text-slate-400">Intente con otro término de búsqueda o documento de identidad.</p>
+              @if (patientSearchText) {
+                <button type="button" class="btn btn-secondary btn-sm mt-3" (click)="clearPatientSearch()">
+                  Limpiar búsqueda
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto p-1">
+              @for (pat of patients(); track pat.id) {
+                <div 
+                  class="patient-card cursor-pointer p-3 border rounded-lg hover:border-sky-500 transition-colors"
+                  [class.border-sky-600]="selectedPatient()?.id === pat.id"
+                  [class.bg-sky-50]="selectedPatient()?.id === pat.id"
+                  [class.dark:bg-sky-900/30]="selectedPatient()?.id === pat.id"
+                  [class.dark:border-sky-400]="selectedPatient()?.id === pat.id"
+                  (click)="selectPatient(pat)">
+                  <div class="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 text-xs flex items-center justify-center font-bold flex-shrink-0">
+                      {{ (pat.firstName[0] || pat.fullName[0] || 'P').toUpperCase() }}
+                    </span>
+                    <span class="truncate">{{ pat.fullName || (pat.firstName + ' ' + pat.lastName) }}</span>
+                  </div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                    <span class="doc-pill">
+                      Doc: {{ pat.documentId }}
+                    </span>
+                    <span>•</span>
+                    <span>{{ pat.age }} años</span>
+                  </div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tel: {{ pat.phone || 'N/A' }}</div>
                 </div>
-                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
-                  <span class="doc-pill">
-                    Doc: {{ pat.documentId }}
-                  </span>
-                  <span>•</span>
-                  <span>{{ pat.age }} años</span>
-                </div>
-                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tel: {{ pat.phone || 'N/A' }}</div>
-              </div>
-            }
-          </div>
+              }
+            </div>
+          }
         </div>
       }
 
@@ -376,7 +406,7 @@ import { ToastService } from '../../core/services/toast.service';
     }
   `]
 })
-export class BookingWizardComponent implements OnInit {
+export class BookingWizardComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -399,23 +429,19 @@ export class BookingWizardComponent implements OnInit {
 
   readonly slots = signal<TimeSlotDto[]>([]);
   readonly loadingSlots = signal<boolean>(false);
+  readonly loadingPatients = signal<boolean>(false);
   readonly booking = signal<boolean>(false);
 
-  patientFilter: string = '';
+  private readonly searchSubject = new Subject<string>();
+  private searchSub?: Subscription;
+
+  patientSearchText: string = '';
   selectedDate: string = new Date().toISOString().substring(0, 10);
   bookingNotes: string = '';
 
   get todayStr(): string {
     return new Date().toISOString().substring(0, 10);
   }
-
-  readonly filteredPatients = computed(() => {
-    const q = this.patientFilter.trim().toLowerCase();
-    if (!q) return this.patients();
-    return this.patients().filter(p => 
-      p.fullName.toLowerCase().includes(q) || p.documentId.includes(q)
-    );
-  });
 
   readonly availableSpecialties = computed(() => {
     const area = this.selectedArea();
@@ -436,7 +462,50 @@ export class BookingWizardComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.setupPatientSearch();
     this.loadCatalogues();
+  }
+
+  ngOnDestroy(): void {
+    this.searchSub?.unsubscribe();
+  }
+
+  setupPatientSearch(): void {
+    this.searchSub = this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(query => {
+        this.loadingPatients.set(true);
+        const url = query.trim()
+          ? `${environment.apiUrl}/patients?query=${encodeURIComponent(query.trim())}`
+          : `${environment.apiUrl}/patients`;
+        return this.http.get<ApiResponse<PatientDto[]>>(url).pipe(
+          catchError(() => of({ success: false, message: '', data: [] as PatientDto[], errors: [] }))
+        );
+      })
+    ).subscribe({
+      next: (res) => {
+        this.loadingPatients.set(false);
+        const pats = (res.data || []).map(p => ({
+          ...p,
+          fullName: p.fullName || `${p.firstName || ''} ${p.lastName || ''}`.trim()
+        }));
+        this.patients.set(pats);
+      },
+      error: () => {
+        this.loadingPatients.set(false);
+      }
+    });
+  }
+
+  onPatientSearch(term: string): void {
+    this.patientSearchText = term;
+    this.searchSubject.next(term);
+  }
+
+  clearPatientSearch(): void {
+    this.patientSearchText = '';
+    this.searchSubject.next('');
   }
 
   loadCatalogues(): void {
@@ -464,6 +533,19 @@ export class BookingWizardComponent implements OnInit {
           const found = this.patients().find(p => p.id === queryPatientId);
           if (found) {
             this.selectPatient(found);
+          } else {
+            // Fetch directly if not in top list
+            this.http.get<ApiResponse<PatientDto>>(`${environment.apiUrl}/patients/${queryPatientId}`).subscribe({
+              next: (patientRes) => {
+                if (patientRes.data) {
+                  const pat = {
+                    ...patientRes.data,
+                    fullName: patientRes.data.fullName || `${patientRes.data.firstName || ''} ${patientRes.data.lastName || ''}`.trim()
+                  };
+                  this.selectPatient(pat);
+                }
+              }
+            });
           }
         }
       }
