@@ -15,6 +15,7 @@ import { MedicalRecordModalComponent } from './components/medical-record-modal.c
 import { PatientPrescriptionsTabComponent } from './components/patient-prescriptions-tab.component';
 import { PrescriptionModalComponent } from './components/prescription-modal.component';
 import { PrescriptionPrintModalComponent } from './components/prescription-print-modal.component';
+import { PatientDocumentsTabComponent } from './components/patient-documents-tab.component';
 
 @Component({
   selector: 'app-patient-detail',
@@ -28,7 +29,8 @@ import { PrescriptionPrintModalComponent } from './components/prescription-print
     MedicalRecordModalComponent,
     PatientPrescriptionsTabComponent,
     PrescriptionModalComponent,
-    PrescriptionPrintModalComponent
+    PrescriptionPrintModalComponent,
+    PatientDocumentsTabComponent
   ],
   template: `
     <div class="page-container">
@@ -84,6 +86,9 @@ import { PrescriptionPrintModalComponent } from './components/prescription-print
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'prescriptions'" (click)="setTab('prescriptions')">
           💊 Recetas y Fórmulas ({{ prescriptions().length }})
         </button>
+        <button type="button" class="tab-btn" [class.active]="activeTab() === 'documents'" (click)="setTab('documents')">
+          📂 Estudios y Archivos
+        </button>
       </div>
 
       <!-- TAB 1: DATOS PERSONALES -->
@@ -116,6 +121,11 @@ import { PrescriptionPrintModalComponent } from './components/prescription-print
           (openCreatePrescription)="openCreatePrescriptionModal()"
           (openPrint)="openPrintModal($event)">
         </app-patient-prescriptions-tab>
+      }
+
+      <!-- TAB 5: ESTUDIOS Y ARCHIVOS ADJUNTOS -->
+      @if (activeTab() === 'documents') {
+        <app-patient-documents-tab [patientId]="patientId()"></app-patient-documents-tab>
       }
 
       <!-- MODAL CREAR CONSULTA MÉDICA -->
@@ -196,7 +206,7 @@ export class PatientDetailComponent implements OnInit {
   readonly prescriptions = signal<PrescriptionDto[]>([]);
   readonly specialists = signal<SpecialistDto[]>([]);
 
-  readonly activeTab = signal<'info' | 'appointments' | 'records' | 'prescriptions'>('info');
+  readonly activeTab = signal<'info' | 'appointments' | 'records' | 'prescriptions' | 'documents'>('info');
 
   readonly recordModalOpen = signal<boolean>(false);
   readonly savingRecord = signal<boolean>(false);
@@ -241,7 +251,7 @@ export class PatientDetailComponent implements OnInit {
     });
   }
 
-  setTab(tab: 'info' | 'appointments' | 'records' | 'prescriptions'): void {
+  setTab(tab: 'info' | 'appointments' | 'records' | 'prescriptions' | 'documents'): void {
     this.activeTab.set(tab);
   }
 

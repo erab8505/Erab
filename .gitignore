@@ -32,3 +32,8 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 appsettings.Development.local.json
+
+# Uploaded application data
+App_Data/
+backend/MedApp.Api/App_Data/
+

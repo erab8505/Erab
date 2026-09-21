@@ -74,9 +74,19 @@ public class SchedulingService : ISchedulingService
             query = query.Where(s => s.Status == status.Value);
         }
 
-        return await query
+        var schedulings = await query
             .OrderBy(s => s.ScheduledAt)
-            .Select(s => new SchedulingDto(
+            .ToListAsync();
+
+        var schedulingIds = schedulings.Select(s => s.Id).ToList();
+        var payments = await _context.Payments
+            .Where(p => p.SchedulingId.HasValue && schedulingIds.Contains(p.SchedulingId.Value))
+            .ToDictionaryAsync(p => p.SchedulingId!.Value);
+
+        return schedulings.Select(s =>
+        {
+            payments.TryGetValue(s.Id, out var payment);
+            return new SchedulingDto(
                 s.Id,
                 s.CompanyId,
                 s.PatientId,
@@ -90,9 +100,13 @@ public class SchedulingService : ISchedulingService
                 s.DurationMinutes,
                 s.Notes,
                 s.Status,
-                s.CreatedAt
-            ))
-            .ToListAsync();
+                s.CreatedAt,
+                PaymentStatus: payment?.Status,
+                PaymentAmount: payment?.Amount,
+                PaymentMethod: payment?.Method,
+                PaymentId: payment?.Id
+            );
+        }).ToList();
     }
 
     public async Task<SchedulingDto> GetSchedulingByIdAsync(Guid id)
@@ -109,6 +123,8 @@ public class SchedulingService : ISchedulingService
         if (_currentUserService.IsSpecialist && s.SpecialistId != _currentUserService.SpecialistId)
             throw new NotFoundException("Cita médica", id);
 
+        var payment = await _context.Payments.FirstOrDefaultAsync(p => p.SchedulingId == id);
+
         return new SchedulingDto(
             s.Id,
             s.CompanyId,
@@ -123,7 +139,11 @@ public class SchedulingService : ISchedulingService
             s.DurationMinutes,
             s.Notes,
             s.Status,
-            s.CreatedAt
+            s.CreatedAt,
+            PaymentStatus: payment?.Status,
+            PaymentAmount: payment?.Amount,
+            PaymentMethod: payment?.Method,
+            PaymentId: payment?.Id
         );
     }
 

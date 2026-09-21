@@ -330,6 +330,261 @@ export class PrescriptionPrintModalComponent {
   }
 
   printDocument(): void {
-    window.print();
+    if (!this.prescription) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      document.body.removeChild(iframe);
+      window.print();
+      return;
+    }
+
+    const patientName = this.patient?.fullName || (this.patient?.firstName ? `${this.patient.firstName} ${this.patient.lastName}` : 'Paciente');
+    const patientDoc = this.patient?.documentId || 'N/A';
+    const patientAge = this.patient?.age != null ? `${this.patient.age} años` : 'N/A';
+    const doctorName = this.prescription.specialistName || 'Especialista';
+    const rxDate = this.prescription.prescriptionDate ? new Date(this.prescription.prescriptionDate).toLocaleDateString('es-ES') : '';
+
+    const itemsHtml = (this.prescription.items || []).map(item => `
+      <tr>
+        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">
+          <div style="font-weight: 700; font-size: 13px; color: #0f172a;">${item.medicationName}</div>
+          ${item.instructions ? `<div style="font-size: 11px; color: #475569; margin-top: 2px;">${item.instructions}</div>` : ''}
+        </td>
+        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">${item.dosage}</td>
+        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">${item.frequency}</td>
+        <td style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">${item.durationDays} días</td>
+      </tr>
+    `).join('');
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="utf-8">
+          <title>Receta Médica - ${patientName}</title>
+          <style>
+            @page {
+              margin: 15mm;
+              size: auto;
+            }
+            * {
+              box-sizing: border-box;
+              margin: 0;
+              padding: 0;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+              font-size: 12px;
+              color: #0f172a;
+              background: #ffffff;
+              padding: 10px;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #0284c7;
+              padding-bottom: 12px;
+              margin-bottom: 15px;
+            }
+            .clinic-title {
+              font-size: 18px;
+              font-weight: 800;
+              color: #0284c7;
+            }
+            .clinic-meta {
+              font-size: 11px;
+              color: #475569;
+              margin-top: 3px;
+            }
+            .rx-tag {
+              text-align: right;
+            }
+            .rx-badge {
+              display: inline-block;
+              background: #0284c7;
+              color: white;
+              font-weight: 800;
+              font-size: 11px;
+              padding: 3px 10px;
+              border-radius: 4px;
+              letter-spacing: 0.5px;
+            }
+            .rx-date {
+              display: block;
+              font-size: 11px;
+              color: #475569;
+              margin-top: 4px;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 15px;
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 6px;
+              padding: 10px 14px;
+              margin-bottom: 15px;
+            }
+            .info-label {
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              color: #64748b;
+            }
+            .info-val {
+              font-size: 13px;
+              font-weight: 700;
+              color: #0f172a;
+              margin-top: 2px;
+            }
+            .info-sub {
+              font-size: 11px;
+              color: #475569;
+              margin-top: 2px;
+            }
+            .rx-title {
+              font-size: 13px;
+              font-weight: 800;
+              color: #0284c7;
+              margin-bottom: 8px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 15px;
+            }
+            th {
+              background: #f1f5f9;
+              text-align: left;
+              padding: 8px 10px;
+              font-size: 11px;
+              font-weight: 700;
+              color: #475569;
+              border-bottom: 1px solid #cbd5e1;
+            }
+            .notes-box {
+              background: #f8fafc;
+              border-left: 3px solid #0284c7;
+              padding: 8px 12px;
+              margin-bottom: 25px;
+            }
+            .notes-label {
+              font-size: 11px;
+              font-weight: 700;
+              color: #0284c7;
+            }
+            .notes-text {
+              font-size: 11px;
+              color: #334155;
+              margin-top: 3px;
+            }
+            .footer {
+              display: flex;
+              justify-content: flex-end;
+              margin-top: 40px;
+              padding-top: 15px;
+            }
+            .sig-box {
+              text-align: center;
+              width: 200px;
+              border-top: 1px solid #000;
+              padding-top: 5px;
+            }
+            .sig-doctor {
+              font-weight: 700;
+              font-size: 12px;
+            }
+            .sig-label {
+              font-size: 10px;
+              color: #64748b;
+              text-transform: uppercase;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="clinic-title">${this.companyName || 'MedApp Centro Médico'}</div>
+              <div class="clinic-meta">NIT/RUC: ${this.companyTaxId || 'N/A'} • Tel: ${this.companyPhone || 'N/A'}</div>
+              ${this.companyAddress ? `<div class="clinic-meta">${this.companyAddress}</div>` : ''}
+            </div>
+            <div class="rx-tag">
+              <span class="rx-badge">RECETA MÉDICA</span>
+              <span class="rx-date">${rxDate}</span>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div>
+              <div class="info-label">Paciente:</div>
+              <div class="info-val">${patientName}</div>
+              <div class="info-sub">Doc: <b>${patientDoc}</b> • Edad: <b>${patientAge}</b></div>
+            </div>
+            <div>
+              <div class="info-label">Médico Tratante:</div>
+              <div class="info-val">👨‍⚕️ ${doctorName}</div>
+              <div class="info-sub">Prescripción Clínica Autorizada</div>
+            </div>
+          </div>
+
+          <div class="rx-title">Rp. Prescripción Farmacológica</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Medicamento</th>
+                <th>Dosis</th>
+                <th>Frecuencia</th>
+                <th>Duración</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          ${this.prescription.notes ? `
+          <div class="notes-box">
+            <div class="notes-label">Indicaciones y Recomendaciones Generales:</div>
+            <div class="notes-text">${this.prescription.notes}</div>
+          </div>` : ''}
+
+          <div class="footer">
+            <div class="sig-box">
+              <div class="sig-doctor">${doctorName}</div>
+              <div class="sig-label">Firma y Sello Médico</div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (err) {
+        console.error('Error printing prescription:', err);
+        window.print();
+      } finally {
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1500);
+      }
+    }, 200);
   }
 }

@@ -1,17 +1,22 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ApiResponse, AppointmentStatus, CreateMedicalRecordDto, CreatePrescriptionDto, CreatePrescriptionItemDto, MedicalRecordDto, PrescriptionDto, SchedulingDto, SpecialistDto, TimeSlotDto } from '../../core/models/models';
+import { ApiResponse, AppointmentStatus, CreateMedicalRecordDto, CreatePrescriptionDto, CreatePrescriptionItemDto, MedicalRecordDto, PaymentDto, PrescriptionDto, SchedulingDto, SpecialistDto, TimeSlotDto } from '../../core/models/models';
 import { AuthService } from '../../core/services/auth.service';
+import { CompanyContextService } from '../../core/services/company-context.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../shared/components/data-table/data-table.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { TimegridCalendarComponent } from './components/timegrid-calendar.component';
+import { PaymentModalComponent } from './components/payment-modal.component';
+import { PaymentReceiptModalComponent } from './components/payment-receipt-modal.component';
 
 @Component({
   selector: 'app-scheduling-list',
@@ -24,16 +29,47 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
     DataTableComponent,
     ModalComponent,
     ConfirmDialogComponent,
-    BadgeComponent
+    BadgeComponent,
+    TimegridCalendarComponent,
+    PaymentModalComponent,
+    PaymentReceiptModalComponent
   ],
   template: `
     <div class="page-container">
       <div class="page-header">
         <div>
           <h1 class="text-2xl font-bold">Agenda Médica y Citas</h1>
-          <p class="text-slate-500 text-sm">Control de turnos, atención clínica, confirmaciones y reprogramación de citas</p>
+          <p class="text-slate-500 text-sm">Control de turnos, atención clínica, confirmaciones, cobros y calendario</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- View Mode Toggle (List vs Calendar) -->
+          <div class="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5">
+            <button
+              type="button"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1"
+              [class.bg-white]="activeView() === 'list'"
+              [class.text-blue-600]="activeView() === 'list'"
+              [class.shadow-sm]="activeView() === 'list'"
+              [class.dark:bg-slate-700]="activeView() === 'list'"
+              [class.text-slate-600]="activeView() !== 'list'"
+              [class.dark:text-slate-400]="activeView() !== 'list'"
+              (click)="activeView.set('list')">
+              📋 Lista
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all flex items-center gap-1"
+              [class.bg-white]="activeView() === 'calendar'"
+              [class.text-blue-600]="activeView() === 'calendar'"
+              [class.shadow-sm]="activeView() === 'calendar'"
+              [class.dark:bg-slate-700]="activeView() === 'calendar'"
+              [class.text-slate-600]="activeView() !== 'calendar'"
+              [class.dark:text-slate-400]="activeView() !== 'calendar'"
+              (click)="activeView.set('calendar')">
+              📅 Calendario (Cuadrícula)
+            </button>
+          </div>
+
           <a routerLink="/scheduling/new" class="btn btn-primary">
             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -43,110 +79,154 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
         </div>
       </div>
 
-      <!-- Quick Filter Bar -->
-      <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex items-center justify-between flex-wrap gap-3">
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtro de Citas:</span>
-          
-          @if (authService.isSpecialist()) {
-            <span class="btn btn-sm btn-primary cursor-default">
-              👨‍⚕️ Mis Citas
-            </span>
-          } @else {
-            <button 
-              type="button" 
-              class="btn btn-sm" 
-              [class.btn-primary]="filterMode() === 'ALL'"
-              [class.btn-secondary]="filterMode() !== 'ALL'"
-              (click)="setFilterMode('ALL')">
-              🌐 Todas las Citas
-            </button>
+      @if (activeView() === 'calendar') {
+        <app-timegrid-calendar
+          [appointments]="filteredSchedulings()"
+          [specialists]="specialists()"
+          (appointmentSelected)="onCalendarAppointmentSelected($event)"
+          (emptySlotClicked)="onCalendarEmptySlotClicked($event)">
+        </app-timegrid-calendar>
+      } @else {
+        <!-- Quick Filter Bar -->
+        <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtro de Citas:</span>
+            
+            @if (authService.isSpecialist()) {
+              <span class="btn btn-sm btn-primary cursor-default">
+                👨‍⚕️ Mis Citas
+              </span>
+            } @else {
+              <button 
+                type="button" 
+                class="btn btn-sm" 
+                [class.btn-primary]="filterMode() === 'ALL'"
+                [class.btn-secondary]="filterMode() !== 'ALL'"
+                (click)="setFilterMode('ALL')">
+                🌐 Todas las Citas
+              </button>
+            }
+          </div>
+
+          @if (!authService.isSpecialist()) {
+            <div class="flex items-center gap-2">
+              <label class="text-xs text-slate-500 font-medium">Especialista:</label>
+              <select 
+                [ngModel]="selectedSpecialistId()" 
+                (ngModelChange)="onSpecialistDropdownChange($event)"
+                class="form-select text-xs py-1 px-2.5 rounded-lg border-slate-300">
+                <option value="">Todos los especialistas</option>
+                @for (s of specialists(); track s.id) {
+                  <option [value]="s.id">{{ s.fullName }} ({{ s.specialtyName }})</option>
+                }
+              </select>
+            </div>
           }
         </div>
 
-        @if (!authService.isSpecialist()) {
-          <div class="flex items-center gap-2">
-            <label class="text-xs text-slate-500 font-medium">Especialista:</label>
-            <select 
-              [ngModel]="selectedSpecialistId()" 
-              (ngModelChange)="onSpecialistDropdownChange($event)"
-              class="form-select text-xs py-1 px-2.5 rounded-lg border-slate-300">
-              <option value="">Todos los especialistas</option>
-              @for (s of specialists(); track s.id) {
-                <option [value]="s.id">{{ s.fullName }} ({{ s.specialtyName }})</option>
+        <app-data-table 
+          [data]="filteredSchedulings()" 
+          [columns]="columns" 
+          [loading]="loading()"
+          placeholder="Buscar por paciente, documento, especialista...">
+          
+          <ng-template #cellTemplate let-item let-col="column">
+            @switch (col.key) {
+              @case ('scheduledAt') {
+                <span class="font-semibold text-slate-900 dark:text-slate-100">
+                  🗓️ {{ item.scheduledAt | date:'dd/MM/yyyy HH:mm' }}
+                </span>
               }
-            </select>
-          </div>
-        }
-      </div>
+              @case ('patientName') {
+                <div>
+                  <a [routerLink]="['/patients', item.patientId]" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                    {{ item.patientName }}
+                  </a>
+                  <span class="text-xs text-slate-400 block">Doc: {{ item.patientDocument || item.patientDocumentId || '-' }}</span>
+                </div>
+              }
+              @case ('specialistName') {
+                <span class="font-medium">👨‍⚕️ {{ item.specialistName }}</span>
+              }
+              @case ('status') {
+                <app-badge [variant]="getStatusVariant(item.status)" [text]="item.status"></app-badge>
+              }
+              @case ('payment') {
+                @if (item.paymentStatus === 'Paid') {
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 hover:opacity-80 transition-opacity cursor-pointer border border-emerald-300 dark:border-emerald-700"
+                    title="Clic para ver recibo de pago"
+                    (click)="openReceiptModal(item, $event)">
+                    <span>💵 Pagado</span>
+                    @if (item.paymentAmount) {
+                      <span>(\${{ item.paymentAmount | number:'1.2-2' }})</span>
+                    }
+                  </button>
+                } @else if (item.status === 'Completed') {
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 transition-colors cursor-pointer border border-amber-300 dark:border-amber-700"
+                    title="Clic para registrar cobro"
+                    (click)="openPaymentModal(item, $event)">
+                    <span>⏳ Pendiente</span>
+                    <span class="text-[10px] font-semibold underline ml-0.5">Cobrar</span>
+                  </button>
+                } @else {
+                  <span class="text-xs text-slate-400 dark:text-slate-500">—</span>
+                }
+              }
+              @default {
+                {{ item[col.key] || '-' }}
+              }
+            }
+          </ng-template>
 
-      <app-data-table 
-        [data]="filteredSchedulings()" 
-        [columns]="columns" 
-        [loading]="loading()"
-        placeholder="Buscar por paciente, documento, especialista...">
-        
-        <ng-template #cellTemplate let-item let-col="column">
-          @switch (col.key) {
-            @case ('scheduledAt') {
-              <span class="font-semibold text-slate-900 dark:text-slate-100">
-                🗓️ {{ item.scheduledAt | date:'dd/MM/yyyy HH:mm' }}
-              </span>
-            }
-            @case ('patientName') {
-              <div>
-                <a [routerLink]="['/patients', item.patientId]" class="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-                  {{ item.patientName }}
-                </a>
-                <span class="text-xs text-slate-400 block">Doc: {{ item.patientDocument || item.patientDocumentId || '-' }}</span>
-              </div>
-            }
-            @case ('specialistName') {
-              <span class="font-medium">👨‍⚕️ {{ item.specialistName }}</span>
-            }
-            @case ('status') {
-              <app-badge [variant]="getStatusVariant(item.status)" [text]="item.status"></app-badge>
-            }
-            @default {
-              {{ item[col.key] || '-' }}
-            }
-          }
-        </ng-template>
-
-        <ng-template #actionTemplate let-item>
-          <div class="table-actions">
-            @if (item.status === 'Scheduled' || item.status === 0 || item.status === '0') {
-              <button type="button" class="table-action-btn btn-confirm" title="Confirmar Cita" (click)="updateStatus(item, 'Confirmed')">
-                <span>✓</span> Confirmar
-              </button>
-            }
-            @if (item.status === 'Confirmed' || item.status === 'Scheduled' || item.status === 0 || item.status === 1 || item.status === '0' || item.status === '1') {
-              <!-- Atender Cita con Registro Clínico Completo (Solo roles clínicos) -->
-              @if (authService.isAdmin() || authService.isSpecialist()) {
-                <button type="button" class="table-action-btn btn-attend" title="Atender Consulta Médica" (click)="openAttendModal(item)">
-                  <span>🩺</span> Atender Cita
+          <ng-template #actionTemplate let-item>
+            <div class="table-actions">
+              @if (item.paymentStatus === 'Paid') {
+                <button type="button" class="table-action-btn" title="Ver Recibo de Pago" (click)="openReceiptModal(item, $event)">
+                  <span>🧾</span> Recibo
+                </button>
+              } @else if (item.status === 'Completed') {
+                <button type="button" class="table-action-btn text-amber-600 font-bold" title="Registrar Cobro" (click)="openPaymentModal(item, $event)">
+                  <span>💵</span> Cobrar
                 </button>
               }
-              <button type="button" class="table-action-btn btn-reschedule" title="Reprogramar Cita" (click)="openRescheduleModal(item)">
-                <span>🔄</span> Reagendar
-              </button>
-              <button type="button" class="table-action-btn btn-cancel" title="Cancelar Cita" (click)="confirmCancel(item)">
-                <span>✕</span> Cancelar
-              </button>
-            }
-            @if (item.status === 'Completed' || item.status === 2 || item.status === '2') {
-              <span class="table-action-badge badge-completed">
-                <span>✓</span> Atendida / Finalizada
-              </span>
-            }
-            @if (item.status === 'Cancelled' || item.status === 3 || item.status === '3') {
-              <span class="table-action-badge badge-cancelled">
-                <span>✕</span> Cancelada
-              </span>
-            }
-          </div>
-        </ng-template>
-      </app-data-table>
+
+              @if (item.status === 'Scheduled' || item.status === 0 || item.status === '0') {
+                <button type="button" class="table-action-btn btn-confirm" title="Confirmar Cita" (click)="updateStatus(item, 'Confirmed')">
+                  <span>✓</span> Confirmar
+                </button>
+              }
+              @if (item.status === 'Confirmed' || item.status === 'Scheduled' || item.status === 0 || item.status === 1 || item.status === '0' || item.status === '1') {
+                <!-- Atender Cita con Registro Clínico Completo (Solo roles clínicos) -->
+                @if (authService.isAdmin() || authService.isSpecialist()) {
+                  <button type="button" class="table-action-btn btn-attend" title="Atender Consulta Médica" (click)="openAttendModal(item)">
+                    <span>🩺</span> Atender Cita
+                  </button>
+                }
+                <button type="button" class="table-action-btn btn-reschedule" title="Reprogramar Cita" (click)="openRescheduleModal(item)">
+                  <span>🔄</span> Reagendar
+                </button>
+                <button type="button" class="table-action-btn btn-cancel" title="Cancelar Cita" (click)="confirmCancel(item)">
+                  <span>✕</span> Cancelar
+                </button>
+              }
+              @if (item.status === 'Completed' || item.status === 2 || item.status === '2') {
+                <span class="table-action-badge badge-completed">
+                  <span>✓</span> Atendida / Finalizada
+                </span>
+              }
+              @if (item.status === 'Cancelled' || item.status === 3 || item.status === '3') {
+                <span class="table-action-badge badge-cancelled">
+                  <span>✕</span> Cancelada
+                </span>
+              }
+            </div>
+          </ng-template>
+        </app-data-table>
+      }
 
       <!-- MODAL 1: ATENDER CITA (HISTORIA CLÍNICA & SIGNOS VITALES) -->
       <app-modal
@@ -576,6 +656,27 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
         </div>
       </app-modal>
 
+      <!-- MODAL 4: REGISTRAR COBRO / PAGO -->
+      <app-payment-modal
+        [isOpen]="paymentModalOpen()"
+        [scheduling]="selectedSchedulingForPayment()"
+        [existingPayment]="selectedPayment()"
+        (closed)="closePaymentModal()"
+        (paymentSaved)="onPaymentSaved($event)">
+      </app-payment-modal>
+
+      <!-- MODAL 5: RECIBO DE PAGO / TICKET IMPRIMIBLE -->
+      <app-payment-receipt-modal
+        [isOpen]="paymentReceiptModalOpen()"
+        [payment]="selectedPayment()"
+        [scheduling]="selectedSchedulingForPayment()"
+        [companyName]="companyContext.activeCompanyName()"
+        [companyTaxId]="companyContext.activeCompany()?.taxId || ''"
+        [companyPhone]="companyContext.activeCompany()?.phone || ''"
+        [companyAddress]="companyContext.activeCompany()?.address || ''"
+        (closed)="closeReceiptModal()">
+      </app-payment-receipt-modal>
+
       <!-- CONFIRM CANCEL DIALOG -->
       <app-confirm-dialog 
         [isOpen]="cancelDialogOpen()" 
@@ -642,12 +743,18 @@ import { BadgeComponent } from '../../shared/components/badge/badge.component';
 export class SchedulingListComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
   readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
+  private readonly paymentService = inject(PaymentService);
+  readonly companyContext = inject(CompanyContextService);
 
   readonly schedulings = signal<SchedulingDto[]>([]);
   readonly specialists = signal<SpecialistDto[]>([]);
   readonly loading = signal<boolean>(true);
+
+  // View Mode
+  readonly activeView = signal<'list' | 'calendar'>('list');
 
   // Filters
   readonly filterMode = signal<'ALL' | 'MINE'>(this.authService.isSpecialist() ? 'MINE' : 'ALL');
@@ -667,6 +774,12 @@ export class SchedulingListComponent implements OnInit {
 
     return list;
   });
+
+  // Payments
+  readonly paymentModalOpen = signal<boolean>(false);
+  readonly paymentReceiptModalOpen = signal<boolean>(false);
+  readonly selectedPayment = signal<PaymentDto | null>(null);
+  readonly selectedSchedulingForPayment = signal<SchedulingDto | null>(null);
 
   // Attend Modal (Modal 1)
   readonly attendModalOpen = signal<boolean>(false);
@@ -776,8 +889,9 @@ export class SchedulingListComponent implements OnInit {
     { key: 'patientName', label: 'Paciente', sortable: true },
     { key: 'specialistName', label: 'Especialista', sortable: true },
     { key: 'interventionName', label: 'Procedimiento' },
-    { key: 'durationMinutes', label: 'Duración', width: '90px' },
-    { key: 'status', label: 'Estado', sortable: true, width: '120px' }
+    { key: 'durationMinutes', label: 'Duración', width: '85px' },
+    { key: 'status', label: 'Estado', sortable: true, width: '110px' },
+    { key: 'payment', label: 'Pago', sortable: false, width: '130px' }
   ];
 
   ngOnInit(): void {
@@ -1019,5 +1133,99 @@ export class SchedulingListComponent implements OnInit {
       },
       error: () => this.cancelling.set(false)
     });
+  }
+
+  // Payment methods
+  openPaymentModal(item: SchedulingDto, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedSchedulingForPayment.set(item);
+    
+    if (item.paymentId) {
+      this.paymentService.getPaymentById(item.paymentId).subscribe({
+        next: (res) => {
+          this.selectedPayment.set(res.data || null);
+          this.paymentModalOpen.set(true);
+        },
+        error: () => {
+          this.selectedPayment.set(null);
+          this.paymentModalOpen.set(true);
+        }
+      });
+    } else {
+      this.selectedPayment.set(null);
+      this.paymentModalOpen.set(true);
+    }
+  }
+
+  closePaymentModal(): void {
+    this.paymentModalOpen.set(false);
+    this.selectedPayment.set(null);
+    this.selectedSchedulingForPayment.set(null);
+  }
+
+  openReceiptModal(item: SchedulingDto, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedSchedulingForPayment.set(item);
+
+    if (item.paymentId) {
+      this.paymentService.getPaymentById(item.paymentId).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.selectedPayment.set(res.data);
+            this.paymentReceiptModalOpen.set(true);
+          } else {
+            this.toast.error('No se encontró el registro de pago.');
+          }
+        },
+        error: () => this.toast.error('Error al consultar comprobante.')
+      });
+    } else {
+      this.paymentService.getPaymentBySchedulingId(item.id).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.selectedPayment.set(res.data);
+            this.paymentReceiptModalOpen.set(true);
+          } else {
+            this.toast.info('No hay cobro registrado para esta cita aún.');
+            this.openPaymentModal(item);
+          }
+        },
+        error: () => this.toast.error('Error al consultar comprobante.')
+      });
+    }
+  }
+
+  closeReceiptModal(): void {
+    this.paymentReceiptModalOpen.set(false);
+    this.selectedPayment.set(null);
+    this.selectedSchedulingForPayment.set(null);
+  }
+
+  onPaymentSaved(payment: PaymentDto): void {
+    this.loadSchedulings();
+    this.selectedPayment.set(payment);
+    this.paymentReceiptModalOpen.set(true);
+  }
+
+  // Calendar Interactions
+  onCalendarAppointmentSelected(item: SchedulingDto): void {
+    if (item.status === 'Scheduled' || item.status === 'Confirmed') {
+      if (this.authService.isAdmin() || this.authService.isSpecialist()) {
+        this.openAttendModal(item);
+      }
+    } else if (item.paymentStatus === 'Paid') {
+      this.openReceiptModal(item);
+    } else if (item.status === 'Completed') {
+      this.openPaymentModal(item);
+    }
+  }
+
+  onCalendarEmptySlotClicked(slot: { date: Date; hour: number; minute: number; specialistId?: string }): void {
+    const dateStr = slot.date.toISOString().substring(0, 10);
+    const queryParams: any = { date: dateStr };
+    if (slot.specialistId) {
+      queryParams.specialistId = slot.specialistId;
+    }
+    this.router.navigate(['/scheduling/new'], { queryParams });
   }
 }

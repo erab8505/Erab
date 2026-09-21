@@ -144,6 +144,10 @@ export interface PatientDto {
   isActive: boolean;
 }
 
+export type PaymentMethod = 'Cash' | 'CreditCard' | 'DebitCard' | 'BankTransfer' | 'ElectronicWallet';
+export type PaymentStatus = 'Pending' | 'Paid' | 'Refunded' | 'Cancelled';
+export type DocumentCategory = 'LabResult' | 'ImagingXRay' | 'ConsentForm' | 'ExternalReport' | 'PrescriptionOrder' | 'Other';
+
 export interface SchedulingDto {
   id: string;
   companyId?: string;
@@ -160,6 +164,64 @@ export interface SchedulingDto {
   durationMinutes: number;
   status: AppointmentStatus;
   notes?: string | null;
+  createdAt: string;
+  paymentStatus?: PaymentStatus | null;
+  paymentAmount?: number | null;
+  paymentMethod?: PaymentMethod | null;
+  paymentId?: string | null;
+}
+
+export interface PaymentDto {
+  id: string;
+  companyId: string;
+  schedulingId?: string | null;
+  patientId: string;
+  patientName?: string | null;
+  patientDocumentId?: string | null;
+  amount: number;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  transactionReference?: string | null;
+  invoiceOrReceiptNumber?: string | null;
+  notes?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+export interface CreatePaymentDto {
+  schedulingId?: string | null;
+  patientId: string;
+  amount: number;
+  method: PaymentMethod;
+  status?: PaymentStatus;
+  transactionReference?: string | null;
+  notes?: string | null;
+}
+
+export interface DailyCashSummaryDto {
+  date: string;
+  totalTransactions: number;
+  totalAmount: number;
+  cashAmount: number;
+  cardAmount: number;
+  transferAmount: number;
+  electronicWalletAmount: number;
+  pendingCount: number;
+  paidCount: number;
+}
+
+export interface PatientDocumentDto {
+  id: string;
+  companyId: string;
+  patientId: string;
+  medicalRecordId?: string | null;
+  title: string;
+  fileName: string;
+  originalFileName: string;
+  contentType: string;
+  fileSizeBytes: number;
+  category: DocumentCategory;
+  description?: string | null;
   createdAt: string;
 }
 

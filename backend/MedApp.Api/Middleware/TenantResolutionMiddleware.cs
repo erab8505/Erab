@@ -30,18 +30,29 @@ public class TenantResolutionMiddleware
             return;
         }
 
+        string? headerValue = null;
         if (context.Request.Headers.TryGetValue("X-Company-Id", out var companyIdHeader))
         {
-            var headerValue = companyIdHeader.ToString().Trim();
-            if (!string.IsNullOrEmpty(headerValue))
+            headerValue = companyIdHeader.ToString().Trim();
+        }
+        else if (context.Request.Query.TryGetValue("companyId", out var companyIdQuery))
+        {
+            headerValue = companyIdQuery.ToString().Trim();
+        }
+        else if (context.Request.Query.TryGetValue("X-Company-Id", out var xCompanyIdQuery))
+        {
+            headerValue = xCompanyIdQuery.ToString().Trim();
+        }
+
+        if (!string.IsNullOrEmpty(headerValue))
+        {
+            if (!Guid.TryParse(headerValue, out var companyId))
             {
-                if (!Guid.TryParse(headerValue, out var companyId))
-                {
-                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(ApiResponse.Fail("Invalid X-Company-Id header format."));
-                    return;
-                }
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(ApiResponse.Fail("Invalid X-Company-Id header format."));
+                return;
+            }
 
                 // If user is authenticated, verify company membership
                 if (context.User.Identity?.IsAuthenticated == true)
@@ -76,10 +87,10 @@ public class TenantResolutionMiddleware
                     }
                 }
 
-                companyContext.SetCompany(companyId);
-            }
+            companyContext.SetCompany(companyId);
         }
 
         await _next(context);
     }
 }
+

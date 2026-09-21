@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         // JWT Authentication Configuration
         var secret = configuration["Jwt:Secret"] ?? "MedAppSuperSecretKeyForDevelopmentAndTestingPurposesOnly2026!";
@@ -63,6 +64,23 @@ public static class DependencyInjection
                 ValidAudience = audience,
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
+            };
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"].ToString();
+                    if (string.IsNullOrEmpty(accessToken))
+                    {
+                        accessToken = context.Request.Query["token"].ToString();
+                    }
+
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
             };
         });
 

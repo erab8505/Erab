@@ -16,7 +16,11 @@ public record SchedulingDto(
     int DurationMinutes,
     string? Notes,
     AppointmentStatus Status,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    PaymentStatus? PaymentStatus = null,
+    decimal? PaymentAmount = null,
+    PaymentMethod? PaymentMethod = null,
+    Guid? PaymentId = null
 );
 
 public record CreateSchedulingDto(

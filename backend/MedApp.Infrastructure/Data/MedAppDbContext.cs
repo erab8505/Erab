@@ -28,6 +28,8 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
     public DbSet<MedicalRecord> MedicalRecords => Set<MedicalRecord>();
     public DbSet<Prescription> Prescriptions => Set<Prescription>();
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<PatientDocument> PatientDocuments => Set<PatientDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,6 +67,12 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
 
         modelBuilder.Entity<PrescriptionItem>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.Prescription.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<Payment>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<PatientDocument>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
