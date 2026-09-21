@@ -59,8 +59,11 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1rem;
+      padding: 0.5rem;
       overflow-y: auto;
+    }
+    @media (min-width: 640px) {
+      .modal-backdrop { padding: 1rem; }
     }
     .modal-card {
       background-color: var(--card-bg, #ffffff);
@@ -68,10 +71,13 @@ import { CommonModule } from '@angular/common';
       border-radius: 0.75rem;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
       width: 100%;
-      max-height: 90vh;
+      max-height: 92vh;
       display: flex;
       flex-direction: column;
       border: 1px solid var(--border-color, #e2e8f0);
+    }
+    @media (min-width: 640px) {
+      .modal-card { max-height: 90vh; }
     }
     .size-sm { max-width: 24rem; }
     .size-md { max-width: 32rem; }
@@ -83,18 +89,28 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1.25rem 1.5rem;
+      padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--border-color, #e2e8f0);
+      gap: 0.5rem;
+    }
+    @media (min-width: 640px) {
+      .modal-header { padding: 1.25rem 1.5rem; }
     }
     .modal-title {
-      font-size: 1.125rem;
+      font-size: 1.05rem;
       font-weight: 600;
       margin: 0;
     }
+    @media (min-width: 640px) {
+      .modal-title { font-size: 1.125rem; }
+    }
     .modal-subtitle {
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       color: var(--text-muted, #64748b);
       margin: 0.25rem 0 0 0;
+    }
+    @media (min-width: 640px) {
+      .modal-subtitle { font-size: 0.875rem; }
     }
     .modal-close-btn {
       color: var(--text-muted, #64748b);
@@ -106,25 +122,34 @@ import { CommonModule } from '@angular/common';
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
     .modal-close-btn:hover {
       background-color: var(--bg-hover, #f1f5f9);
       color: var(--text-color, #0f172a);
     }
     .modal-body {
-      padding: 1.5rem;
+      padding: 1rem 1.25rem;
       overflow-y: auto;
       flex: 1;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (min-width: 640px) {
+      .modal-body { padding: 1.5rem; }
     }
     .modal-footer {
-      padding: 1rem 1.5rem;
+      padding: 0.75rem 1.25rem;
       border-top: 1px solid var(--border-color, #e2e8f0);
       display: flex;
       justify-content: flex-end;
-      gap: 0.75rem;
+      gap: 0.5rem;
       background-color: var(--card-footer-bg, #f8fafc);
       border-bottom-left-radius: 0.75rem;
       border-bottom-right-radius: 0.75rem;
+      flex-wrap: wrap;
+    }
+    @media (min-width: 640px) {
+      .modal-footer { padding: 1rem 1.5rem; gap: 0.75rem; }
     }
     @media print {
       .modal-backdrop {

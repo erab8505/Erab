@@ -99,6 +99,15 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       </header>
 
       <div class="app-body">
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        @if (mobileMenuOpen()) {
+          <div 
+            class="sidebar-backdrop" 
+            (click)="closeMobileMenu()" 
+            aria-hidden="true">
+          </div>
+        }
+
         <!-- Sidebar -->
         <aside class="app-sidebar" [class.mobile-open]="mobileMenuOpen()">
           <nav class="sidebar-nav">
@@ -213,15 +222,21 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 1.5rem;
+      padding: 0 1rem;
       position: sticky;
       top: 0;
       z-index: 30;
     }
+    @media (min-width: 768px) {
+      .app-navbar { padding: 0 1.5rem; }
+    }
     .navbar-left, .navbar-right {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.5rem;
+    }
+    @media (min-width: 640px) {
+      .navbar-left, .navbar-right { gap: 0.875rem; }
     }
     .mobile-menu-btn {
       display: none;
@@ -237,13 +252,13 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
     .brand-logo {
       display: flex;
       align-items: center;
-      gap: 0.625rem;
+      gap: 0.5rem;
       cursor: pointer;
       text-decoration: none;
     }
     .brand-icon {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 2rem;
+      height: 2rem;
       border-radius: var(--radius-lg, 0.75rem);
       background: var(--primary-color, #006194);
       display: flex;
@@ -251,39 +266,63 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       justify-content: center;
       box-shadow: 0 2px 6px var(--primary-glow, rgba(0, 97, 148, 0.25));
     }
+    @media (min-width: 640px) {
+      .brand-icon { width: 2.25rem; height: 2.25rem; }
+    }
     .brand-name {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 1.25rem;
+      font-size: 1.125rem;
       font-weight: 800;
       color: var(--primary-color, #006194);
       letter-spacing: -0.03em;
     }
+    @media (min-width: 640px) {
+      .brand-name { font-size: 1.25rem; }
+    }
     .company-pill {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.375rem;
       background: var(--card-footer-bg, #eff4ff);
-      padding: 0.375rem 0.75rem;
+      padding: 0.25rem 0.625rem;
       border-radius: var(--radius-full, 9999px);
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       border: 1px solid var(--border-color, #dce9ff);
+      max-width: 140px;
+    }
+    @media (min-width: 640px) {
+      .company-pill {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+        max-width: 220px;
+        gap: 0.5rem;
+      }
+    }
+    .company-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .switch-company-link {
       background: transparent;
       border: none;
       color: var(--secondary-color, #006a61);
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       font-weight: 600;
       cursor: pointer;
       padding-left: 0.375rem;
       border-left: 1px solid var(--border-input, #bfc7d2);
+      flex-shrink: 0;
+    }
+    @media (min-width: 640px) {
+      .switch-company-link { font-size: 0.75rem; }
     }
     .switch-company-link:hover {
       text-decoration: underline;
     }
     .nav-icon-btn {
-      width: 2.25rem;
-      height: 2.25rem;
+      width: 2rem;
+      height: 2rem;
       border-radius: var(--radius-lg, 0.75rem);
       border: 1px solid var(--border-color, #dce9ff);
       background: var(--card-bg, #ffffff);
@@ -293,31 +332,43 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       justify-content: center;
       transition: background-color 0.15s;
     }
+    @media (min-width: 640px) {
+      .nav-icon-btn { width: 2.25rem; height: 2.25rem; }
+    }
     .nav-icon-btn:hover {
       background: var(--bg-hover, #e5eeff);
     }
     .user-profile-badge {
       display: flex;
       align-items: center;
-      gap: 0.625rem;
+      gap: 0.5rem;
       background: var(--card-footer-bg, #eff4ff);
-      padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+      padding: 0.2rem 0.5rem 0.2rem 0.2rem;
       border-radius: var(--radius-full, 9999px);
       border: 1px solid var(--border-color, #dce9ff);
     }
+    @media (min-width: 640px) {
+      .user-profile-badge {
+        padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+        gap: 0.625rem;
+      }
+    }
     .user-avatar {
-      width: 2rem;
-      height: 2rem;
+      width: 1.875rem;
+      height: 1.875rem;
       border-radius: 9999px;
       background: var(--primary-color, #006194);
       color: white;
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-weight: 700;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 1px 3px var(--primary-glow);
+    }
+    @media (min-width: 640px) {
+      .user-avatar { width: 2rem; height: 2rem; font-size: 0.8125rem; }
     }
     .user-name {
       font-size: 0.8125rem;
@@ -328,15 +379,18 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
       display: flex;
       align-items: center;
       gap: 0.375rem;
-      padding: 0.4rem 0.75rem;
+      padding: 0.375rem 0.625rem;
       border-radius: var(--radius-md, 0.5rem);
       border: 1px solid var(--border-color, #dce9ff);
       background: var(--card-bg, #ffffff);
       color: var(--danger-color, #ba1a1a);
       cursor: pointer;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       transition: all 0.15s;
+    }
+    @media (min-width: 640px) {
+      .logout-btn { padding: 0.4rem 0.75rem; font-size: 0.875rem; }
     }
     .logout-btn:hover {
       background: var(--danger-light, #ffdad6);
@@ -349,6 +403,19 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
     .app-body {
       display: flex;
       flex: 1;
+      position: relative;
+    }
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(2px);
+      z-index: 35;
+      animation: fadeIn 0.15s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
     .app-sidebar {
       width: 16.5rem;
@@ -365,8 +432,8 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
         bottom: 0;
         left: -16.5rem;
         z-index: 40;
-        transition: left 0.2s ease-in-out;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
       }
       .app-sidebar.mobile-open {
         left: 0;
@@ -413,9 +480,15 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
     }
     .app-main {
       flex: 1;
-      padding: 1.75rem 2rem;
+      padding: 1rem 0.75rem;
       max-width: 100%;
       overflow-x: hidden;
+    }
+    @media (min-width: 640px) {
+      .app-main { padding: 1.25rem 1.25rem; }
+    }
+    @media (min-width: 1024px) {
+      .app-main { padding: 1.75rem 2rem; }
     }
   `]
 })

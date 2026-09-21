@@ -1,6 +1,6 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PatientDto, StudyOrderDto, StudyOrderStatus } from '../../../core/models/models';
+import { PatientDto, StudyOrderDto, StudyOrderItemDto, StudyOrderResultDto, StudyOrderStatus } from '../../../core/models/models';
 import { StudyOrderService } from '../../../core/services/study-order.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CompanyContextService } from '../../../core/services/company-context.service';
@@ -46,9 +46,9 @@ import { StudyReportModalComponent } from '../../studies/components/study-report
       } @else if (orders().length === 0) {
         <div class="p-10 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900/30">
           <span class="text-4xl block mb-2">🧪</span>
-          <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">No hay órdenes de estudios clínicos registradas</h4>
+          <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">No hay estudios clínicos registrados</h4>
           <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-            Haga clic en "+ Solicitar Estudio para este Paciente" para emitir una orden de laboratorio, rayos X o ecografía.
+            No se han emitido órdenes de laboratorio o estudios para este paciente.
           </p>
           <button type="button" class="btn btn-sm btn-primary mt-4" (click)="openCreateModal()">
             + Solicitar Primer Estudio
@@ -57,95 +57,70 @@ import { StudyReportModalComponent } from '../../studies/components/study-report
       } @else {
         <div class="space-y-3">
           @for (order of orders(); track order.id) {
-            <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs transition-all hover:border-blue-300 dark:hover:border-blue-700">
-              <div class="flex items-start justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="font-mono text-xs font-bold px-2 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800">
-                    {{ order.orderNumber }}
-                  </span>
-                  <span class="text-xs text-slate-500 font-mono">
-                    🗓️ {{ order.orderDate | date:'dd/MM/yyyy HH:mm' }}
-                  </span>
-                  @if (order.specialistName) {
-                    <span class="text-xs text-slate-600 dark:text-slate-300">
-                      • Solicitó: 👨‍⚕️ {{ order.specialistName }}
+            @for (item of order.items; track item.id) {
+              <div class="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-3 transition-all hover:border-blue-300 dark:hover:border-blue-700">
+                <!-- Nombre del Estudio & Botón Ver e Imprimir Informe -->
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                      🧪 {{ item.studyName }}
                     </span>
+                    <span class="text-xs text-slate-400 font-mono">
+                      ({{ order.orderDate | date:'dd/MM/yyyy HH:mm' }})
+                    </span>
+                  </div>
+
+                  <!-- Botón Ver e Imprimir Informe (Solo estudios completados) -->
+                  @if (isCompleted(order, item)) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-primary font-bold flex items-center gap-1.5"
+                      (click)="openReportModal(order)">
+                      <span>📄</span> Ver e Imprimir Informe
+                    </button>
                   }
                 </div>
 
-                <div class="flex items-center gap-2">
-                  <span
-                    class="text-[11px] font-bold px-2.5 py-0.5 rounded-full"
-                    [class.bg-amber-100]="order.status === 'Requested'"
-                    [class.text-amber-800]="order.status === 'Requested'"
-                    [class.bg-blue-100]="order.status === 'InAnalysis'"
-                    [class.text-blue-800]="order.status === 'InAnalysis'"
-                    [class.bg-emerald-100]="order.status === 'Completed' || order.status === 'Delivered'"
-                    [class.text-emerald-800]="order.status === 'Completed' || order.status === 'Delivered'">
-                    {{ getStatusLabel(order.status) }}
-                  </span>
-                  <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
-                    $ {{ order.totalAmount | number:'1.2-2' }}
-                  </span>
+                <!-- Valores Fuera de Rango -->
+                <div class="pt-1">
+                  @if (getOutOfRangeResults(item).length > 0) {
+                    <div class="space-y-1.5">
+                      <span class="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wide flex items-center gap-1">
+                        ⚠️ Valores Fuera de Rango:
+                      </span>
+                      <div class="flex flex-wrap gap-2">
+                        @for (res of getOutOfRangeResults(item); track res.id) {
+                          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-700 text-xs">
+                            <span class="text-slate-700 dark:text-slate-200 font-semibold">{{ res.parameterName }}:</span>
+                            <span class="font-mono font-extrabold text-rose-600 dark:text-rose-400">
+                              {{ res.numericValue != null ? res.numericValue : res.textValue }} {{ res.unit || '' }}
+                            </span>
+                            @if (res.referenceText) {
+                              <span class="text-[10px] text-slate-500 font-normal">({{ res.referenceText }})</span>
+                            } @else if (res.referenceRangeMin != null && res.referenceRangeMax != null) {
+                              <span class="text-[10px] text-slate-500 font-normal">(Ref: {{ res.referenceRangeMin }} - {{ res.referenceRangeMax }})</span>
+                            }
+                            @if (res.alertLevel === 'High') {
+                              <span class="text-[10px] font-bold text-rose-600 bg-rose-100 dark:bg-rose-900/60 px-1 py-0.5 rounded">▲ Alto</span>
+                            } @else if (res.alertLevel === 'Low') {
+                              <span class="text-[10px] font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/60 px-1 py-0.5 rounded">▼ Bajo</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  } @else if (hasResults(item)) {
+                    <span class="text-xs text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1">
+                      <span>✓</span> Todos los valores dentro del rango normal
+                    </span>
+                  } @else {
+                    <span class="text-xs text-slate-400 italic">
+                      Resultados en proceso de laboratorio
+                    </span>
+                  }
                 </div>
               </div>
-
-              <!-- Studies and Results Summary -->
-              <div class="py-2.5 space-y-2">
-                @for (item of order.items; track item.id) {
-                  <div class="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-lg">
-                    <div class="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200 mb-1">
-                      <span>🧪 {{ item.studyName }} ({{ item.studyCode }})</span>
-                      <span class="text-[10px] text-slate-400 font-normal uppercase">{{ item.studyCategoryName }}</span>
-                    </div>
-
-                    <!-- Parameter results chips -->
-                    <div class="flex flex-wrap gap-1.5 mt-1.5">
-                      @for (res of item.results; track res.id) {
-                        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white dark:bg-slate-900 border text-[11px]"
-                          [class.border-rose-300]="res.isOutOfRange"
-                          [class.bg-rose-50]="res.isOutOfRange"
-                          [class.dark:bg-rose-950/30]="res.isOutOfRange"
-                          [class.border-slate-200]="!res.isOutOfRange"
-                          [class.dark:border-slate-700]="!res.isOutOfRange">
-                          <span class="text-slate-500 font-medium">{{ res.parameterName }}:</span>
-                          <span class="font-bold font-mono" [class.text-rose-600]="res.isOutOfRange">
-                            {{ res.numericValue != null ? res.numericValue : (res.textValue || 'Pendiente') }} {{ res.unit || '' }}
-                          </span>
-                          @if (res.alertLevel === 'High') {
-                            <span class="text-[9px] font-extrabold text-rose-600">▲</span>
-                          } @else if (res.alertLevel === 'Low') {
-                            <span class="text-[9px] font-extrabold text-blue-600">▼</span>
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-
-              <!-- Actions Bottom Bar -->
-              <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                @if (authService.isLaboratorist() || authService.isAdmin()) {
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-outline-primary"
-                    title="Capturar o editar resultados"
-                    (click)="openResultsModal(order)">
-                    📝 Capturar Resultados
-                  </button>
-                }
-
-                @if (order.status === 'Completed' || order.status === 'Delivered') {
-                  <button
-                    type="button"
-                    class="btn btn-xs btn-primary font-bold"
-                    (click)="openReportModal(order)">
-                    📄 Ver e Imprimir Informe
-                  </button>
-                }
-              </div>
-            </div>
+            }
           }
         </div>
       }
@@ -257,5 +232,20 @@ export class PatientStudiesTabComponent implements OnInit, OnChanges {
 
   onResultsSaved(_order: StudyOrderDto): void {
     this.loadPatientOrders();
+  }
+
+  getOutOfRangeResults(item: StudyOrderItemDto): StudyOrderResultDto[] {
+    return (item.results || []).filter(r => r.isOutOfRange);
+  }
+
+  hasResults(item: StudyOrderItemDto): boolean {
+    return !!(item.results && item.results.length > 0 && item.results.some(r => r.numericValue != null || r.textValue));
+  }
+
+  isCompleted(order: StudyOrderDto, item?: StudyOrderItemDto): boolean {
+    if (item && (item.status === 'Completed' || item.status === 'Delivered')) {
+      return true;
+    }
+    return order.status === 'Completed' || order.status === 'Delivered';
   }
 }

@@ -289,7 +289,7 @@ import { ToastService } from '../../core/services/toast.service';
 
             <!-- Summary & Confirm Button -->
             @if (selectedSlot()) {
-              <div class="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-center justify-between">
+              <div class="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <span class="text-xs text-emerald-800 dark:text-emerald-300 font-bold block">TURNO SELECCIONADO</span>
                   <span class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
@@ -298,7 +298,7 @@ import { ToastService } from '../../core/services/toast.service';
                 </div>
                 <button 
                   type="button" 
-                  class="btn btn-primary" 
+                  class="btn btn-primary w-full sm:w-auto" 
                   [disabled]="booking()" 
                   (click)="confirmBooking()">
                   @if (booking()) {

@@ -157,21 +157,27 @@ export interface TableColumn<T = any> {
       flex-direction: column;
     }
     .table-toolbar {
-      padding: 1rem 1.25rem;
+      padding: 0.75rem 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 0.75rem;
       border-bottom: 1px solid var(--border-color, #e2e8f0);
       flex-wrap: wrap;
+    }
+    @media (min-width: 640px) {
+      .table-toolbar { padding: 1rem 1.25rem; gap: 1rem; }
     }
     .search-box {
       position: relative;
       display: flex;
       align-items: center;
-      min-width: 260px;
-      max-width: 400px;
+      min-width: 0;
+      width: 100%;
       flex: 1;
+    }
+    @media (min-width: 640px) {
+      .search-box { min-width: 240px; max-width: 400px; }
     }
     .search-icon {
       position: absolute;
@@ -209,10 +215,12 @@ export interface TableColumn<T = any> {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      flex-wrap: wrap;
     }
     .table-wrapper {
       overflow-x: auto;
       width: 100%;
+      -webkit-overflow-scrolling: touch;
     }
     .data-table {
       width: 100%;
@@ -227,6 +235,7 @@ export interface TableColumn<T = any> {
       padding: 0.75rem 1rem;
       border-bottom: 1px solid var(--border-color, #e2e8f0);
       user-select: none;
+      white-space: nowrap;
     }
     .th-content {
       display: flex;
@@ -234,7 +243,7 @@ export interface TableColumn<T = any> {
       gap: 0.375rem;
     }
     .data-table td {
-      padding: 0.875rem 1rem;
+      padding: 0.75rem 1rem;
       border-bottom: 1px solid var(--border-color, #f1f5f9);
       color: var(--text-color, #334155);
     }
@@ -242,15 +251,18 @@ export interface TableColumn<T = any> {
       background-color: var(--table-row-hover, #f8fafc);
     }
     .table-pagination {
-      padding: 0.75rem 1.25rem;
+      padding: 0.75rem 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-top: 1px solid var(--border-color, #e2e8f0);
       background-color: var(--table-th-bg, #f8fafc);
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       flex-wrap: wrap;
       gap: 0.75rem;
+    }
+    @media (min-width: 640px) {
+      .table-pagination { padding: 0.75rem 1.25rem; font-size: 0.875rem; }
     }
     .pagination-info {
       color: var(--text-muted, #64748b);
@@ -258,17 +270,23 @@ export interface TableColumn<T = any> {
     .pagination-controls {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.375rem;
+    }
+    @media (min-width: 640px) {
+      .pagination-controls { gap: 0.5rem; }
     }
     .pagination-btn {
-      padding: 0.375rem 0.75rem;
+      padding: 0.3125rem 0.625rem;
       border: 1px solid var(--border-input, #cbd5e1);
       border-radius: 0.375rem;
       background: var(--card-bg, #ffffff);
       color: var(--text-color, #334155);
       cursor: pointer;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       transition: all 0.15s ease;
+    }
+    @media (min-width: 640px) {
+      .pagination-btn { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
     }
     .pagination-btn:hover:not(:disabled) {
       background: var(--bg-hover, #f1f5f9);
@@ -279,9 +297,12 @@ export interface TableColumn<T = any> {
       cursor: not-allowed;
     }
     .pagination-page-indicator {
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       color: var(--text-muted, #64748b);
-      margin: 0 0.5rem;
+      margin: 0 0.25rem;
+    }
+    @media (min-width: 640px) {
+      .pagination-page-indicator { font-size: 0.875rem; margin: 0 0.5rem; }
     }
   `]
 })

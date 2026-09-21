@@ -56,58 +56,7 @@ interface TreeArea extends AreaDto {
       </div>
 
       <!-- ADMIN DASHBOARD VIEW -->
-      @if (authService.isAdmin()) {
-        <!-- Metric Cards -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-              </svg>
-            </div>
-            <div>
-              <span class="stat-label">Áreas Médicas</span>
-              <span class="stat-value">{{ stats().areasCount }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-              </svg>
-            </div>
-            <div>
-              <span class="stat-label">Especialidades</span>
-              <span class="stat-value">{{ stats().specialtiesCount }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-            </div>
-            <div>
-              <span class="stat-label">Especialistas</span>
-              <span class="stat-value">{{ stats().specialistsCount }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-              </svg>
-            </div>
-            <div>
-              <span class="stat-label">Pacientes Registrados</span>
-              <span class="stat-value">{{ stats().patientsCount }}</span>
-            </div>
-          </div>
-        </div>
-
+      @if (authService.isAdmin()) {      
         <!-- Organization Tree Section -->
         <div class="card p-5 mt-6">
           <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-200 dark:border-slate-700">
@@ -201,52 +150,6 @@ interface TreeArea extends AreaDto {
           }
         </div>
       } @else {
-        <!-- CLINICAL / RECEPTIONIST DASHBOARD VIEW -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-              </svg>
-            </div>
-            <div>
-              <span class="stat-label">Total Pacientes</span>
-              <span class="stat-value">{{ patientMetrics().total }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon bg-sky-50 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400">
-              <span class="text-xl font-bold">♂</span>
-            </div>
-            <div>
-              <span class="stat-label">Hombres</span>
-              <span class="stat-value">{{ patientMetrics().male }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon bg-pink-50 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400">
-              <span class="text-xl font-bold">♀</span>
-            </div>
-            <div>
-              <span class="stat-label">Mujeres</span>
-              <span class="stat-value">{{ patientMetrics().female }}</span>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-            </div>
-            <div>
-              <span class="stat-label">Citas del Día</span>
-              <span class="stat-value">{{ todayAppointmentsCount() }}</span>
-            </div>
-          </div>
-        </div>
 
         <!-- Recent Patients Section -->
         <div class="card p-5 mt-6">

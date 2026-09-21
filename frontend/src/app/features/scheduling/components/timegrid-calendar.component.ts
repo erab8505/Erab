@@ -95,155 +95,159 @@ interface DayColumn {
 
       <!-- TimeGrid Main Container -->
       <div class="timegrid-container">
-        <!-- TimeGrid Header (Columns Names) -->
-        <div class="timegrid-header-row">
-          <!-- Time Axis Corner -->
-          <div class="time-axis-corner">
-            <span class="text-[10px] uppercase font-bold text-slate-400">Hora</span>
-          </div>
+        <div class="timegrid-scroll-wrapper">
+          <div class="timegrid-inner" [style.min-width]="innerMinWidth()">
+            <!-- TimeGrid Header (Columns Names) -->
+            <div class="timegrid-header-row">
+              <!-- Time Axis Corner -->
+              <div class="time-axis-corner">
+                <span class="text-[10px] uppercase font-bold text-slate-400">Hora</span>
+              </div>
 
-          <!-- Columns Headers -->
-          <div class="grid-columns-header" [style.grid-template-columns]="gridColumnsTemplate()">
-            @if (viewMode() === 'day') {
-              @for (col of specialistColumns(); track col.specialist.id) {
-                <div class="col-header">
-                  <span class="font-bold text-slate-800 dark:text-slate-100 text-xs truncate">
-                    👨‍⚕️ {{ col.specialist.fullName }}
-                  </span>
-                  <span class="text-[11px] text-slate-400">
-                    {{ col.appointments.length }} {{ col.appointments.length === 1 ? 'cita' : 'citas' }}
-                  </span>
-                </div>
-              }
-            } @else {
-              @for (day of weekDays(); track day.date.toISOString()) {
-                <div class="col-header" [class.today-header]="day.isToday">
-                  <span class="font-bold text-xs uppercase" [class.text-blue-600]="day.isToday">
-                    {{ day.dayLabel }}
-                  </span>
-                  <span class="text-[11px]" [class.font-bold]="day.isToday">
-                    {{ day.dateLabel }}
-                  </span>
-                </div>
-              }
-            }
-          </div>
-        </div>
-
-        <!-- TimeGrid Body (Hour Rows & Columns) -->
-        <div class="timegrid-body-scroll">
-          <div class="timegrid-body">
-            <!-- Left Time Axis Labels (07:00 to 20:00) -->
-            <div class="time-axis-column">
-              @for (hour of timeSlots(); track hour.timeString) {
-                <div class="time-slot-label">
-                  <span>{{ hour.timeString }}</span>
-                </div>
-              }
+              <!-- Columns Headers -->
+              <div class="grid-columns-header" [style.grid-template-columns]="gridColumnsTemplate()">
+                @if (viewMode() === 'day') {
+                  @for (col of specialistColumns(); track col.specialist.id) {
+                    <div class="col-header">
+                      <span class="font-bold text-slate-800 dark:text-slate-100 text-xs truncate">
+                        👨‍⚕️ {{ col.specialist.fullName }}
+                      </span>
+                      <span class="text-[11px] text-slate-400">
+                        {{ col.appointments.length }} {{ col.appointments.length === 1 ? 'cita' : 'citas' }}
+                      </span>
+                    </div>
+                  }
+                } @else {
+                  @for (day of weekDays(); track day.date.toISOString()) {
+                    <div class="col-header" [class.today-header]="day.isToday">
+                      <span class="font-bold text-xs uppercase" [class.text-blue-600]="day.isToday">
+                        {{ day.dayLabel }}
+                      </span>
+                      <span class="text-[11px]" [class.font-bold]="day.isToday">
+                        {{ day.dateLabel }}
+                      </span>
+                    </div>
+                  }
+                }
+              </div>
             </div>
 
-            <!-- Columns Content Grid -->
-            <div class="grid-columns-body" [style.grid-template-columns]="gridColumnsTemplate()">
-              @if (viewMode() === 'day') {
-                @for (col of specialistColumns(); track col.specialist.id) {
-                  <div class="timegrid-column">
-                    <!-- Background Grid Lines -->
-                    @for (hour of timeSlots(); track hour.timeString) {
-                      <div
-                        class="hour-cell"
-                        (click)="onEmptySlotClicked(currentDate(), hour.hour, 0, col.specialist.id)"
-                        title="Clic para agendar a las {{ hour.timeString }} con {{ col.specialist.fullName }}">
+            <!-- TimeGrid Body (Hour Rows & Columns) -->
+            <div class="timegrid-body-scroll">
+              <div class="timegrid-body">
+                <!-- Left Time Axis Labels (07:00 to 20:00) -->
+                <div class="time-axis-column">
+                  @for (hour of timeSlots(); track hour.timeString) {
+                    <div class="time-slot-label">
+                      <span>{{ hour.timeString }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Columns Content Grid -->
+                <div class="grid-columns-body" [style.grid-template-columns]="gridColumnsTemplate()">
+                  @if (viewMode() === 'day') {
+                    @for (col of specialistColumns(); track col.specialist.id) {
+                      <div class="timegrid-column">
+                        <!-- Background Grid Lines -->
+                        @for (hour of timeSlots(); track hour.timeString) {
+                          <div
+                            class="hour-cell"
+                            (click)="onEmptySlotClicked(currentDate(), hour.hour, 0, col.specialist.id)"
+                            title="Clic para agendar a las {{ hour.timeString }} con {{ col.specialist.fullName }}">
+                          </div>
+                        }
+
+                        <!-- Current Time Indicator -->
+                        @if (isTodayCurrentDate() && nowPercent() >= 0 && nowPercent() <= 100) {
+                          <div class="now-indicator" [style.top.%]="nowPercent()">
+                            <div class="now-dot"></div>
+                          </div>
+                        }
+
+                        <!-- Appointments Blocks -->
+                        @for (block of col.appointments; track block.appointment.id) {
+                          <div
+                            class="appointment-block"
+                            [class]="'status-' + block.appointment.status.toLowerCase()"
+                            [style.top.%]="block.topPercent"
+                            [style.height.%]="block.heightPercent"
+                            (click)="selectAppointment(block.appointment, $event)">
+                            
+                            <div class="appt-card-inner">
+                              <div class="flex items-center justify-between gap-1">
+                                <span class="appt-time font-mono">{{ block.startTimeLabel }} - {{ block.endTimeLabel }}</span>
+                                <!-- Payment indicator badge -->
+                                @if (block.appointment.paymentStatus === 'Paid') {
+                                  <span class="badge-mini-paid" [title]="'Pagado: $' + block.appointment.paymentAmount">💵 Pagado</span>
+                                } @else if (block.appointment.paymentStatus === 'Pending' && block.appointment.status === 'Completed') {
+                                  <span class="badge-mini-pending" title="Cobro Pendiente">⏳ Pend.</span>
+                                }
+                              </div>
+
+                              <div class="appt-patient font-bold truncate">
+                                {{ block.appointment.patientName }}
+                              </div>
+
+                              <div class="appt-procedure text-[11px] truncate opacity-90">
+                                🩺 {{ block.appointment.interventionTypeName || block.appointment.interventionName || 'Consulta' }}
+                              </div>
+                            </div>
+                          </div>
+                        }
                       </div>
                     }
+                  } @else {
+                    @for (day of weekDays(); track day.date.toISOString()) {
+                      <div class="timegrid-column" [class.today-column]="day.isToday">
+                        <!-- Background Grid Lines -->
+                        @for (hour of timeSlots(); track hour.timeString) {
+                          <div
+                            class="hour-cell"
+                            (click)="onEmptySlotClicked(day.date, hour.hour, 0, selectedSpecialistId() || undefined)"
+                            title="Clic para agendar el {{ day.dayLabel }} a las {{ hour.timeString }}">
+                          </div>
+                        }
 
-                    <!-- Current Time Indicator -->
-                    @if (isTodayCurrentDate() && nowPercent() >= 0 && nowPercent() <= 100) {
-                      <div class="now-indicator" [style.top.%]="nowPercent()">
-                        <div class="now-dot"></div>
+                        <!-- Current Time Indicator -->
+                        @if (day.isToday && nowPercent() >= 0 && nowPercent() <= 100) {
+                          <div class="now-indicator" [style.top.%]="nowPercent()">
+                            <div class="now-dot"></div>
+                          </div>
+                        }
+
+                        <!-- Appointments Blocks -->
+                        @for (block of day.appointments; track block.appointment.id) {
+                          <div
+                            class="appointment-block"
+                            [class]="'status-' + block.appointment.status.toLowerCase()"
+                            [style.top.%]="block.topPercent"
+                            [style.height.%]="block.heightPercent"
+                            (click)="selectAppointment(block.appointment, $event)">
+                            
+                            <div class="appt-card-inner">
+                              <div class="flex items-center justify-between gap-1">
+                                <span class="appt-time font-mono">{{ block.startTimeLabel }}</span>
+                                @if (block.appointment.paymentStatus === 'Paid') {
+                                  <span class="badge-mini-paid">💵</span>
+                                }
+                              </div>
+
+                              <div class="appt-patient font-bold truncate">
+                                {{ block.appointment.patientName }}
+                              </div>
+
+                              <div class="appt-procedure text-[10px] truncate opacity-90">
+                                👨‍⚕️ {{ block.appointment.specialistName }}
+                              </div>
+                            </div>
+                          </div>
+                        }
                       </div>
                     }
-
-                    <!-- Appointments Blocks -->
-                    @for (block of col.appointments; track block.appointment.id) {
-                      <div
-                        class="appointment-block"
-                        [class]="'status-' + block.appointment.status.toLowerCase()"
-                        [style.top.%]="block.topPercent"
-                        [style.height.%]="block.heightPercent"
-                        (click)="selectAppointment(block.appointment, $event)">
-                        
-                        <div class="appt-card-inner">
-                          <div class="flex items-center justify-between gap-1">
-                            <span class="appt-time font-mono">{{ block.startTimeLabel }} - {{ block.endTimeLabel }}</span>
-                            <!-- Payment indicator badge -->
-                            @if (block.appointment.paymentStatus === 'Paid') {
-                              <span class="badge-mini-paid" [title]="'Pagado: $' + block.appointment.paymentAmount">💵 Pagado</span>
-                            } @else if (block.appointment.paymentStatus === 'Pending' && block.appointment.status === 'Completed') {
-                              <span class="badge-mini-pending" title="Cobro Pendiente">⏳ Pend.</span>
-                            }
-                          </div>
-
-                          <div class="appt-patient font-bold truncate">
-                            {{ block.appointment.patientName }}
-                          </div>
-
-                          <div class="appt-procedure text-[11px] truncate opacity-90">
-                            🩺 {{ block.appointment.interventionTypeName || block.appointment.interventionName || 'Consulta' }}
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                }
-              } @else {
-                @for (day of weekDays(); track day.date.toISOString()) {
-                  <div class="timegrid-column" [class.today-column]="day.isToday">
-                    <!-- Background Grid Lines -->
-                    @for (hour of timeSlots(); track hour.timeString) {
-                      <div
-                        class="hour-cell"
-                        (click)="onEmptySlotClicked(day.date, hour.hour, 0, selectedSpecialistId() || undefined)"
-                        title="Clic para agendar el {{ day.dayLabel }} a las {{ hour.timeString }}">
-                      </div>
-                    }
-
-                    <!-- Current Time Indicator -->
-                    @if (day.isToday && nowPercent() >= 0 && nowPercent() <= 100) {
-                      <div class="now-indicator" [style.top.%]="nowPercent()">
-                        <div class="now-dot"></div>
-                      </div>
-                    }
-
-                    <!-- Appointments Blocks -->
-                    @for (block of day.appointments; track block.appointment.id) {
-                      <div
-                        class="appointment-block"
-                        [class]="'status-' + block.appointment.status.toLowerCase()"
-                        [style.top.%]="block.topPercent"
-                        [style.height.%]="block.heightPercent"
-                        (click)="selectAppointment(block.appointment, $event)">
-                        
-                        <div class="appt-card-inner">
-                          <div class="flex items-center justify-between gap-1">
-                            <span class="appt-time font-mono">{{ block.startTimeLabel }}</span>
-                            @if (block.appointment.paymentStatus === 'Paid') {
-                              <span class="badge-mini-paid">💵</span>
-                            }
-                          </div>
-
-                          <div class="appt-patient font-bold truncate">
-                            {{ block.appointment.patientName }}
-                          </div>
-
-                          <div class="appt-procedure text-[10px] truncate opacity-90">
-                            👨‍⚕️ {{ block.appointment.specialistName }}
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                }
-              }
+                  }
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -307,6 +311,17 @@ interface DayColumn {
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      width: 100%;
+    }
+    .timegrid-scroll-wrapper {
+      overflow-x: auto;
+      width: 100%;
+      -webkit-overflow-scrolling: touch;
+    }
+    .timegrid-inner {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
     }
     .timegrid-header-row {
       display: flex;
@@ -324,6 +339,13 @@ interface DayColumn {
       align-items: center;
       justify-content: center;
       padding: 0.5rem;
+      position: sticky;
+      left: 0;
+      z-index: 20;
+      background: var(--card-footer-bg, #f8fafc);
+    }
+    :host-context(.dark) .time-axis-corner {
+      background: var(--card-footer-bg, #0f1d2e);
     }
     .grid-columns-header {
       display: grid;
@@ -363,6 +385,13 @@ interface DayColumn {
       display: flex;
       flex-direction: column;
       user-select: none;
+      position: sticky;
+      left: 0;
+      z-index: 11;
+      background: var(--card-bg, #ffffff);
+    }
+    :host-context(.dark) .time-axis-column {
+      background: var(--card-bg, #13253a);
     }
     .time-slot-label {
       height: 60px;
@@ -722,6 +751,15 @@ export class TimegridCalendarComponent implements OnInit {
     end.setHours(23, 59, 59, 999);
 
     return { start, end };
+  }
+
+  innerMinWidth(): string {
+    if (this.viewMode() === 'day') {
+      const cols = Math.max(1, this.specialistColumns().length);
+      return `${60 + cols * 180}px`;
+    } else {
+      return '970px';
+    }
   }
 
   selectAppointment(appt: SchedulingDto, event: Event): void {

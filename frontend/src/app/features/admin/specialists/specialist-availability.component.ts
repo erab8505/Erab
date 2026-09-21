@@ -40,7 +40,7 @@ interface DayConfig {
       <!-- Add Interval Card -->
       <div class="card p-5">
         <h2 class="text-base font-semibold mb-3">Agregar Turno / Intervalo de Atención</h2>
-        <form [formGroup]="form" (ngSubmit)="addAvailability()" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+        <form [formGroup]="form" (ngSubmit)="addAvailability()" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
           <div class="form-group mb-0">
             <label class="form-label">Día de la Semana *</label>
             <select formControlName="dayOfWeek" class="form-select">
@@ -70,7 +70,7 @@ interface DayConfig {
       </div>
 
       <!-- 7-Day Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-7 gap-3 mt-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 mt-4">
         @for (d of days; track d.index) {
           <div class="day-column card p-3">
             <div class="day-header pb-2 mb-2 border-b border-slate-200 dark:border-slate-700">
@@ -107,8 +107,11 @@ interface DayConfig {
   `,
   styles: [`
     .page-container { display: flex; flex-direction: column; gap: 1rem; }
-    .page-header { display: flex; align-items: center; justify-content: space-between; }
-    .day-column { min-height: 280px; display: flex; flex-direction: column; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .day-column { min-height: 160px; display: flex; flex-direction: column; }
+    @media (min-width: 1280px) {
+      .day-column { min-height: 280px; }
+    }
     .day-header { display: flex; align-items: center; justify-content: space-between; }
     .interval-chip {
       background: #eff6ff;
