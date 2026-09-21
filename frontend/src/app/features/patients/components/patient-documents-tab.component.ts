@@ -126,19 +126,31 @@ import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialo
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
           @for (doc of filteredDocuments(); track doc.id) {
             <div class="doc-card">
-              <!-- Card Thumbnail / Icon Header -->
-              <div class="doc-preview" (click)="previewDocument(doc)">
+              <!-- Card Thumbnail / Icon Header (On-demand preview, no automatic binary download) -->
+              <div class="doc-preview" (click)="previewDocument(doc)" title="Clic para previsualizar">
                 @if (isImage(doc.contentType)) {
-                  <img [src]="getAuthenticatedDownloadUrl(doc.id)" [alt]="doc.title" class="preview-img" />
+                  <div class="image-placeholder flex flex-col items-center justify-center">
+                    <span class="text-3xl">🖼️</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mt-1">
+                      {{ getFileExtension(doc.originalFileName || doc.fileName) || 'IMAGEN' }}
+                    </span>
+                  </div>
                 } @else if (doc.contentType === 'application/pdf') {
-                  <div class="pdf-placeholder">
+                  <div class="pdf-placeholder flex flex-col items-center justify-center">
                     <span class="text-3xl">📄</span>
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400 mt-1">PDF</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mt-1">PDF</span>
+                  </div>
+                } @else if (doc.contentType === 'application/dicom' || (doc.fileName && doc.fileName.toLowerCase().endsWith('.dcm'))) {
+                  <div class="dicom-placeholder flex flex-col items-center justify-center">
+                    <span class="text-3xl">🩻</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 mt-1">DICOM</span>
                   </div>
                 } @else {
-                  <div class="generic-placeholder">
+                  <div class="generic-placeholder flex flex-col items-center justify-center">
                     <span class="text-3xl">📁</span>
-                    <span class="text-[10px] font-bold uppercase text-slate-500 mt-1">{{ doc.contentType }}</span>
+                    <span class="text-[10px] font-bold uppercase text-slate-500 mt-1">
+                      {{ getFileExtension(doc.originalFileName || doc.fileName) || 'ARCHIVO' }}
+                    </span>
                   </div>
                 }
 
@@ -720,5 +732,11 @@ export class PatientDocumentsTabComponent implements OnInit {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  getFileExtension(fileName?: string): string {
+    if (!fileName) return '';
+    const lastDot = fileName.lastIndexOf('.');
+    return lastDot >= 0 ? fileName.substring(lastDot + 1).toUpperCase() : '';
   }
 }

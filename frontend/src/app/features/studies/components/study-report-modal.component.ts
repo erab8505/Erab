@@ -348,16 +348,75 @@ export class StudyReportModalComponent {
 
   shareWhatsApp(): void {
     if (!this.order) return;
+
     const phone = (this.order.patientPhone || '').replace(/\D/g, '');
     const patientName = this.order.patientName;
+    const patientDoc = this.order.patientDocumentId || 'N/A';
     const orderNum = this.order.orderNumber;
-    const text = encodeURIComponent(`Hola ${patientName}, te compartimos la confirmación de tus resultados de laboratorio (${orderNum}) en ${this.companyName || 'MedApp Centro Médico'}. Ya se encuentran validados y listos en tu expediente.`);
-    
-    if (phone) {
-      window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
-    } else {
-      window.open(`https://wa.me/?text=${text}`, '_blank');
+    const clinicName = this.companyName || 'MedApp Centro Médico & Laboratorio';
+    const dateStr = this.order.completedDate
+      ? new Date(this.order.completedDate).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : new Date(this.order.orderDate).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    let message = `🔬 *INFORME DE RESULTADOS DE LABORATORIO*\n`;
+    message += `🏥 *${clinicName.toUpperCase()}*\n`;
+    message += `----------------------------------------\n`;
+    message += `👤 *Paciente:* ${patientName}\n`;
+    message += `🪪 *Documento:* ${patientDoc}\n`;
+    message += `📋 *No. Orden:* ${orderNum}\n`;
+    message += `🗓️ *Fecha:* ${dateStr}\n`;
+    if (this.order.specialistName) {
+      message += `👨‍⚕️ *Médico:* ${this.order.specialistName}\n`;
     }
+    if (this.order.clinicalDiagnosis) {
+      message += `🩺 *Diagnóstico:* ${this.order.clinicalDiagnosis}\n`;
+    }
+    message += `----------------------------------------\n\n`;
+
+    for (const item of (this.order.items || [])) {
+      message += `🧪 *${item.studyName.toUpperCase()}* (${item.studyCode})\n`;
+
+      for (const res of (item.results || [])) {
+        const val = res.numericValue != null ? res.numericValue : (res.textValue || '—');
+        const unit = res.unit ? ` ${res.unit}` : '';
+        let alertBadge = '';
+        if (res.alertLevel === 'High') {
+          alertBadge = ' ⚠️ *[▲ ALTO]*';
+        } else if (res.alertLevel === 'Low') {
+          alertBadge = ' ⚠️ *[▼ BAJO]*';
+        } else if (res.isOutOfRange) {
+          alertBadge = ' ⚠️ *[FUERA DE RANGO]*';
+        }
+
+        const ref = res.referenceText
+          ? res.referenceText
+          : (res.referenceRangeMin != null || res.referenceRangeMax != null
+              ? `${res.referenceRangeMin ?? 0} - ${res.referenceRangeMax ?? 'N/A'}${unit}`
+              : 'Normal');
+
+        message += `• *${res.parameterName}:* ${val}${unit}${alertBadge}\n`;
+        message += `  _Ref: ${ref}_\n`;
+        if (res.interpretation) {
+          message += `  _Nota: ${res.interpretation}_\n`;
+        }
+      }
+      message += `\n`;
+    }
+
+    if (this.order.notes) {
+      message += `----------------------------------------\n`;
+      message += `📝 *Observaciones Generales:*\n${this.order.notes}\n`;
+    }
+
+    message += `----------------------------------------\n`;
+    message += `✅ _Informe oficial emitido y validado por el Laboratorio Clínico._\n`;
+    if (this.companyPhone) {
+      message += `📞 _Consultas: ${this.companyPhone}_\n`;
+    }
+
+    const encodedText = encodeURIComponent(message);
+    const url = phone ? `https://wa.me/${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
+    window.open(url, '_blank');
   }
 
   close(): void {
