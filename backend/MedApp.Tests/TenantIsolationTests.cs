@@ -140,4 +140,61 @@ public class TenantIsolationTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task CompanyAdmin_QueryUsers_ReturnsOnlyUsersAssignedToTheirCompany()
+    {
+        // Arrange: company_admin_test belongs only to Company 1
+        var token = await AuthenticateAsync("company_admin_test", "CompAdmin123!");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Remove("X-Company-Id");
+        _client.DefaultRequestHeaders.Add("X-Company-Id", _factory.Company1Id.ToString());
+
+        var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+
+        // Act
+        var response = await _client.GetAsync("/api/users");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserDto>>>(jsonOptions);
+        result.Should().NotBeNull();
+        result!.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+
+        // Should contain company_admin_test and receptionist_test (Company 1)
+        result.Data!.Should().Contain(u => u.Username == "company_admin_test");
+        result.Data.Should().Contain(u => u.Username == "receptionist_test");
+
+        // Should NOT contain company2_user (Company 2 only)
+        result.Data.Should().NotContain(u => u.Username == "company2_user");
+    }
+
+    [Fact]
+    public async Task SuperAdmin_QueryUsers_ReturnsAllUsersAcrossPlatform()
+    {
+        // Arrange: admin_test is SuperAdmin
+        var token = await AuthenticateAsync("admin_test", "AdminTest123!");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Remove("X-Company-Id");
+
+        var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+
+        // Act
+        var response = await _client.GetAsync("/api/users");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserDto>>>(jsonOptions);
+        result.Should().NotBeNull();
+        result!.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+
+        // Should contain all users across both companies
+        result.Data!.Should().Contain(u => u.Username == "company_admin_test");
+        result.Data.Should().Contain(u => u.Username == "company2_user");
+        result.Data.Should().Contain(u => u.Username == "admin_test");
+    }
 }

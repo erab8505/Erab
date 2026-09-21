@@ -256,7 +256,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         };
         companyAdmin.UserCompanies.Add(new UserCompany { UserId = CompanyAdminUserId, CompanyId = Company1Id });
 
-        context.Users.AddRange(admin, companyAdmin, receptionist, specialistUser1, specialistUser2);
+        var company2User = new User
+        {
+            Id = Guid.Parse("11111111-0000-0000-0000-000000000006"),
+            Username = "company2_user",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Comp2User123!"),
+            Role = UserRole.Receptionist
+        };
+        company2User.UserCompanies.Add(new UserCompany { UserId = company2User.Id, CompanyId = Company2Id });
+
+        context.Users.AddRange(admin, companyAdmin, receptionist, specialistUser1, specialistUser2, company2User);
         context.SaveChanges();
     }
 }

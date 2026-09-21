@@ -114,7 +114,9 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
             <div class="form-group">
               <label class="form-label">Rol del Sistema *</label>
               <select formControlName="role" class="form-select" (change)="onRoleChange()">
-                <option value="SuperAdmin">👑 Super Administrador (SuperAdmin - Acceso Global)</option>
+                @if (authService.isSuperAdmin()) {
+                  <option value="SuperAdmin">👑 Super Administrador (SuperAdmin - Acceso Global)</option>
+                }
                 <option value="Admin">🛡️ Administrador (Admin - Por Empresa/s)</option>
                 <option value="Receptionist">Recepcionista</option>
                 <option value="Specialist">Especialista Médico / Odontológico</option>
