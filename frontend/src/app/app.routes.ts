@@ -74,16 +74,19 @@ export const routes: Routes = [
       },
       {
         path: 'patients/:id',
-        loadComponent: () => import('./features/patients/patient-detail.component').then(m => m.PatientDetailComponent)
+        loadComponent: () => import('./features/patients/patient-detail.component').then(m => m.PatientDetailComponent),
+        canActivate: [roleGuard(['Admin', 'Specialist', 'Receptionist'])]
       },
       // Scheduling Routes
       {
         path: 'scheduling',
-        loadComponent: () => import('./features/scheduling/scheduling-list.component').then(m => m.SchedulingListComponent)
+        loadComponent: () => import('./features/scheduling/scheduling-list.component').then(m => m.SchedulingListComponent),
+        canActivate: [roleGuard(['Admin', 'Specialist', 'Receptionist'])]
       },
       {
         path: 'scheduling/new',
-        loadComponent: () => import('./features/scheduling/booking-wizard.component').then(m => m.BookingWizardComponent)
+        loadComponent: () => import('./features/scheduling/booking-wizard.component').then(m => m.BookingWizardComponent),
+        canActivate: [roleGuard(['Admin', 'Specialist', 'Receptionist'])]
       },
       // Clinical Studies & Laboratory Routes
       {
@@ -92,7 +95,8 @@ export const routes: Routes = [
       },
       {
         path: 'studies/catalog',
-        loadComponent: () => import('./features/studies/clinical-study-list.component').then(m => m.ClinicalStudyListComponent)
+        loadComponent: () => import('./features/studies/clinical-study-list.component').then(m => m.ClinicalStudyListComponent),
+        canActivate: [roleGuard(['Admin'])]
       }
     ]
   },

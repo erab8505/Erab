@@ -1,4 +1,4 @@
-﻿namespace MedApp.Application.Common.Interfaces;
+namespace MedApp.Application.Common.Interfaces;
 
 public interface ICurrentUserService
 {
@@ -8,4 +8,5 @@ public interface ICurrentUserService
     bool IsAdmin { get; }
     bool IsSpecialist { get; }
     bool IsReceptionist { get; }
+    bool IsLaboratorist { get; }
 }

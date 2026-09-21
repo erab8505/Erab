@@ -118,12 +118,14 @@ import { ToastContainerComponent } from '../shared/components/toast/toast-contai
               <span>Pacientes</span>
             </a>
 
-            <a routerLink="/scheduling" routerLinkActive="active" (click)="closeMobileMenu()" class="nav-item">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-              </svg>
-              <span>Agenda y Citas</span>
-            </a>
+            @if (!authService.isLaboratorist()) {
+              <a routerLink="/scheduling" routerLinkActive="active" (click)="closeMobileMenu()" class="nav-item">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span>Agenda y Citas</span>
+              </a>
+            }
 
             <a routerLink="/studies" routerLinkActive="active" (click)="closeMobileMenu()" class="nav-item">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -434,6 +436,7 @@ export class ShellComponent {
     const role = this.authService.userRole();
     switch (role) {
       case 'Admin': return 'Administrador';
+      case 'Laboratorist': return 'Laboratorio';
       case 'Specialist': return 'Especialista';
       case 'Receptionist': return 'Recepcionista';
       default: return 'Usuario';
@@ -444,6 +447,7 @@ export class ShellComponent {
     const role = this.authService.userRole();
     switch (role) {
       case 'Admin': return 'primary';
+      case 'Laboratorist': return 'warning';
       case 'Specialist': return 'info';
       case 'Receptionist': return 'success';
       default: return 'warning';

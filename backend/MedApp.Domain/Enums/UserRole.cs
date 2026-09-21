@@ -4,5 +4,6 @@ public enum UserRole
 {
     Admin,
     Receptionist,
-    Specialist
+    Specialist,
+    Laboratorist
 }

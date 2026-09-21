@@ -283,9 +283,9 @@ public class StudyOrderService : IStudyOrderService
 
     public async Task<ApiResponse<StudyOrderDto>> SaveResultsAsync(Guid id, SaveStudyResultsDto dto, CancellationToken cancellationToken = default)
     {
-        if (_currentUserService.IsReceptionist)
+        if (!_currentUserService.IsLaboratorist && !_currentUserService.IsAdmin)
         {
-            return ApiResponse<StudyOrderDto>.Fail("Las recepcionistas no tienen permisos para capturar o validar resultados de estudios. Esta acción solo puede ser realizada por un especialista clínico.");
+            return ApiResponse<StudyOrderDto>.Fail("Solo el personal con rol de Laboratorista tiene permisos para registrar y validar resultados de análisis clínicos.");
         }
 
         Guid? validatedSpecialistId = _currentUserService.SpecialistId;

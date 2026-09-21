@@ -649,6 +649,34 @@ public static class DbInitializer
                 }
                 logger.LogInformation("Dr. Felipe Echavarria user created and linked.");
             }
+
+            // Ensure laboratorist user exists
+            var existingLabUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "laboratorio_central");
+            if (existingLabUser == null)
+            {
+                var labUser = new User
+                {
+                    Id = Guid.Parse("d0000005-0000-0000-0000-000000000099"),
+                    Username = "laboratorio_central",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("lab123"),
+                    Role = UserRole.Laboratorist,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+                await context.Users.AddAsync(labUser);
+                await context.SaveChangesAsync();
+
+                var linked = await context.UserCompanies.IgnoreQueryFilters().AnyAsync(uc => uc.UserId == labUser.Id && uc.CompanyId == dentalCompanyId);
+                if (!linked)
+                {
+                    await context.UserCompanies.AddAsync(new UserCompany
+                    {
+                        UserId = labUser.Id,
+                        CompanyId = dentalCompanyId
+                    });
+                    await context.SaveChangesAsync();
+                }
+                logger.LogInformation("Laboratorist user (laboratorio_central) created and linked.");
+            }
         }
 
         // 6. Pacientes Odontológicos

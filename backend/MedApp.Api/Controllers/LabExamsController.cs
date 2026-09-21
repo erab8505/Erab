@@ -37,6 +37,7 @@ public class LabExamsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<LabExamDto>>> Create([FromBody] CreateLabExamDto dto, CancellationToken cancellationToken)
     {
         var result = await _examService.CreateAsync(dto, cancellationToken);
@@ -45,6 +46,7 @@ public class LabExamsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<LabExamDto>>> Update(Guid id, [FromBody] UpdateLabExamDto dto, CancellationToken cancellationToken)
     {
         var result = await _examService.UpdateAsync(id, dto, cancellationToken);
@@ -53,6 +55,7 @@ public class LabExamsController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await _examService.DeleteAsync(id, cancellationToken);

@@ -126,7 +126,7 @@ import { StudyReportModalComponent } from '../../studies/components/study-report
 
               <!-- Actions Bottom Bar -->
               <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                @if (!authService.isReceptionist()) {
+                @if (authService.isLaboratorist() || authService.isAdmin()) {
                   <button
                     type="button"
                     class="btn btn-xs btn-outline-primary"
@@ -238,8 +238,8 @@ export class PatientStudiesTabComponent implements OnInit, OnChanges {
   }
 
   openResultsModal(order: StudyOrderDto): void {
-    if (this.authService.isReceptionist()) {
-      this.toast.error('Las recepcionistas no tienen permisos para capturar resultados. Solo un especialista puede realizar esta acción.');
+    if (!this.authService.isLaboratorist() && !this.authService.isAdmin()) {
+      this.toast.error('Solo el personal de Laboratorio o Administradores pueden capturar y validar resultados de estudios.');
       return;
     }
     this.selectedOrder.set(order);

@@ -27,6 +27,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Admin,Specialist,Receptionist")]
     [ProducesResponseType(typeof(ApiResponse<PatientDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetPatientById(Guid id)
@@ -47,6 +48,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "Admin,Specialist,Receptionist")]
     [ProducesResponseType(typeof(ApiResponse<PatientDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]

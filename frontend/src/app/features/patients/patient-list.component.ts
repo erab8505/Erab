@@ -6,6 +6,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subject, Subscription, catchError, debounceTime, distinctUntilChanged, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, Gender, PatientDto, StudyOrderDto } from '../../core/models/models';
+import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../shared/components/data-table/data-table.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
@@ -30,12 +31,14 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
             </svg>
             + Orden de Estudio
           </button>
-          <button type="button" class="btn btn-primary" (click)="openCreateModal()">
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Nuevo Paciente
-          </button>
+          @if (!authService.isLaboratorist()) {
+            <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Nuevo Paciente
+            </button>
+          }
         </div>
       </div>
 
@@ -58,12 +61,21 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
               </div>
             }
             @case ('fullName') {
-              <a [routerLink]="['/patients', item.id]" class="group inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline">
-                <span class="w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-xs">
-                  {{ (item.firstName[0] || item.fullName[0] || 'P').toUpperCase() }}
-                </span>
-                <span class="font-semibold text-sm">{{ item.fullName || (item.firstName + ' ' + item.lastName) }}</span>
-              </a>
+              @if (!authService.isLaboratorist()) {
+                <a [routerLink]="['/patients', item.id]" class="group inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline">
+                  <span class="w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-xs">
+                    {{ (item.firstName[0] || item.fullName[0] || 'P').toUpperCase() }}
+                  </span>
+                  <span class="font-semibold text-sm">{{ item.fullName || (item.firstName + ' ' + item.lastName) }}</span>
+                </a>
+              } @else {
+                <div class="inline-flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                  <span class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-xs">
+                    {{ (item.firstName[0] || item.fullName[0] || 'P').toUpperCase() }}
+                  </span>
+                  <span class="font-semibold text-sm">{{ item.fullName || (item.firstName + ' ' + item.lastName) }}</span>
+                </div>
+              }
             }
             @case ('age') {
               <span class="text-slate-700 dark:text-slate-300 font-medium">{{ item.age }} años ({{ item.gender }})</span>
@@ -91,15 +103,17 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
             <button type="button" class="btn btn-secondary btn-sm text-blue-600 dark:text-blue-400 font-semibold" title="Emitir orden de laboratorio / estudio clínico" (click)="openStudyOrderModal(item)">
               🧪 Estudio
             </button>
-            <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: item.id }" class="btn btn-secondary btn-sm" title="Agendar nueva cita">
-              🗓️ Agendar
-            </a>
-            <a [routerLink]="['/patients', item.id]" class="btn btn-secondary btn-sm" title="Ver historial clínico completo">
-              Expediente
-            </a>
-            <button type="button" class="btn btn-secondary btn-sm" (click)="openEditModal(item)">
-              Editar
-            </button>
+            @if (!authService.isLaboratorist()) {
+              <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: item.id }" class="btn btn-secondary btn-sm" title="Agendar nueva cita">
+                🗓️ Agendar
+              </a>
+              <a [routerLink]="['/patients', item.id]" class="btn btn-secondary btn-sm" title="Ver historial clínico completo">
+                Expediente
+              </a>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="openEditModal(item)">
+                Editar
+              </button>
+            }
           </div>
         </ng-template>
       </app-data-table>
@@ -226,6 +240,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
 export class PatientListComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
+  readonly authService = inject(AuthService);
   private readonly toast = inject(ToastService);
 
   readonly patients = signal<PatientDto[]>([]);

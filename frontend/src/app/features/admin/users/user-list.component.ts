@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -101,22 +101,40 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="form-group">
               <label class="form-label">Rol del Sistema *</label>
-              <select formControlName="role" class="form-select">
+              <select formControlName="role" class="form-select" (change)="onRoleChange()">
                 <option value="Admin">Administrador (Admin)</option>
                 <option value="Receptionist">Recepcionista</option>
-                <option value="Specialist">Especialista Médico</option>
+                <option value="Specialist">Especialista Médico / Odontológico</option>
+                <option value="Laboratorist">Laboratorista / Personal de Laboratorio</option>
               </select>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Perfil Especialista Asociado (Opcional)</label>
-              <select formControlName="specialistId" class="form-select">
-                <option value="">Sin vincular a especialista</option>
-                @for (doc of specialists(); track doc.id) {
-                  <option [value]="doc.id">{{ doc.fullName }} ({{ doc.specialtyName }})</option>
-                }
-              </select>
-            </div>
+            @if (form.get('role')?.value === 'Specialist') {
+              <div class="form-group">
+                <label class="form-label">Médico / Especialista Clínico Asociado *</label>
+                <select formControlName="specialistId" class="form-select">
+                  <option value="">-- Seleccionar Especialista Clínico --</option>
+                  @for (doc of clinicalSpecialists(); track doc.id) {
+                    <option [value]="doc.id">👨‍⚕️ {{ doc.fullName }} ({{ doc.specialtyName }})</option>
+                  }
+                </select>
+              </div>
+            } @else if (form.get('role')?.value === 'Laboratorist') {
+              <div class="form-group">
+                <label class="form-label">Perfil de Laboratorista / Bioanalista (Opcional)</label>
+                <select formControlName="specialistId" class="form-select">
+                  <option value="">Sin vincular a perfil específico</option>
+                  @for (doc of labSpecialists(); track doc.id) {
+                    <option [value]="doc.id">🔬 {{ doc.fullName }} ({{ doc.specialtyName }})</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <div class="form-group opacity-60">
+                <label class="form-label">Perfil Profesional Asociado</label>
+                <input type="text" class="form-control text-xs" disabled value="No requerido para este rol" />
+              </div>
+            }
           </div>
 
           <!-- Multi-Company Assignment Checkboxes -->
@@ -176,6 +194,21 @@ export class UserListComponent implements OnInit {
   readonly specialists = signal<SpecialistDto[]>([]);
   readonly selectedCompanyIds = signal<string[]>([]);
 
+  readonly clinicalSpecialists = computed(() => {
+    return this.specialists().filter(s => {
+      const spec = (s.specialtyName || '').toLowerCase();
+      return !spec.includes('laboratorio') && !spec.includes('bioanálisis') && !spec.includes('patología');
+    });
+  });
+
+  readonly labSpecialists = computed(() => {
+    const list = this.specialists().filter(s => {
+      const spec = (s.specialtyName || '').toLowerCase();
+      return spec.includes('laboratorio') || spec.includes('bioanálisis') || spec.includes('patología');
+    });
+    return list.length > 0 ? list : this.specialists();
+  });
+
   readonly loading = signal<boolean>(true);
   readonly saving = signal<boolean>(false);
   readonly modalOpen = signal<boolean>(false);
@@ -201,6 +234,13 @@ export class UserListComponent implements OnInit {
     this.loadData();
   }
 
+  onRoleChange(): void {
+    const r = this.form.get('role')?.value;
+    if (r !== 'Specialist' && r !== 'Laboratorist') {
+      this.form.patchValue({ specialistId: '' });
+    }
+  }
+
   loadData(): void {
     this.loading.set(true);
     forkJoin({
@@ -218,10 +258,11 @@ export class UserListComponent implements OnInit {
     });
   }
 
-  getRoleVariant(role: UserRole): 'primary' | 'success' | 'info' {
+  getRoleVariant(role: UserRole): 'primary' | 'success' | 'info' | 'warning' {
     switch (role) {
       case 'Admin': return 'primary';
       case 'Specialist': return 'info';
+      case 'Laboratorist': return 'warning';
       case 'Receptionist': return 'success';
       default: return 'primary';
     }

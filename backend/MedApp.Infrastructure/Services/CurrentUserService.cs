@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using MedApp.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Http;
 
@@ -40,4 +40,6 @@ public class CurrentUserService : ICurrentUserService
     public bool IsSpecialist => string.Equals(Role, "Specialist", StringComparison.OrdinalIgnoreCase);
 
     public bool IsReceptionist => string.Equals(Role, "Receptionist", StringComparison.OrdinalIgnoreCase);
+
+    public bool IsLaboratorist => string.Equals(Role, "Laboratorist", StringComparison.OrdinalIgnoreCase);
 }

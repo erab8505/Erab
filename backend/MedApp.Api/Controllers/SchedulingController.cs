@@ -9,7 +9,7 @@ namespace MedApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "Admin,Specialist,Receptionist")]
 public class SchedulingController : ControllerBase
 {
     private readonly ISchedulingService _schedulingService;

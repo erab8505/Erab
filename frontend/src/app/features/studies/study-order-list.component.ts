@@ -36,9 +36,11 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
         </div>
 
         <div class="flex items-center gap-2.5">
-          <a routerLink="/studies/catalog" class="btn btn-outline-primary text-xs font-bold">
-            ⚙️ Catálogo de Estudios
-          </a>
+          @if (authService.isAdmin()) {
+            <a routerLink="/studies/catalog" class="btn btn-outline-primary text-xs font-bold">
+              ⚙️ Catálogo de Estudios
+            </a>
+          }
           <button type="button" class="btn btn-primary" (click)="openCreateModal()">
             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -227,8 +229,8 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
               </button>
             }
 
-            <!-- Capture Results Button (Only for Specialists / Admins, not Receptionists) -->
-            @if (!authService.isReceptionist()) {
+            <!-- Capture Results Button (Only for Laboratorists / Admins) -->
+            @if (authService.isLaboratorist() || authService.isAdmin()) {
               <button
                 type="button"
                 class="table-action-btn font-bold text-blue-600 dark:text-blue-400"
@@ -387,8 +389,8 @@ export class StudyOrderListComponent implements OnInit {
   }
 
   openResultsModal(order: StudyOrderDto): void {
-    if (this.authService.isReceptionist()) {
-      this.toast.error('Las recepcionistas no tienen permisos para capturar resultados. Solo un especialista puede realizar esta acción.');
+    if (!this.authService.isLaboratorist() && !this.authService.isAdmin()) {
+      this.toast.error('Solo el personal de Laboratorio o Administradores pueden capturar y validar resultados de estudios.');
       return;
     }
     this.selectedOrder.set(order);

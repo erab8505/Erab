@@ -53,13 +53,13 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
             </div>
           </div>
 
-          <!-- Validating Specialist Info Banner -->
+          <!-- Validating Laboratorist Info Banner -->
           <div class="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-xl flex items-center justify-between text-xs">
             <div class="flex items-center gap-2">
-              <span class="text-base">👨‍⚕️</span>
+              <span class="text-base">🔬</span>
               <div>
                 <span class="font-bold text-slate-800 dark:text-slate-100">
-                  Especialista que valida e informa:
+                  Laboratorista / Químico que valida:
                 </span>
                 <span class="ml-1 text-blue-700 dark:text-blue-300 font-semibold">
                   {{ authService.username() }} ({{ authService.userRole() }})
@@ -67,7 +67,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
               </div>
             </div>
             <span class="text-[10px] text-slate-400 font-mono">
-              Los resultados quedarán registrados bajo este especialista
+              Los resultados quedarán registrados bajo este laboratorista
             </span>
           </div>
 
@@ -263,8 +263,8 @@ export class StudyCaptureResultsModalComponent implements OnChanges {
   saveResults(): void {
     if (!this.order) return;
 
-    if (this.authService.isReceptionist()) {
-      this.toast.error('Las recepcionistas no tienen permisos para capturar o validar resultados de estudios.');
+    if (!this.authService.isLaboratorist() && !this.authService.isAdmin()) {
+      this.toast.error('Solo el personal de Laboratorio o Administradores tienen permisos para capturar o validar resultados de estudios.');
       return;
     }
 

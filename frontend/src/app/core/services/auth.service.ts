@@ -59,6 +59,10 @@ export class AuthService {
     return this.userRole() === 'Receptionist';
   }
 
+  isLaboratorist(): boolean {
+    return this.userRole() === 'Laboratorist';
+  }
+
   private handleAuthSuccess(data: LoginResponseDto): void {
     const companies = data.assignedCompanies || data.companies || [];
     const session: UserSession = {
