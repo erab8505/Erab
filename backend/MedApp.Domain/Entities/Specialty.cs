@@ -13,6 +13,6 @@ public class Specialty : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
 
-    public ICollection<Specialist> Specialists { get; set; } = new List<Specialist>();
+    public ICollection<Employee> Employees { get; set; } = new List<Employee>();
     public ICollection<InterventionType> InterventionTypes { get; set; } = new List<InterventionType>();
 }

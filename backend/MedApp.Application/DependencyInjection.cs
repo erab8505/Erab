@@ -17,8 +17,7 @@ public static class DependencyInjection
         services.AddScoped<ICompanyService, CompanyService>();
         services.AddScoped<IAreaService, AreaService>();
         services.AddScoped<ISpecialtyService, SpecialtyService>();
-        services.AddScoped<ISpecialistService, SpecialistService>();
-        services.AddScoped<ISpecialistAvailabilityService, SpecialistAvailabilityService>();
+        services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IInterventionTypeService, InterventionTypeService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IPatientService, PatientService>();
@@ -31,7 +30,6 @@ public static class DependencyInjection
         services.AddScoped<ILabExamService, LabExamService>();
         services.AddScoped<IClinicalStudyService, ClinicalStudyService>();
         services.AddScoped<IStudyOrderService, StudyOrderService>();
-        services.AddScoped<IReceptionistService, ReceptionistService>();
         services.AddScoped<IAuditService, AuditService>();
 
         return services;

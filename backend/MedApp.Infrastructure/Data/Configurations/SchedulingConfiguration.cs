@@ -27,7 +27,7 @@ public class SchedulingConfiguration : IEntityTypeConfiguration<Scheduling>
             .HasMaxLength(50)
             .IsRequired();
 
-        builder.HasIndex(s => new { s.SpecialistId, s.ScheduledAt });
+        builder.HasIndex(s => new { s.EmployeeId, s.ScheduledAt });
 
         builder.HasOne(s => s.Company)
             .WithMany(c => c.Schedulings)
@@ -39,9 +39,9 @@ public class SchedulingConfiguration : IEntityTypeConfiguration<Scheduling>
             .HasForeignKey(s => s.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(s => s.Specialist)
-            .WithMany(sp => sp.Schedulings)
-            .HasForeignKey(s => s.SpecialistId)
+        builder.HasOne(s => s.Employee)
+            .WithMany()
+            .HasForeignKey(s => s.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(s => s.InterventionType)

@@ -33,8 +33,8 @@ public class UserService : IUserService
     public async Task<List<UserDto>> GetUsersAsync()
     {
         var query = _context.Users
-            .Include(u => u.Specialist)
-            .Include(u => u.Receptionist)
+            .Include(u => u.Employee)
+            .Include(u => u.UserRoles)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
             .AsQueryable();
@@ -58,38 +58,38 @@ public class UserService : IUserService
             }
         }
 
-        return await query
+        var users = await query
             .OrderBy(u => u.Username)
-            .Select(u => new UserDto(
-                u.Id,
-                u.Username,
-                u.Role,
-                u.SpecialistId,
-                u.Specialist != null ? $"{u.Specialist.FirstName} {u.Specialist.LastName}" : null,
-                u.ReceptionistId,
-                u.Receptionist != null ? $"{u.Receptionist.FirstName} {u.Receptionist.LastName}" : null,
-                u.UserCompanies.Select(uc => uc.CompanyId).ToList(),
-                u.UserCompanies.Select(uc => new CompanyDto(
-                    uc.Company.Id,
-                    uc.Company.Name,
-                    uc.Company.TaxId,
-                    uc.Company.Address,
-                    uc.Company.Phone,
-                    uc.Company.Email,
-                    uc.Company.IsActive,
-                    uc.Company.Description,
-                    uc.Company.CreatedAt
-                )).ToList(),
-                u.CreatedAt
-            ))
             .ToListAsync();
+
+        return users.Select(u => new UserDto(
+            u.Id,
+            u.Username,
+            u.UserRoles.Select(ur => ur.Role).ToList(),
+            u.EmployeeId,
+            u.Employee != null ? u.Employee.FullName : null,
+            u.Employee != null ? u.Employee.JobTitle : null,
+            u.UserCompanies.Select(uc => uc.CompanyId).ToList(),
+            u.UserCompanies.Select(uc => new CompanyDto(
+                uc.Company.Id,
+                uc.Company.Name,
+                uc.Company.TaxId,
+                uc.Company.Address,
+                uc.Company.Phone,
+                uc.Company.Email,
+                uc.Company.IsActive,
+                uc.Company.Description,
+                uc.Company.CreatedAt
+            )).ToList(),
+            u.CreatedAt
+        )).ToList();
     }
 
     public async Task<UserDto> GetUserByIdAsync(Guid id)
     {
         var user = await _context.Users
-            .Include(u => u.Specialist)
-            .Include(u => u.Receptionist)
+            .Include(u => u.Employee)
+            .Include(u => u.UserRoles)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
             .FirstOrDefaultAsync(u => u.Id == id);
@@ -124,11 +124,10 @@ public class UserService : IUserService
         return new UserDto(
             user.Id,
             user.Username,
-            user.Role,
-            user.SpecialistId,
-            user.Specialist != null ? $"{user.Specialist.FirstName} {user.Specialist.LastName}" : null,
-            user.ReceptionistId,
-            user.Receptionist != null ? $"{user.Receptionist.FirstName} {user.Receptionist.LastName}" : null,
+            user.UserRoles.Select(ur => ur.Role).ToList(),
+            user.EmployeeId,
+            user.Employee != null ? user.Employee.FullName : null,
+            user.Employee != null ? user.Employee.JobTitle : null,
             user.UserCompanies.Select(uc => uc.CompanyId).ToList(),
             user.UserCompanies.Select(uc => new CompanyDto(
                 uc.Company.Id,
@@ -147,7 +146,13 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateUserAsync(CreateUserDto dto)
     {
-        if (!_currentUserService.IsSuperAdmin && dto.Role == UserRole.SuperAdmin)
+        var roles = dto.Roles?.Distinct().ToList() ?? new List<UserRole>();
+        if (!roles.Any())
+        {
+            roles.Add(UserRole.Receptionist);
+        }
+
+        if (!_currentUserService.IsSuperAdmin && roles.Contains(UserRole.SuperAdmin))
         {
             throw new ForbiddenAccessException("Solo un Super Administrador puede crear otros Super Administradores.");
         }
@@ -156,32 +161,30 @@ public class UserService : IUserService
         if (existsUsername)
             throw new ConflictException($"El nombre de usuario '{dto.Username}' ya está en uso.");
 
-        Guid? specialistId = null;
-        if ((dto.Role == UserRole.Specialist || dto.Role == UserRole.Laboratorist) && dto.SpecialistId.HasValue)
+        Guid? employeeId = null;
+        if (dto.EmployeeId.HasValue)
         {
-            var specialist = await _context.Specialists.FindAsync(dto.SpecialistId.Value);
-            if (specialist == null)
-                throw new NotFoundException("Especialista", dto.SpecialistId.Value);
-            specialistId = dto.SpecialistId.Value;
-        }
-
-        Guid? receptionistId = null;
-        if (dto.Role == UserRole.Receptionist && dto.ReceptionistId.HasValue)
-        {
-            var receptionist = await _context.Receptionists.FindAsync(dto.ReceptionistId.Value);
-            if (receptionist == null)
-                throw new NotFoundException("Recepcionista", dto.ReceptionistId.Value);
-            receptionistId = dto.ReceptionistId.Value;
+            var employee = await _context.Employees.FindAsync(dto.EmployeeId.Value);
+            if (employee == null)
+                throw new NotFoundException("Colaborador", dto.EmployeeId.Value);
+            employeeId = dto.EmployeeId.Value;
         }
 
         var user = new User
         {
-            Username = dto.Username,
+            Username = dto.Username.Trim(),
             PasswordHash = _passwordHasher.HashPassword(dto.Password),
-            Role = dto.Role,
-            SpecialistId = specialistId,
-            ReceptionistId = receptionistId
+            EmployeeId = employeeId
         };
+
+        foreach (var role in roles)
+        {
+            user.UserRoles.Add(new UserRoleAssignment
+            {
+                UserId = user.Id,
+                Role = role
+            });
+        }
 
         var companyIdsToAssign = dto.CompanyIds?.Distinct().ToList() ?? new List<Guid>();
 
@@ -203,32 +206,36 @@ public class UserService : IUserService
         await _context.Users.AddAsync(user);
         await _context.SaveChangesAsync();
 
+        var rolesStr = string.Join(", ", roles);
         await _auditService.LogAsync(
             "CREATE",
             "Users",
             user.Id.ToString(),
-            $"Creó el usuario '{user.Username}' con rol '{user.Role}'",
-            new { user.Username, user.Role, SpecialistId = specialistId, ReceptionistId = receptionistId, CompanyIds = companyIdsToAssign }
+            $"Creó el usuario '{user.Username}' con roles [{rolesStr}]",
+            new { user.Username, Roles = roles, EmployeeId = employeeId, CompanyIds = companyIdsToAssign }
         );
 
-        // Reload with companies
+        // Reload with companies and employee
         return await GetUserByIdAsync(user.Id);
     }
 
     public async Task<UserDto> UpdateUserAsync(Guid id, UpdateUserDto dto)
     {
         var user = await _context.Users
-            .Include(u => u.Specialist)
-            .Include(u => u.Receptionist)
+            .Include(u => u.Employee)
+            .Include(u => u.UserRoles)
             .Include(u => u.UserCompanies)
             .FirstOrDefaultAsync(u => u.Id == id);
 
         if (user == null)
             throw new NotFoundException("Usuario", id);
 
+        var currentRoles = user.UserRoles.Select(r => r.Role).ToList();
+        var newRoles = dto.Roles?.Distinct().ToList() ?? currentRoles;
+
         if (!_currentUserService.IsSuperAdmin)
         {
-            if (user.Role == UserRole.SuperAdmin || dto.Role == UserRole.SuperAdmin)
+            if (currentRoles.Contains(UserRole.SuperAdmin) || newRoles.Contains(UserRole.SuperAdmin))
             {
                 throw new ForbiddenAccessException("No tiene permisos para modificar roles de Super Administrador.");
             }
@@ -254,55 +261,77 @@ public class UserService : IUserService
             }
         }
 
-        Guid? specialistId = null;
-        if ((dto.Role == UserRole.Specialist || dto.Role == UserRole.Laboratorist) && dto.SpecialistId.HasValue)
+        Guid? employeeId = null;
+        if (dto.EmployeeId.HasValue)
         {
-            var specialist = await _context.Specialists.FindAsync(dto.SpecialistId.Value);
-            if (specialist == null)
-                throw new NotFoundException("Especialista", dto.SpecialistId.Value);
-            specialistId = dto.SpecialistId.Value;
+            var employee = await _context.Employees.FindAsync(dto.EmployeeId.Value);
+            if (employee == null)
+                throw new NotFoundException("Colaborador", dto.EmployeeId.Value);
+            employeeId = dto.EmployeeId.Value;
         }
 
-        Guid? receptionistId = null;
-        if (dto.Role == UserRole.Receptionist && dto.ReceptionistId.HasValue)
+        user.EmployeeId = employeeId;
+
+        // Synchronize UserRoles safely without clearing
+        var rolesToRemove = user.UserRoles.Where(ur => !newRoles.Contains(ur.Role)).ToList();
+        foreach (var ur in rolesToRemove)
         {
-            var receptionist = await _context.Receptionists.FindAsync(dto.ReceptionistId.Value);
-            if (receptionist == null)
-                throw new NotFoundException("Recepcionista", dto.ReceptionistId.Value);
-            receptionistId = dto.ReceptionistId.Value;
+            _context.UserRoles.Remove(ur);
         }
 
-        user.Role = dto.Role;
-        user.SpecialistId = specialistId;
-        user.ReceptionistId = receptionistId;
+        var existingRoleEnums = user.UserRoles.Select(ur => ur.Role).ToHashSet();
+        foreach (var r in newRoles)
+        {
+            if (!existingRoleEnums.Contains(r))
+            {
+                var newRoleAssignment = new UserRoleAssignment
+                {
+                    UserId = user.Id,
+                    Role = r
+                };
+                _context.UserRoles.Add(newRoleAssignment);
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(dto.Password))
         {
             user.PasswordHash = _passwordHasher.HashPassword(dto.Password);
         }
 
-        // Update company memberships
+        // Synchronize company memberships safely without clearing
         if (dto.CompanyIds != null)
         {
-            user.UserCompanies.Clear();
-            foreach (var companyId in dto.CompanyIds.Distinct())
+            var newCompanyIds = dto.CompanyIds.Distinct().ToHashSet();
+            var companiesToRemove = user.UserCompanies.Where(uc => !newCompanyIds.Contains(uc.CompanyId)).ToList();
+            foreach (var uc in companiesToRemove)
             {
-                user.UserCompanies.Add(new UserCompany
+                _context.UserCompanies.Remove(uc);
+            }
+
+            var existingCompanyIds = user.UserCompanies.Select(uc => uc.CompanyId).ToHashSet();
+            foreach (var companyId in newCompanyIds)
+            {
+                if (!existingCompanyIds.Contains(companyId))
                 {
-                    UserId = user.Id,
-                    CompanyId = companyId
-                });
+                    var newUc = new UserCompany
+                    {
+                        UserId = user.Id,
+                        CompanyId = companyId
+                    };
+                    _context.UserCompanies.Add(newUc);
+                }
             }
         }
 
         await _context.SaveChangesAsync();
 
+        var rolesStr = string.Join(", ", newRoles);
         await _auditService.LogAsync(
             "UPDATE",
             "Users",
             user.Id.ToString(),
-            $"Actualizó el usuario '{user.Username}' (Rol: {user.Role})",
-            new { user.Username, user.Role, SpecialistId = specialistId, ReceptionistId = receptionistId }
+            $"Actualizó el usuario '{user.Username}' (Roles: [{rolesStr}])",
+            new { user.Username, Roles = newRoles, EmployeeId = employeeId }
         );
 
         return await GetUserByIdAsync(user.Id);
@@ -311,15 +340,18 @@ public class UserService : IUserService
     public async Task<bool> DeleteUserAsync(Guid id)
     {
         var user = await _context.Users
+            .Include(u => u.UserRoles)
             .Include(u => u.UserCompanies)
             .FirstOrDefaultAsync(u => u.Id == id);
 
         if (user == null)
             throw new NotFoundException("Usuario", id);
 
+        var isSuperAdmin = user.UserRoles.Any(r => r.Role == UserRole.SuperAdmin);
+
         if (!_currentUserService.IsSuperAdmin)
         {
-            if (user.Role == UserRole.SuperAdmin)
+            if (isSuperAdmin)
             {
                 throw new ForbiddenAccessException("No tiene permisos para eliminar a un Super Administrador.");
             }

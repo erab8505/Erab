@@ -43,12 +43,7 @@ public class AuditService : IAuditService
             var username = _currentUserService.Username ?? "Sistema";
             
             // Try parse user role or default
-            UserRole userRole = UserRole.Receptionist;
-            if (!string.IsNullOrWhiteSpace(_currentUserService.Role) &&
-                Enum.TryParse<UserRole>(_currentUserService.Role, true, out var parsedRole))
-            {
-                userRole = parsedRole;
-            }
+            UserRole userRole = _currentUserService.Roles.FirstOrDefault();
 
             string? detailsJson = null;
             if (details != null)

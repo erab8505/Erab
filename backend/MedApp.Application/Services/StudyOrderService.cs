@@ -32,7 +32,8 @@ public class StudyOrderService : IStudyOrderService
         var query = _context.StudyOrders
             .AsNoTracking()
             .Include(o => o.Patient)
-            .Include(o => o.Specialist)
+            .Include(o => o.RequestingDoctor)
+            .Include(o => o.Laboratorist)
             .Include(o => o.Items)
                 .ThenInclude(i => i.ClinicalStudy)
             .Include(o => o.Items)
@@ -60,10 +61,10 @@ public class StudyOrderService : IStudyOrderService
                 PatientName = o.Patient.FirstName + " " + o.Patient.LastName,
                 PatientDocumentId = o.Patient.DocumentId,
                 PatientPhone = o.Patient.Phone,
-                SpecialistId = o.SpecialistId,
-                SpecialistName = o.Specialist != null ? o.Specialist.FirstName + " " + o.Specialist.LastName : null,
+                RequestingDoctorId = o.RequestingDoctorId,
+                RequestingDoctorName = o.RequestingDoctor != null ? o.RequestingDoctor.FirstName + " " + o.RequestingDoctor.LastName : null,
                 LaboratoristId = o.LaboratoristId,
-                LaboratoristName = o.LaboratoristName,
+                LaboratoristName = o.Laboratorist != null ? o.Laboratorist.FirstName + " " + o.Laboratorist.LastName : o.LaboratoristName,
                 SchedulingId = o.SchedulingId,
                 Status = o.Status,
                 OrderDate = o.OrderDate,
@@ -114,7 +115,8 @@ public class StudyOrderService : IStudyOrderService
         var o = await _context.StudyOrders
             .AsNoTracking()
             .Include(x => x.Patient)
-            .Include(x => x.Specialist)
+            .Include(x => x.RequestingDoctor)
+            .Include(x => x.Laboratorist)
             .Include(x => x.Items)
                 .ThenInclude(i => i.ClinicalStudy)
             .Include(x => x.Items)
@@ -135,10 +137,10 @@ public class StudyOrderService : IStudyOrderService
             PatientName = o.Patient.FirstName + " " + o.Patient.LastName,
             PatientDocumentId = o.Patient.DocumentId,
             PatientPhone = o.Patient.Phone,
-            SpecialistId = o.SpecialistId,
-            SpecialistName = o.Specialist != null ? o.Specialist.FirstName + " " + o.Specialist.LastName : null,
+            RequestingDoctorId = o.RequestingDoctorId,
+            RequestingDoctorName = o.RequestingDoctor != null ? o.RequestingDoctor.FirstName + " " + o.RequestingDoctor.LastName : null,
             LaboratoristId = o.LaboratoristId,
-            LaboratoristName = o.LaboratoristName,
+            LaboratoristName = o.Laboratorist != null ? o.Laboratorist.FirstName + " " + o.Laboratorist.LastName : o.LaboratoristName,
             SchedulingId = o.SchedulingId,
             Status = o.Status,
             OrderDate = o.OrderDate,
@@ -215,7 +217,7 @@ public class StudyOrderService : IStudyOrderService
         {
             CompanyId = _companyContext.CompanyId.Value,
             PatientId = dto.PatientId,
-            SpecialistId = dto.SpecialistId,
+            RequestingDoctorId = dto.RequestingDoctorId,
             SchedulingId = dto.SchedulingId,
             OrderNumber = orderNumber,
             Status = StudyOrderStatus.Requested,
@@ -319,20 +321,19 @@ public class StudyOrderService : IStudyOrderService
         if (string.IsNullOrWhiteSpace(resolvedLaboratoristName) && _currentUserService.UserId.HasValue)
         {
             var user = await _context.Users
-                .Include(u => u.Specialist)
+                .Include(u => u.Employee)
                 .FirstOrDefaultAsync(u => u.Id == _currentUserService.UserId.Value, cancellationToken);
 
             if (user != null)
             {
-                if (user.Specialist != null)
+                if (user.Employee != null)
                 {
-                    resolvedLaboratoristName = user.Specialist.FullName;
-                    resolvedLaboratoristId = user.SpecialistId;
+                    resolvedLaboratoristName = user.Employee.FullName;
+                    resolvedLaboratoristId = user.EmployeeId;
                 }
                 else
                 {
                     resolvedLaboratoristName = user.Username;
-                    resolvedLaboratoristId = user.Id;
                 }
             }
         }
@@ -355,9 +356,9 @@ public class StudyOrderService : IStudyOrderService
         order.LaboratoristId = resolvedLaboratoristId;
         order.LaboratoristName = resolvedLaboratoristName;
 
-        if (!order.SpecialistId.HasValue && dto.SpecialistId.HasValue)
+        if (!order.RequestingDoctorId.HasValue && dto.RequestingDoctorId.HasValue)
         {
-            order.SpecialistId = dto.SpecialistId.Value;
+            order.RequestingDoctorId = dto.RequestingDoctorId.Value;
         }
 
         if (!string.IsNullOrWhiteSpace(dto.GeneralInterpretation))

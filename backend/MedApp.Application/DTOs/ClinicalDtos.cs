@@ -75,18 +75,22 @@ public record PrescriptionDto(
     Guid PatientId,
     string? PatientName,
     Guid? MedicalRecordId,
-    Guid SpecialistId,
-    string? SpecialistName,
+    Guid EmployeeId,
+    string? EmployeeName,
     DateTimeOffset PrescriptionDate,
     string? Notes,
     List<PrescriptionItemDto> Items,
     DateTimeOffset CreatedAt
-);
+)
+{
+    public Guid SpecialistId => EmployeeId;
+    public string? SpecialistName => EmployeeName;
+}
 
 public record CreatePrescriptionDto(
     Guid PatientId,
     Guid? MedicalRecordId,
-    Guid SpecialistId,
+    Guid EmployeeId,
     DateTimeOffset? PrescriptionDate,
     string? Notes,
     List<CreatePrescriptionItemDto> Items

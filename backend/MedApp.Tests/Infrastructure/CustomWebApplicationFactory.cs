@@ -101,8 +101,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         };
         context.Specialties.Add(spec1);
 
-        // Specialist 1 in Company 1
-        var specialistProfile1 = new Specialist
+        // Employee 1 (Specialist) in Company 1
+        var employee1 = new Employee
         {
             Id = SpecialistProfileId,
             CompanyId = Company1Id,
@@ -110,11 +110,12 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             FirstName = "Carlos",
             LastName = "Gómez",
             LicenseNumber = "MED-CARD-9912",
+            JobTitle = "Cardiólogo",
             IsActive = true
         };
 
-        // Specialist 2 in Company 1
-        var specialistProfile2 = new Specialist
+        // Employee 2 (Specialist) in Company 1
+        var employee2 = new Employee
         {
             Id = Specialist2ProfileId,
             CompanyId = Company1Id,
@@ -122,28 +123,29 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             FirstName = "Ana",
             LastName = "Martínez",
             LicenseNumber = "MED-CARD-8833",
+            JobTitle = "Cardióloga",
             IsActive = true
         };
-        context.Specialists.AddRange(specialistProfile1, specialistProfile2);
+        context.Employees.AddRange(employee1, employee2);
 
-        // Specialist Availabilities for Monday (Day 1)
-        var availability1 = new SpecialistAvailability
+        // Employee Availabilities for Monday (Day 1)
+        var availability1 = new EmployeeAvailability
         {
             Id = Guid.NewGuid(),
-            SpecialistId = SpecialistProfileId,
+            EmployeeId = SpecialistProfileId,
             DayOfWeek = 1, // Monday
             StartHour = "08:00",
             EndHour = "12:00"
         };
-        var availability2 = new SpecialistAvailability
+        var availability2 = new EmployeeAvailability
         {
             Id = Guid.NewGuid(),
-            SpecialistId = Specialist2ProfileId,
+            EmployeeId = Specialist2ProfileId,
             DayOfWeek = 1, // Monday
             StartHour = "13:00",
             EndHour = "17:00"
         };
-        context.SpecialistAvailabilities.AddRange(availability1, availability2);
+        context.EmployeeAvailabilities.AddRange(availability1, availability2);
 
         // Intervention Type
         var intervention = new InterventionType
@@ -189,7 +191,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = Specialist1SchedulingId,
             CompanyId = Company1Id,
             PatientId = Patient1Id,
-            SpecialistId = SpecialistProfileId,
+            EmployeeId = SpecialistProfileId,
             InterventionTypeId = InterventionId,
             ScheduledAt = DateTimeOffset.UtcNow.AddDays(1),
             DurationMinutes = 30,
@@ -201,7 +203,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = Specialist2SchedulingId,
             CompanyId = Company1Id,
             PatientId = Patient1Id,
-            SpecialistId = Specialist2ProfileId,
+            EmployeeId = Specialist2ProfileId,
             InterventionTypeId = InterventionId,
             ScheduledAt = DateTimeOffset.UtcNow.AddDays(2),
             DurationMinutes = 30,
@@ -216,7 +218,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = AdminUserId,
             Username = "admin_test",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("AdminTest123!"),
-            Role = UserRole.SuperAdmin
+            UserRoles = new List<UserRoleAssignment> { new() { Role = UserRole.SuperAdmin } }
         };
         admin.UserCompanies.Add(new UserCompany { UserId = AdminUserId, CompanyId = Company1Id });
 
@@ -225,7 +227,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = ReceptionistUserId,
             Username = "receptionist_test",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("ReceptTest123!"),
-            Role = UserRole.Receptionist
+            UserRoles = new List<UserRoleAssignment> { new() { Role = UserRole.Receptionist } }
         };
         receptionist.UserCompanies.Add(new UserCompany { UserId = ReceptionistUserId, CompanyId = Company1Id });
 
@@ -234,8 +236,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = SpecialistUserId,
             Username = "specialist_test",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("SpecTest123!"),
-            Role = UserRole.Specialist,
-            SpecialistId = SpecialistProfileId
+            EmployeeId = SpecialistProfileId,
+            UserRoles = new List<UserRoleAssignment> { new() { Role = UserRole.Specialist } }
         };
         specialistUser1.UserCompanies.Add(new UserCompany { UserId = SpecialistUserId, CompanyId = Company1Id });
 
@@ -244,15 +246,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = Specialist2UserId,
             Username = "specialist2_test",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Spec2Test123!"),
-            Role = UserRole.Specialist,
-            SpecialistId = Specialist2ProfileId
+            EmployeeId = Specialist2ProfileId,
+            UserRoles = new List<UserRoleAssignment> { new() { Role = UserRole.Specialist } }
         };
+
         var companyAdmin = new User
         {
             Id = CompanyAdminUserId,
             Username = "company_admin_test",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("CompAdmin123!"),
-            Role = UserRole.Admin
+            UserRoles = new List<UserRoleAssignment> { new() { Role = UserRole.Admin } }
         };
         companyAdmin.UserCompanies.Add(new UserCompany { UserId = CompanyAdminUserId, CompanyId = Company1Id });
 
@@ -261,7 +264,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Id = Guid.Parse("11111111-0000-0000-0000-000000000006"),
             Username = "company2_user",
             PasswordHash = BCrypt.Net.BCrypt.HashPassword("Comp2User123!"),
-            Role = UserRole.Receptionist
+            UserRoles = new List<UserRoleAssignment> { new() { Role = UserRole.Receptionist } }
         };
         company2User.UserCompanies.Add(new UserCompany { UserId = company2User.Id, CompanyId = Company2Id });
 

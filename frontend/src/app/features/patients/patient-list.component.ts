@@ -31,7 +31,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
             </svg>
             + Orden de Estudio
           </button>
-          @if (!authService.isLaboratorist()) {
+          @if (authService.canManagePatients()) {
             <button type="button" class="btn btn-primary" (click)="openCreateModal()">
               <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -61,7 +61,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
               </div>
             }
             @case ('fullName') {
-              @if (!authService.isLaboratorist()) {
+              @if (authService.canManagePatients()) {
                 <a [routerLink]="['/patients', item.id]" class="group inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline">
                   <span class="w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-xs">
                     {{ (item.firstName[0] || item.fullName[0] || 'P').toUpperCase() }}
@@ -103,7 +103,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
             <button type="button" class="btn btn-secondary btn-sm text-blue-600 dark:text-blue-400 font-semibold" title="Emitir orden de laboratorio / estudio clínico" (click)="openStudyOrderModal(item)">
               🧪 Estudio
             </button>
-            @if (!authService.isLaboratorist()) {
+            @if (authService.canManagePatients()) {
               <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: item.id }" class="btn btn-secondary btn-sm" title="Agendar nueva cita">
                 🗓️ Agendar
               </a>

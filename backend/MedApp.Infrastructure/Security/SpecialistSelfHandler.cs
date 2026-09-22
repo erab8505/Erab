@@ -20,31 +20,30 @@ public class SpecialistSelfHandler : AuthorizationHandler<SpecialistSelfRequirem
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, SpecialistSelfRequirement requirement)
     {
-        var role = context.User.FindFirstValue(ClaimTypes.Role) ?? context.User.FindFirstValue("role");
-
         // SuperAdmins and Admins always fulfill the requirement
-        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) || string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        if (context.User.IsInRole("Admin") || context.User.IsInRole("SuperAdmin"))
         {
             context.Succeed(requirement);
             return Task.CompletedTask;
         }
 
-        // Specialists must have a specialistId claim
-        if (string.Equals(role, "Specialist", StringComparison.OrdinalIgnoreCase))
+        // Specialists must have an employeeId / specialistId claim
+        if (context.User.IsInRole("Specialist"))
         {
-            var userSpecialistIdStr = context.User.FindFirstValue("specialistId");
-            if (Guid.TryParse(userSpecialistIdStr, out var userSpecialistId))
+            var userEmpIdStr = context.User.FindFirstValue("employeeId") ?? context.User.FindFirstValue("specialistId");
+            if (Guid.TryParse(userEmpIdStr, out var userEmpId))
             {
                 var httpContext = _httpContextAccessor.HttpContext;
                 if (httpContext != null)
                 {
                     var routeData = httpContext.GetRouteData();
-                    if (routeData.Values.TryGetValue("specialistId", out var routeSpecialistIdObj) ||
-                        routeData.Values.TryGetValue("id", out routeSpecialistIdObj))
+                    if (routeData.Values.TryGetValue("employeeId", out var routeEmpIdObj) ||
+                        routeData.Values.TryGetValue("specialistId", out routeEmpIdObj) ||
+                        routeData.Values.TryGetValue("id", out routeEmpIdObj))
                     {
-                        if (Guid.TryParse(routeSpecialistIdObj?.ToString(), out var routeSpecialistId))
+                        if (Guid.TryParse(routeEmpIdObj?.ToString(), out var routeEmpId))
                         {
-                            if (userSpecialistId == routeSpecialistId)
+                            if (userEmpId == routeEmpId)
                             {
                                 context.Succeed(requirement);
                                 return Task.CompletedTask;
@@ -53,7 +52,7 @@ public class SpecialistSelfHandler : AuthorizationHandler<SpecialistSelfRequirem
                     }
                     else
                     {
-                        // If no specific route specialist ID is specified, specialist can proceed
+                        // If no specific route ID is specified, specialist can proceed
                         context.Succeed(requirement);
                         return Task.CompletedTask;
                     }

@@ -74,7 +74,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
             </svg>
             + Orden de Estudio
           </button>
-          @if (!authService.isLaboratorist()) {
+          @if (authService.canAccessScheduling()) {
             <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: patientId() }" class="btn btn-primary">
               🗓️ Agendar Cita
             </a>
@@ -87,17 +87,17 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'info'" (click)="setTab('info')">
           📋 Datos Personales
         </button>
-        @if (!authService.isLaboratorist()) {
+        @if (authService.canAccessScheduling()) {
           <button type="button" class="tab-btn" [class.active]="activeTab() === 'appointments'" (click)="setTab('appointments')">
             🗓️ Citas ({{ appointments().length }})
           </button>
         }
-        @if (authService.isAdmin() || authService.isSpecialist()) {
+        @if (authService.canViewMedicalRecords()) {
           <button type="button" class="tab-btn" [class.active]="activeTab() === 'records'" (click)="setTab('records')">
             🩺 Historia Clínica ({{ medicalRecords().length }})
           </button>
         }
-        @if (!authService.isLaboratorist()) {
+        @if (authService.canViewPrescriptions()) {
           <button type="button" class="tab-btn" [class.active]="activeTab() === 'prescriptions'" (click)="setTab('prescriptions')">
             💊 Recetas y Fórmulas ({{ prescriptions().length }})
           </button>
@@ -105,7 +105,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'studies'" (click)="setTab('studies')">
           🧪 Estudios y Laboratorio
         </button>
-        @if (!authService.isLaboratorist()) {
+        @if (authService.canViewDocuments()) {
           <button type="button" class="tab-btn" [class.active]="activeTab() === 'documents'" (click)="setTab('documents')">
             📂 Archivos Adjuntos
           </button>
@@ -118,7 +118,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 2: CITAS / SCHEDULING -->
-      @if (activeTab() === 'appointments' && !authService.isLaboratorist()) {
+      @if (activeTab() === 'appointments' && authService.canAccessScheduling()) {
         <app-patient-appointments-tab 
           [appointments]="appointments()" 
           [patientId]="patientId()">
@@ -126,7 +126,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 3: NOTAS MÉDICAS / HISTORIA CLÍNICA -->
-      @if (activeTab() === 'records' && (authService.isAdmin() || authService.isSpecialist())) {
+      @if (activeTab() === 'records' && authService.canViewMedicalRecords()) {
         <app-patient-records-tab 
           [medicalRecords]="medicalRecords()" 
           [canCreate]="canCreateClinical()"
@@ -135,7 +135,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 4: RECETAS / PRESCRIPCIONES -->
-      @if (activeTab() === 'prescriptions' && !authService.isLaboratorist()) {
+      @if (activeTab() === 'prescriptions' && authService.canViewPrescriptions()) {
         <app-patient-prescriptions-tab 
           [prescriptions]="prescriptions()" 
           [canCreate]="canCreateClinical()"
@@ -150,7 +150,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 6: ARCHIVOS ADJUNTOS -->
-      @if (activeTab() === 'documents' && !authService.isLaboratorist()) {
+      @if (activeTab() === 'documents' && authService.canViewDocuments()) {
         <app-patient-documents-tab [patientId]="patientId()"></app-patient-documents-tab>
       }
 
@@ -263,25 +263,26 @@ export class PatientDetailComponent implements OnInit {
   }
 
   loadAllData(id: string): void {
-    const isLab = this.authService.isLaboratorist();
-    const canViewRecords = (this.authService.isAdmin() || this.authService.isSpecialist()) && !isLab;
+    const canAccessScheduling = this.authService.canAccessScheduling();
+    const canViewRecords = this.authService.canViewMedicalRecords();
+    const canViewPrescriptions = this.authService.canViewPrescriptions();
 
-    if (isLab) {
+    if (this.authService.isOnlyLaboratorist()) {
       this.activeTab.set('studies');
     }
 
     forkJoin({
       patient: this.http.get<ApiResponse<PatientDto>>(`${environment.apiUrl}/patients/${id}`),
-      appointments: !isLab
+      appointments: canAccessScheduling
         ? this.http.get<ApiResponse<SchedulingDto[]>>(`${environment.apiUrl}/scheduling?patientId=${id}`)
         : of({ success: true, message: '', data: [] as SchedulingDto[], errors: [] }),
       records: canViewRecords
         ? this.http.get<ApiResponse<MedicalRecordDto[]>>(`${environment.apiUrl}/medical-records?patientId=${id}`)
         : of({ success: true, message: '', data: [] as MedicalRecordDto[], errors: [] }),
-      prescriptions: !isLab
+      prescriptions: canViewPrescriptions
         ? this.http.get<ApiResponse<PrescriptionDto[]>>(`${environment.apiUrl}/prescriptions?patientId=${id}`)
         : of({ success: true, message: '', data: [] as PrescriptionDto[], errors: [] }),
-      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`)
+      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/employees`)
     }).subscribe({
       next: (res) => {
         const pat = res.patient.data;
@@ -302,7 +303,7 @@ export class PatientDetailComponent implements OnInit {
   }
 
   canCreateClinical(): boolean {
-    return this.authService.isAdmin() || this.authService.isSpecialist();
+    return this.authService.canCreateMedicalRecords();
   }
 
   openCreateRecordModal(): void {

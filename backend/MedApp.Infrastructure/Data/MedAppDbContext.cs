@@ -17,11 +17,12 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
 
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserRoleAssignment> UserRoles => Set<UserRoleAssignment>();
     public DbSet<UserCompany> UserCompanies => Set<UserCompany>();
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeAvailability> EmployeeAvailabilities => Set<EmployeeAvailability>();
     public DbSet<Area> Areas => Set<Area>();
     public DbSet<Specialty> Specialties => Set<Specialty>();
-    public DbSet<Specialist> Specialists => Set<Specialist>();
-    public DbSet<SpecialistAvailability> SpecialistAvailabilities => Set<SpecialistAvailability>();
     public DbSet<InterventionType> InterventionTypes => Set<InterventionType>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Scheduling> Schedulings => Set<Scheduling>();
@@ -38,7 +39,6 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
     public DbSet<StudyOrder> StudyOrders => Set<StudyOrder>();
     public DbSet<StudyOrderItem> StudyOrderItems => Set<StudyOrderItem>();
     public DbSet<StudyOrderResult> StudyOrderResults => Set<StudyOrderResult>();
-    public DbSet<Receptionist> Receptionists => Set<Receptionist>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,17 +48,17 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(MedAppDbContext).Assembly);
 
         // Multi-tenant Global Query Filters
+        modelBuilder.Entity<Employee>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
+
+        modelBuilder.Entity<EmployeeAvailability>()
+            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.Employee.CompanyId == _companyContext.CompanyId);
+
         modelBuilder.Entity<Area>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
 
         modelBuilder.Entity<Specialty>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
-
-        modelBuilder.Entity<Specialist>()
-            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
-
-        modelBuilder.Entity<SpecialistAvailability>()
-            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.Specialist.CompanyId == _companyContext.CompanyId);
 
         modelBuilder.Entity<InterventionType>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
@@ -107,9 +107,6 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
 
         modelBuilder.Entity<StudyOrderResult>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.StudyOrderItem.StudyOrder.CompanyId == _companyContext.CompanyId);
-
-        modelBuilder.Entity<Receptionist>()
-            .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == _companyContext.CompanyId);
 
         modelBuilder.Entity<AuditLog>()
             .HasQueryFilter(e => _companyContext == null || _companyContext.CompanyId == null || e.CompanyId == null || e.CompanyId == _companyContext.CompanyId);

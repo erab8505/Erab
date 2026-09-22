@@ -514,7 +514,7 @@ export class BookingWizardComponent implements OnInit, OnDestroy {
       areas: this.http.get<ApiResponse<AreaDto[]>>(`${environment.apiUrl}/areas`),
       specialties: this.http.get<ApiResponse<SpecialtyDto[]>>(`${environment.apiUrl}/specialties`),
       interventions: this.http.get<ApiResponse<InterventionTypeDto[]>>(`${environment.apiUrl}/intervention-types`),
-      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`)
+      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/employees`)
     }).subscribe({
       next: (res) => {
         const pats = (res.patients.data || []).map(p => ({
@@ -602,7 +602,7 @@ export class BookingWizardComponent implements OnInit, OnDestroy {
     if (!doc || !this.selectedDate) return;
 
     this.loadingSlots.set(true);
-    this.http.get<ApiResponse<TimeSlotDto[]>>(`${environment.apiUrl}/specialists/${doc.id}/slots?date=${this.selectedDate}`).subscribe({
+    this.http.get<ApiResponse<TimeSlotDto[]>>(`${environment.apiUrl}/employees/${doc.id}/slots?date=${this.selectedDate}`).subscribe({
       next: (res) => {
         this.loadingSlots.set(false);
         this.slots.set(res.data || []);

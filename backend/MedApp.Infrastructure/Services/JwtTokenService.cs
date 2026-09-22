@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using MedApp.Application.Common.Interfaces;
 using MedApp.Domain.Entities;
+using MedApp.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -34,19 +35,26 @@ public class JwtTokenService : ITokenService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, user.Role.ToString()),
-            new("role", user.Role.ToString()),
             new("companyIds", JsonSerializer.Serialize(companyIds))
         };
 
-        if (user.SpecialistId.HasValue)
+        var roles = user.UserRoles?.Select(r => r.Role).ToList() ?? new List<UserRole>();
+        if (!roles.Any())
         {
-            claims.Add(new Claim("specialistId", user.SpecialistId.Value.ToString()));
+            roles.Add(UserRole.Receptionist);
         }
 
-        if (user.ReceptionistId.HasValue)
+        foreach (var role in roles)
         {
-            claims.Add(new Claim("receptionistId", user.ReceptionistId.Value.ToString()));
+            claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
+            claims.Add(new Claim("role", role.ToString()));
+        }
+
+        if (user.EmployeeId.HasValue)
+        {
+            claims.Add(new Claim("employeeId", user.EmployeeId.Value.ToString()));
+            // Backwards compatibility claims
+            claims.Add(new Claim("specialistId", user.EmployeeId.Value.ToString()));
         }
 
         var tokenDescriptor = new SecurityTokenDescriptor

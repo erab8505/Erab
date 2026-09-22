@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -141,12 +141,12 @@ public class SpecialistDataIsolationTests : IClassFixture<CustomWebApplicationFa
         var token = await AuthenticateAsync("specialist_test", "SpecTest123!");
         SetHeaders(token, _factory.Company1Id);
 
-        // Act: Get specialists list
-        var response = await _client.GetAsync("/api/specialists");
+        // Act: Get employees list
+        var response = await _client.GetAsync("/api/employees");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<SpecialistDto>>>(JsonOptions);
+        var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<EmployeeDto>>>(JsonOptions);
         result.Should().NotBeNull();
         result!.Success.Should().BeTrue();
 
@@ -164,7 +164,7 @@ public class SpecialistDataIsolationTests : IClassFixture<CustomWebApplicationFa
         SetHeaders(token, _factory.Company1Id);
 
         // Act: Query Specialist 2 by ID
-        var response = await _client.GetAsync($"/api/specialists/{_factory.Specialist2ProfileId}");
+        var response = await _client.GetAsync($"/api/employees/{_factory.Specialist2ProfileId}");
 
         // Assert: 404 NotFound
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -178,7 +178,7 @@ public class SpecialistDataIsolationTests : IClassFixture<CustomWebApplicationFa
         SetHeaders(token, _factory.Company1Id);
 
         // Act: Query Specialist 2 availability
-        var response = await _client.GetAsync($"/api/specialists/{_factory.Specialist2ProfileId}/availability");
+        var response = await _client.GetAsync($"/api/employees/{_factory.Specialist2ProfileId}/availability");
 
         // Assert: 403 Forbidden
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -192,7 +192,7 @@ public class SpecialistDataIsolationTests : IClassFixture<CustomWebApplicationFa
         SetHeaders(token, _factory.Company1Id);
 
         // Act: Query Specialist 2 slots
-        var response = await _client.GetAsync($"/api/specialists/{_factory.Specialist2ProfileId}/slots?date=2026-09-21");
+        var response = await _client.GetAsync($"/api/employees/{_factory.Specialist2ProfileId}/slots?date=2026-09-21");
 
         // Assert: 403 Forbidden
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -205,10 +205,10 @@ public class SpecialistDataIsolationTests : IClassFixture<CustomWebApplicationFa
         var token = await AuthenticateAsync("receptionist_test", "ReceptTest123!");
         SetHeaders(token, _factory.Company1Id);
 
-        // Act 1: Get specialists
-        var specResponse = await _client.GetAsync("/api/specialists");
+        // Act 1: Get employees
+        var specResponse = await _client.GetAsync("/api/employees");
         specResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var specResult = await specResponse.Content.ReadFromJsonAsync<ApiResponse<List<SpecialistDto>>>(JsonOptions);
+        var specResult = await specResponse.Content.ReadFromJsonAsync<ApiResponse<List<EmployeeDto>>>(JsonOptions);
         specResult!.Data.Should().HaveCount(2);
 
         // Act 2: Get schedulings

@@ -19,9 +19,17 @@ export class AuthService {
   readonly currentUser = signal<UserSession | null>(this.getStoredUser());
 
   readonly isAuthenticated = computed(() => !!this.token() && !!this.currentUser());
-  readonly userRole = computed(() => this.currentUser()?.role ?? null);
-  readonly specialistId = computed(() => this.currentUser()?.specialistId ?? null);
-  readonly receptionistId = computed(() => this.currentUser()?.receptionistId ?? null);
+  readonly roles = computed<UserRole[]>(() => {
+    const user = this.currentUser();
+    if (!user) return [];
+    if (user.roles && Array.isArray(user.roles)) return user.roles;
+    if (user.role) return [user.role];
+    return [];
+  });
+  readonly userRole = computed(() => this.roles()[0] ?? null);
+  readonly employeeId = computed(() => this.currentUser()?.employeeId ?? this.currentUser()?.specialistId ?? null);
+  readonly specialistId = computed(() => this.employeeId());
+  readonly receptionistId = computed(() => this.currentUser()?.receptionistId ?? this.employeeId());
   readonly username = computed(() => this.currentUser()?.username ?? '');
   readonly profileName = computed(() => this.currentUser()?.profileName ?? null);
   readonly displayName = computed(() => this.currentUser()?.profileName || this.currentUser()?.username || '');
@@ -45,40 +53,92 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  hasRole(roles: UserRole[]): boolean {
-    const current = this.userRole();
-    return current ? roles.includes(current) : false;
+  hasRole(roles: UserRole[] | UserRole): boolean {
+    const currentRoles = this.roles();
+    if (Array.isArray(roles)) {
+      return roles.some(r => currentRoles.includes(r));
+    }
+    return currentRoles.includes(roles);
   }
 
   isSuperAdmin(): boolean {
-    return this.userRole() === 'SuperAdmin';
+    return this.roles().includes('SuperAdmin');
   }
 
   isAdmin(): boolean {
-    const r = this.userRole();
-    return r === 'Admin' || r === 'SuperAdmin';
+    const r = this.roles();
+    return r.includes('Admin') || r.includes('SuperAdmin');
   }
 
   isSpecialist(): boolean {
-    return this.userRole() === 'Specialist';
+    return this.roles().includes('Specialist');
   }
 
   isReceptionist(): boolean {
-    return this.userRole() === 'Receptionist';
+    return this.roles().includes('Receptionist');
   }
 
   isLaboratorist(): boolean {
-    return this.userRole() === 'Laboratorist';
+    return this.roles().includes('Laboratorist');
+  }
+
+  // Cumulative capabilities
+  canAccessScheduling(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
+  }
+
+  canManagePatients(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
+  }
+
+  canViewMedicalRecords(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist']);
+  }
+
+  canCreateMedicalRecords(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist']);
+  }
+
+  canViewPrescriptions(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
+  }
+
+  canCreatePrescriptions(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist']);
+  }
+
+  canViewDocuments(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
+  }
+
+  canCaptureStudyResults(): boolean {
+    return this.hasRole(['Laboratorist', 'SuperAdmin', 'Admin']);
+  }
+
+  isOnlyLaboratorist(): boolean {
+    return this.isLaboratorist() && !this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
+  }
+
+  isOnlySpecialist(): boolean {
+    return this.isSpecialist() && !this.isAdmin() && !this.isReceptionist();
   }
 
   private handleAuthSuccess(data: LoginResponseDto): void {
     const companies = data.assignedCompanies || data.companies || [];
+    const roles: UserRole[] = data.roles && data.roles.length > 0
+      ? data.roles
+      : (data.role ? [data.role] : []);
+
+    const employeeId = data.employeeId || data.specialistId || data.receptionistId || null;
+
     const session: UserSession = {
       username: data.username,
       profileName: data.profileName || null,
-      role: data.role,
-      specialistId: data.specialistId,
-      receptionistId: data.receptionistId,
+      roles: roles,
+      role: roles[0] || 'Receptionist',
+      employeeId: employeeId,
+      specialistId: employeeId,
+      receptionistId: employeeId,
       token: data.token,
       companyIds: companies.map(c => c.id)
     };
@@ -98,7 +158,11 @@ export class AuthService {
     const stored = localStorage.getItem(this.userKey);
     if (!stored) return null;
     try {
-      return JSON.parse(stored) as UserSession;
+      const parsed = JSON.parse(stored) as UserSession;
+      if (!parsed.roles && parsed.role) {
+        parsed.roles = [parsed.role];
+      }
+      return parsed;
     } catch {
       return null;
     }

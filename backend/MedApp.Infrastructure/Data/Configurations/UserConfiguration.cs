@@ -22,19 +22,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.PasswordHash)
             .IsRequired();
 
-        builder.Property(u => u.Role)
-            .HasConversion<string>()
-            .HasMaxLength(50)
-            .IsRequired();
-
-        builder.HasOne(u => u.Specialist)
+        builder.HasOne(u => u.Employee)
             .WithMany()
-            .HasForeignKey(u => u.SpecialistId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        builder.HasOne(u => u.Receptionist)
-            .WithMany()
-            .HasForeignKey(u => u.ReceptionistId)
+            .HasForeignKey(u => u.EmployeeId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }

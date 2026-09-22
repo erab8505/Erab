@@ -34,9 +34,9 @@ public class PrescriptionConfiguration : IEntityTypeConfiguration<Prescription>
             .HasForeignKey(p => p.MedicalRecordId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(p => p.Specialist)
-            .WithMany(s => s.Prescriptions)
-            .HasForeignKey(p => p.SpecialistId)
+        builder.HasOne(p => p.Employee)
+            .WithMany()
+            .HasForeignKey(p => p.EmployeeId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

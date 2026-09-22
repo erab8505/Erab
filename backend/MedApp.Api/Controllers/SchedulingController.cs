@@ -9,7 +9,7 @@ namespace MedApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Specialist,Receptionist")]
+[Authorize(Roles = "SuperAdmin,Admin,Specialist,Receptionist")]
 public class SchedulingController : ControllerBase
 {
     private readonly ISchedulingService _schedulingService;
@@ -24,12 +24,13 @@ public class SchedulingController : ControllerBase
     public async Task<IActionResult> GetSchedulings(
         [FromQuery] DateTimeOffset? fromDate,
         [FromQuery] DateTimeOffset? toDate,
+        [FromQuery] Guid? employeeId,
         [FromQuery] Guid? specialistId,
         [FromQuery] Guid? patientId,
         [FromQuery] AppointmentStatus? status)
     {
         var schedulings = await _schedulingService.GetSchedulingsAsync(
-            fromDate, toDate, specialistId, patientId, status);
+            fromDate, toDate, employeeId ?? specialistId, patientId, status);
         return Ok(ApiResponse<List<SchedulingDto>>.Ok(schedulings));
     }
 

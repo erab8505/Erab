@@ -43,7 +43,7 @@ public static class DbInitializer
             }
 
             // Seed default superadmin user if none exists
-            var adminUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin");
+            var adminUser = await context.Users.IgnoreQueryFilters().Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Username == "admin");
             if (adminUser == null)
             {
                 adminUser = new User
@@ -51,9 +51,14 @@ public static class DbInitializer
                     Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
                     Username = "admin",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                    Role = UserRole.SuperAdmin,
                     CreatedAt = DateTimeOffset.UtcNow
                 };
+
+                adminUser.UserRoles.Add(new UserRoleAssignment
+                {
+                    UserId = adminUser.Id,
+                    Role = UserRole.SuperAdmin
+                });
 
                 await context.Users.AddAsync(adminUser);
                 await context.SaveChangesAsync();
@@ -68,9 +73,13 @@ public static class DbInitializer
 
                 logger.LogInformation("Default superadmin user seeded (username: admin)");
             }
-            else if (adminUser.Role != UserRole.SuperAdmin)
+            else if (!adminUser.UserRoles.Any(r => r.Role == UserRole.SuperAdmin))
             {
-                adminUser.Role = UserRole.SuperAdmin;
+                adminUser.UserRoles.Add(new UserRoleAssignment
+                {
+                    UserId = adminUser.Id,
+                    Role = UserRole.SuperAdmin
+                });
                 await context.SaveChangesAsync();
                 logger.LogInformation("Default admin user upgraded to SuperAdmin role.");
             }
@@ -113,8 +122,8 @@ public static class DbInitializer
             logger.LogInformation("Dental company seeded: {CompanyName}", dentalCompany.Name);
         }
 
-        // Seed admin_dental user (Admin role specifically assigned to Dental Company)
-        var dentalAdminUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin_dental");
+        // Seed admin_dental user
+        var dentalAdminUser = await context.Users.IgnoreQueryFilters().Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Username == "admin_dental");
         if (dentalAdminUser == null)
         {
             dentalAdminUser = new User
@@ -122,9 +131,14 @@ public static class DbInitializer
                 Id = Guid.Parse("22222222-2222-2222-2222-222222222223"),
                 Username = "admin_dental",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                Role = UserRole.Admin,
                 CreatedAt = DateTimeOffset.UtcNow
             };
+
+            dentalAdminUser.UserRoles.Add(new UserRoleAssignment
+            {
+                UserId = dentalAdminUser.Id,
+                Role = UserRole.Admin
+            });
 
             await context.Users.AddAsync(dentalAdminUser);
             await context.SaveChangesAsync();
@@ -137,6 +151,7 @@ public static class DbInitializer
             await context.SaveChangesAsync();
             logger.LogInformation("Dental Admin user seeded (username: admin_dental, role: Admin)");
         }
+
         // Link superadmin user to Dental company if not already linked
         var adminUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin");
         if (adminUser != null)
@@ -439,96 +454,135 @@ public static class DbInitializer
             logger.LogInformation("Dental intervention types seeded.");
         }
 
-        // 4. Especialistas y Disponibilidad Horaria
-        var specProfileCamilaId = Guid.Parse("d0000004-0000-0000-0000-000000000001");
-        var specProfileOsorioId = Guid.Parse("d0000004-0000-0000-0000-000000000002");
-        var specProfileValentinaId = Guid.Parse("d0000004-0000-0000-0000-000000000003");
-        var specProfileFelipeId = Guid.Parse("d0000004-0000-0000-0000-000000000004");
-        var specProfileMarianaId = Guid.Parse("d0000004-0000-0000-0000-000000000005");
+        // 4. Colaboradores (Employees) y Disponibilidad Horaria
+        var empProfileCamilaId = Guid.Parse("d0000004-0000-0000-0000-000000000001");
+        var empProfileOsorioId = Guid.Parse("d0000004-0000-0000-0000-000000000002");
+        var empProfileValentinaId = Guid.Parse("d0000004-0000-0000-0000-000000000003");
+        var empProfileFelipeId = Guid.Parse("d0000004-0000-0000-0000-000000000004");
+        var empProfileMarianaId = Guid.Parse("d0000004-0000-0000-0000-000000000005");
+        var empProfileRecepId = Guid.Parse("d0000004-0000-0000-0000-000000000006");
+        var empProfileLabId = Guid.Parse("d0000004-0000-0000-0000-000000000007");
 
-        if (!await context.Specialists.IgnoreQueryFilters().AnyAsync(s => s.CompanyId == dentalCompanyId))
+        if (!await context.Employees.IgnoreQueryFilters().AnyAsync(e => e.CompanyId == dentalCompanyId))
         {
-            var specialists = new List<Specialist>
+            var employees = new List<Employee>
             {
-                new Specialist
+                new Employee
                 {
-                    Id = specProfileCamilaId,
+                    Id = empProfileCamilaId,
                     CompanyId = dentalCompanyId,
                     SpecialtyId = specOdonGenId,
                     FirstName = "Camila",
                     LastName = "Restrepo",
+                    IdentificationNumber = "CC-45210987",
                     LicenseNumber = "ODON-COL-45210",
+                    JobTitle = "Odontóloga General",
                     Email = "camila.restrepo@sonrisasysalud.dental",
                     Phone = "+57 310 555 1101",
                     IsActive = true,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
-                new Specialist
+                new Employee
                 {
-                    Id = specProfileOsorioId,
+                    Id = empProfileOsorioId,
                     CompanyId = dentalCompanyId,
                     SpecialtyId = specOrtodonciaId,
                     FirstName = "Juan David",
                     LastName = "Osorio",
+                    IdentificationNumber = "CC-88341209",
                     LicenseNumber = "ODON-ORT-88341",
+                    JobTitle = "Especialista en Ortodoncia",
                     Email = "juan.osorio@sonrisasysalud.dental",
                     Phone = "+57 311 555 2202",
                     IsActive = true,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
-                new Specialist
+                new Employee
                 {
-                    Id = specProfileValentinaId,
+                    Id = empProfileValentinaId,
                     CompanyId = dentalCompanyId,
                     SpecialtyId = specEndodonciaId,
                     FirstName = "Valentina",
                     LastName = "Moreno",
+                    IdentificationNumber = "CC-19402567",
                     LicenseNumber = "ODON-END-19402",
+                    JobTitle = "Especialista en Endodoncia",
                     Email = "valentina.moreno@sonrisasysalud.dental",
                     Phone = "+57 312 555 3303",
                     IsActive = true,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
-                new Specialist
+                new Employee
                 {
-                    Id = specProfileFelipeId,
+                    Id = empProfileFelipeId,
                     CompanyId = dentalCompanyId,
                     SpecialtyId = specCirugiaOralId,
                     FirstName = "Felipe",
                     LastName = "Echavarría",
+                    IdentificationNumber = "CC-66512340",
                     LicenseNumber = "ODON-CIR-66512",
+                    JobTitle = "Cirujano Maxilofacial",
                     Email = "felipe.echavarria@sonrisasysalud.dental",
                     Phone = "+57 313 555 4404",
                     IsActive = true,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
-                new Specialist
+                new Employee
                 {
-                    Id = specProfileMarianaId,
+                    Id = empProfileMarianaId,
                     CompanyId = dentalCompanyId,
                     SpecialtyId = specRehabilitacionId,
                     FirstName = "Mariana",
                     LastName = "Zuluaga",
+                    IdentificationNumber = "CC-77890123",
                     LicenseNumber = "ODON-REH-77890",
+                    JobTitle = "Especialista en Rehabilitación Oral",
                     Email = "mariana.zuluaga@sonrisasysalud.dental",
                     Phone = "+57 314 555 5505",
+                    IsActive = true,
+                    CreatedAt = DateTimeOffset.UtcNow
+                },
+                new Employee
+                {
+                    Id = empProfileRecepId,
+                    CompanyId = dentalCompanyId,
+                    FirstName = "Andrea",
+                    LastName = "Salazar",
+                    IdentificationNumber = "CC-99887766",
+                    JobTitle = "Recepcionista y Atención al Paciente",
+                    Email = "recepcion@sonrisasysalud.dental",
+                    Phone = "+57 315 555 6606",
+                    IsActive = true,
+                    CreatedAt = DateTimeOffset.UtcNow
+                },
+                new Employee
+                {
+                    Id = empProfileLabId,
+                    CompanyId = dentalCompanyId,
+                    FirstName = "Carlos",
+                    LastName = "Mendoza",
+                    IdentificationNumber = "CC-11223344",
+                    LicenseNumber = "LAB-QFB-4402",
+                    JobTitle = "Bioanalista / Responsable de Laboratorio",
+                    Email = "laboratorio@sonrisasysalud.dental",
+                    Phone = "+57 316 555 7707",
                     IsActive = true,
                     CreatedAt = DateTimeOffset.UtcNow
                 }
             };
 
-            await context.Specialists.AddRangeAsync(specialists);
+            await context.Employees.AddRangeAsync(employees);
             await context.SaveChangesAsync();
 
             // Disponibilidad horaria
-            var availabilities = new List<SpecialistAvailability>();
+            var availabilities = new List<EmployeeAvailability>();
             // Dra. Camila: Lunes a Viernes 08:00 - 17:00
             for (int day = 1; day <= 5; day++)
             {
-                availabilities.Add(new SpecialistAvailability
+                availabilities.Add(new EmployeeAvailability
                 {
                     Id = Guid.NewGuid(),
-                    SpecialistId = specProfileCamilaId,
+                    EmployeeId = empProfileCamilaId,
                     DayOfWeek = day,
                     StartHour = "08:00",
                     EndHour = "17:00",
@@ -538,10 +592,10 @@ public static class DbInitializer
             // Dr. Osorio: Lunes, Miércoles, Viernes 09:00 - 18:00
             foreach (var day in new[] { 1, 3, 5 })
             {
-                availabilities.Add(new SpecialistAvailability
+                availabilities.Add(new EmployeeAvailability
                 {
                     Id = Guid.NewGuid(),
-                    SpecialistId = specProfileOsorioId,
+                    EmployeeId = empProfileOsorioId,
                     DayOfWeek = day,
                     StartHour = "09:00",
                     EndHour = "18:00",
@@ -549,21 +603,21 @@ public static class DbInitializer
                 });
             }
             // Dra. Valentina: Martes, Jueves 08:00 - 16:00, Sábado 08:00 - 13:00
-            availabilities.Add(new SpecialistAvailability { Id = Guid.NewGuid(), SpecialistId = specProfileValentinaId, DayOfWeek = 2, StartHour = "08:00", EndHour = "16:00", CreatedAt = DateTimeOffset.UtcNow });
-            availabilities.Add(new SpecialistAvailability { Id = Guid.NewGuid(), SpecialistId = specProfileValentinaId, DayOfWeek = 4, StartHour = "08:00", EndHour = "16:00", CreatedAt = DateTimeOffset.UtcNow });
-            availabilities.Add(new SpecialistAvailability { Id = Guid.NewGuid(), SpecialistId = specProfileValentinaId, DayOfWeek = 6, StartHour = "08:00", EndHour = "13:00", CreatedAt = DateTimeOffset.UtcNow });
+            availabilities.Add(new EmployeeAvailability { Id = Guid.NewGuid(), EmployeeId = empProfileValentinaId, DayOfWeek = 2, StartHour = "08:00", EndHour = "16:00", CreatedAt = DateTimeOffset.UtcNow });
+            availabilities.Add(new EmployeeAvailability { Id = Guid.NewGuid(), EmployeeId = empProfileValentinaId, DayOfWeek = 4, StartHour = "08:00", EndHour = "16:00", CreatedAt = DateTimeOffset.UtcNow });
+            availabilities.Add(new EmployeeAvailability { Id = Guid.NewGuid(), EmployeeId = empProfileValentinaId, DayOfWeek = 6, StartHour = "08:00", EndHour = "13:00", CreatedAt = DateTimeOffset.UtcNow });
 
             // Dr. Felipe: Martes y Jueves 08:00 - 17:00
-            availabilities.Add(new SpecialistAvailability { Id = Guid.NewGuid(), SpecialistId = specProfileFelipeId, DayOfWeek = 2, StartHour = "08:00", EndHour = "17:00", CreatedAt = DateTimeOffset.UtcNow });
-            availabilities.Add(new SpecialistAvailability { Id = Guid.NewGuid(), SpecialistId = specProfileFelipeId, DayOfWeek = 4, StartHour = "08:00", EndHour = "17:00", CreatedAt = DateTimeOffset.UtcNow });
+            availabilities.Add(new EmployeeAvailability { Id = Guid.NewGuid(), EmployeeId = empProfileFelipeId, DayOfWeek = 2, StartHour = "08:00", EndHour = "17:00", CreatedAt = DateTimeOffset.UtcNow });
+            availabilities.Add(new EmployeeAvailability { Id = Guid.NewGuid(), EmployeeId = empProfileFelipeId, DayOfWeek = 4, StartHour = "08:00", EndHour = "17:00", CreatedAt = DateTimeOffset.UtcNow });
 
             // Dra. Mariana: Lunes a Jueves 09:00 - 17:00
             for (int day = 1; day <= 4; day++)
             {
-                availabilities.Add(new SpecialistAvailability
+                availabilities.Add(new EmployeeAvailability
                 {
                     Id = Guid.NewGuid(),
-                    SpecialistId = specProfileMarianaId,
+                    EmployeeId = empProfileMarianaId,
                     DayOfWeek = day,
                     StartHour = "09:00",
                     EndHour = "17:00",
@@ -571,17 +625,18 @@ public static class DbInitializer
                 });
             }
 
-            await context.SpecialistAvailabilities.AddRangeAsync(availabilities);
+            await context.EmployeeAvailabilities.AddRangeAsync(availabilities);
             await context.SaveChangesAsync();
-            logger.LogInformation("Dental specialists and availabilities seeded.");
+            logger.LogInformation("Dental employees and availabilities seeded.");
         }
 
-        // 5. Usuarios Odontológicos
+        // 5. Usuarios Odontológicos con Multi-Roles y Vinculación
         var userRecepDentalId = Guid.Parse("d0000005-0000-0000-0000-000000000001");
         var userCamilaId = Guid.Parse("d0000005-0000-0000-0000-000000000002");
         var userOsorioId = Guid.Parse("d0000005-0000-0000-0000-000000000003");
         var userValentinaId = Guid.Parse("d0000005-0000-0000-0000-000000000004");
         var userFelipeId = Guid.Parse("d0000005-0000-0000-0000-000000000005");
+        var userLabId = Guid.Parse("d0000005-0000-0000-0000-000000000099");
 
         if (!await context.Users.IgnoreQueryFilters().AnyAsync(u => u.Username == "recepcion_dental"))
         {
@@ -592,7 +647,7 @@ public static class DbInitializer
                     Id = userRecepDentalId,
                     Username = "recepcion_dental",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("recep123"),
-                    Role = UserRole.Receptionist,
+                    EmployeeId = empProfileRecepId,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
                 new User
@@ -600,8 +655,7 @@ public static class DbInitializer
                     Id = userCamilaId,
                     Username = "dra_camila",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("camila123"),
-                    Role = UserRole.Specialist,
-                    SpecialistId = specProfileCamilaId,
+                    EmployeeId = empProfileCamilaId,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
                 new User
@@ -609,8 +663,7 @@ public static class DbInitializer
                     Id = userOsorioId,
                     Username = "dr_osorio",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("osorio123"),
-                    Role = UserRole.Specialist,
-                    SpecialistId = specProfileOsorioId,
+                    EmployeeId = empProfileOsorioId,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
                 new User
@@ -618,8 +671,7 @@ public static class DbInitializer
                     Id = userValentinaId,
                     Username = "dra_valentina",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("valentina123"),
-                    Role = UserRole.Specialist,
-                    SpecialistId = specProfileValentinaId,
+                    EmployeeId = empProfileValentinaId,
                     CreatedAt = DateTimeOffset.UtcNow
                 },
                 new User
@@ -627,11 +679,25 @@ public static class DbInitializer
                     Id = userFelipeId,
                     Username = "dr_felipe",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("felipe123"),
-                    Role = UserRole.Specialist,
-                    SpecialistId = specProfileFelipeId,
+                    EmployeeId = empProfileFelipeId,
+                    CreatedAt = DateTimeOffset.UtcNow
+                },
+                new User
+                {
+                    Id = userLabId,
+                    Username = "laboratorio_central",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("lab123"),
+                    EmployeeId = empProfileLabId,
                     CreatedAt = DateTimeOffset.UtcNow
                 }
             };
+
+            dentalUsers[0].UserRoles.Add(new UserRoleAssignment { UserId = userRecepDentalId, Role = UserRole.Receptionist });
+            dentalUsers[1].UserRoles.Add(new UserRoleAssignment { UserId = userCamilaId, Role = UserRole.Specialist });
+            dentalUsers[2].UserRoles.Add(new UserRoleAssignment { UserId = userOsorioId, Role = UserRole.Specialist });
+            dentalUsers[3].UserRoles.Add(new UserRoleAssignment { UserId = userValentinaId, Role = UserRole.Specialist });
+            dentalUsers[4].UserRoles.Add(new UserRoleAssignment { UserId = userFelipeId, Role = UserRole.Specialist });
+            dentalUsers[5].UserRoles.Add(new UserRoleAssignment { UserId = userLabId, Role = UserRole.Laboratorist });
 
             await context.Users.AddRangeAsync(dentalUsers);
             await context.SaveChangesAsync();
@@ -642,95 +708,13 @@ public static class DbInitializer
                 new UserCompany { UserId = userCamilaId, CompanyId = dentalCompanyId },
                 new UserCompany { UserId = userOsorioId, CompanyId = dentalCompanyId },
                 new UserCompany { UserId = userValentinaId, CompanyId = dentalCompanyId },
-                new UserCompany { UserId = userFelipeId, CompanyId = dentalCompanyId }
+                new UserCompany { UserId = userFelipeId, CompanyId = dentalCompanyId },
+                new UserCompany { UserId = userLabId, CompanyId = dentalCompanyId }
             };
 
             await context.UserCompanies.AddRangeAsync(userCompanies);
             await context.SaveChangesAsync();
-            logger.LogInformation("Dental users seeded.");
-        }
-        else
-        {
-            // Ensure dr_felipe exists even if users were previously seeded
-            var existingFelipe = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "dr_felipe");
-            if (existingFelipe == null)
-            {
-                var felipeUser = new User
-                {
-                    Id = userFelipeId,
-                    Username = "dr_felipe",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("felipe123"),
-                    Role = UserRole.Specialist,
-                    SpecialistId = specProfileFelipeId,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-                await context.Users.AddAsync(felipeUser);
-                await context.SaveChangesAsync();
-
-                var linked = await context.UserCompanies.IgnoreQueryFilters().AnyAsync(uc => uc.UserId == felipeUser.Id && uc.CompanyId == dentalCompanyId);
-                if (!linked)
-                {
-                    await context.UserCompanies.AddAsync(new UserCompany
-                    {
-                        UserId = felipeUser.Id,
-                        CompanyId = dentalCompanyId
-                    });
-                    await context.SaveChangesAsync();
-                }
-                logger.LogInformation("Dr. Felipe Echavarria user created and linked.");
-            }
-
-            // Ensure laboratorist user exists
-            var existingLabUser = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "laboratorio_central");
-            if (existingLabUser == null)
-            {
-                var labUser = new User
-                {
-                    Id = Guid.Parse("d0000005-0000-0000-0000-000000000099"),
-                    Username = "laboratorio_central",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("lab123"),
-                    Role = UserRole.Laboratorist,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-                await context.Users.AddAsync(labUser);
-                await context.SaveChangesAsync();
-
-                var linked = await context.UserCompanies.IgnoreQueryFilters().AnyAsync(uc => uc.UserId == labUser.Id && uc.CompanyId == dentalCompanyId);
-                if (!linked)
-                {
-                    await context.UserCompanies.AddAsync(new UserCompany
-                    {
-                        UserId = labUser.Id,
-                        CompanyId = dentalCompanyId
-                    });
-                    await context.SaveChangesAsync();
-                }
-                logger.LogInformation("Laboratorist user (laboratorio_central) created and linked.");
-            }
-
-            // Ensure company-scoped admin user exists for testing
-            var existingAdminDental = await context.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == "admin_dental");
-            if (existingAdminDental == null)
-            {
-                var adminDentalUser = new User
-                {
-                    Id = Guid.Parse("d0000005-0000-0000-0000-000000000000"),
-                    Username = "admin_dental",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                    Role = UserRole.Admin,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-                await context.Users.AddAsync(adminDentalUser);
-                await context.SaveChangesAsync();
-
-                await context.UserCompanies.AddAsync(new UserCompany
-                {
-                    UserId = adminDentalUser.Id,
-                    CompanyId = dentalCompanyId
-                });
-                await context.SaveChangesAsync();
-                logger.LogInformation("Company Admin user (admin_dental) created and linked to dental company.");
-            }
+            logger.LogInformation("Dental users with multi-roles seeded.");
         }
 
         // 6. Pacientes Odontológicos
@@ -821,7 +805,7 @@ public static class DbInitializer
                     Id = Guid.NewGuid(),
                     CompanyId = dentalCompanyId,
                     PatientId = patientMateoId,
-                    SpecialistId = specProfileFelipeId,
+                    EmployeeId = empProfileFelipeId,
                     InterventionTypeId = intCordalesId,
                     ScheduledAt = now.AddDays(1).Date.AddHours(9),
                     DurationMinutes = 60,
@@ -834,7 +818,7 @@ public static class DbInitializer
                     Id = Guid.NewGuid(),
                     CompanyId = dentalCompanyId,
                     PatientId = patientLuciaId,
-                    SpecialistId = specProfileFelipeId,
+                    EmployeeId = empProfileFelipeId,
                     InterventionTypeId = intCordalesId,
                     ScheduledAt = now.Date.AddHours(14),
                     DurationMinutes = 60,
@@ -847,7 +831,7 @@ public static class DbInitializer
                     Id = Guid.NewGuid(),
                     CompanyId = dentalCompanyId,
                     PatientId = patientMateoId,
-                    SpecialistId = specProfileOsorioId,
+                    EmployeeId = empProfileOsorioId,
                     InterventionTypeId = intOrtodonciaCtrlId,
                     ScheduledAt = now.AddDays(1).Date.AddHours(10),
                     DurationMinutes = 30,
@@ -860,7 +844,7 @@ public static class DbInitializer
                     Id = Guid.NewGuid(),
                     CompanyId = dentalCompanyId,
                     PatientId = patientIsabellaId,
-                    SpecialistId = specProfileValentinaId,
+                    EmployeeId = empProfileValentinaId,
                     InterventionTypeId = intEndoMultiId,
                     ScheduledAt = now.AddDays(2).Date.AddHours(9),
                     DurationMinutes = 90,
@@ -873,7 +857,7 @@ public static class DbInitializer
                     Id = Guid.NewGuid(),
                     CompanyId = dentalCompanyId,
                     PatientId = patientLuciaId,
-                    SpecialistId = specProfileCamilaId,
+                    EmployeeId = empProfileCamilaId,
                     InterventionTypeId = intLimpiezaId,
                     ScheduledAt = now.AddDays(-3).Date.AddHours(14),
                     DurationMinutes = 30,
@@ -886,7 +870,7 @@ public static class DbInitializer
                     Id = Guid.NewGuid(),
                     CompanyId = dentalCompanyId,
                     PatientId = patientSamuelId,
-                    SpecialistId = specProfileCamilaId,
+                    EmployeeId = empProfileCamilaId,
                     InterventionTypeId = intSellantesId,
                     ScheduledAt = now.AddDays(-5).Date.AddHours(11),
                     DurationMinutes = 30,
@@ -899,46 +883,6 @@ public static class DbInitializer
             await context.Schedulings.AddRangeAsync(schedulings);
             await context.SaveChangesAsync();
             logger.LogInformation("Dental schedulings seeded.");
-        }
-        else
-        {
-            // Ensure Dr. Felipe has schedulings if none exist for him
-            var felipeHasSchedulings = await context.Schedulings.IgnoreQueryFilters().AnyAsync(s => s.CompanyId == dentalCompanyId && s.SpecialistId == specProfileFelipeId);
-            if (!felipeHasSchedulings)
-            {
-                var felipeSchedulings = new List<Scheduling>
-                {
-                    new Scheduling
-                    {
-                        Id = Guid.NewGuid(),
-                        CompanyId = dentalCompanyId,
-                        PatientId = patientMateoId,
-                        SpecialistId = specProfileFelipeId,
-                        InterventionTypeId = intCordalesId,
-                        ScheduledAt = now.AddDays(1).Date.AddHours(9),
-                        DurationMinutes = 60,
-                        Notes = "Extracción quirúrgica de cordales 38 y 48 retenidas",
-                        Status = AppointmentStatus.Confirmed,
-                        CreatedAt = DateTimeOffset.UtcNow
-                    },
-                    new Scheduling
-                    {
-                        Id = Guid.NewGuid(),
-                        CompanyId = dentalCompanyId,
-                        PatientId = patientLuciaId,
-                        SpecialistId = specProfileFelipeId,
-                        InterventionTypeId = intCordalesId,
-                        ScheduledAt = now.Date.AddHours(14),
-                        DurationMinutes = 60,
-                        Notes = "Valoración y extracción programada de cordal superior 18",
-                        Status = AppointmentStatus.Scheduled,
-                        CreatedAt = DateTimeOffset.UtcNow
-                    }
-                };
-                await context.Schedulings.AddRangeAsync(felipeSchedulings);
-                await context.SaveChangesAsync();
-                logger.LogInformation("Dr. Felipe Echavarria schedulings seeded.");
-            }
         }
 
         // 8. Historias Clínicas y Prescripciones Odontológicas
@@ -989,7 +933,7 @@ public static class DbInitializer
                 Id = Guid.NewGuid(),
                 CompanyId = dentalCompanyId,
                 PatientId = patientLuciaId,
-                SpecialistId = specProfileCamilaId,
+                EmployeeId = empProfileCamilaId,
                 MedicalRecordId = recordLuciaId,
                 PrescriptionDate = DateTimeOffset.UtcNow.AddDays(-3),
                 Notes = "Cuidado post-limpieza y control de placa bacteriana",
@@ -1001,7 +945,7 @@ public static class DbInitializer
                 Id = Guid.NewGuid(),
                 CompanyId = dentalCompanyId,
                 PatientId = patientIsabellaId,
-                SpecialistId = specProfileValentinaId,
+                EmployeeId = empProfileValentinaId,
                 MedicalRecordId = recordIsabellaId,
                 PrescriptionDate = DateTimeOffset.UtcNow.AddDays(-7),
                 Notes = "Manejo de dolor agudo e inflamación periapical (Paciente alérgica a penicilina)",
@@ -1094,7 +1038,7 @@ public static class DbInitializer
 
                     // Biometría Hemática / Hematología
                     new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "HB", Name = "Hemoglobina", Unit = "g/dL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 12.0m, DefaultReferenceMax = 16.5m, DefaultReferenceText = "Mujeres: 12.0 - 15.5 g/dL, Hombres: 13.5 - 17.5 g/dL", DefaultReagentName = "Reactivo Drabkin", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
-                    new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "HCT", Name = "Hematocrito", Unit = "%", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 36.0m, DefaultReferenceMax = 50.0m, DefaultReferenceText = "Mujeres: 37 - 48%, Hombres: 42 - 52%", DefaultReagentName = "Centrifugación", DefaultReagentQuantity = 0.0m, CreatedAt = DateTimeOffset.UtcNow },
+                    new LabParameter { Id = Guid.NewGuid(), CompanyId = webGuid(), Code = "HCT", Name = "Hematocrito", Unit = "%", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 36.0m, DefaultReferenceMax = 50.0m, DefaultReferenceText = "Mujeres: 37 - 48%, Hombres: 42 - 52%", DefaultReagentName = "Centrifugación", DefaultReagentQuantity = 0.0m, CreatedAt = DateTimeOffset.UtcNow },
                     new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "RBC", Name = "Eritrocitos (Glóbulos Rojos)", Unit = "x10^6/uL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 4.0m, DefaultReferenceMax = 5.5m, DefaultReferenceText = "Mujeres: 4.0 - 5.2, Hombres: 4.5 - 5.9 x10^6/uL", DefaultReagentName = "Diluyente Hematológico", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
                     new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "WBC", Name = "Leucocitos Totales (Glóbulos Blancos)", Unit = "x10^3/uL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 4.5m, DefaultReferenceMax = 11.0m, DefaultReferenceText = "Normal: 4.5 - 11.0 x10^3/uL", DefaultReagentName = "Reactivo Lisante", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
                     new LabParameter { Id = Guid.NewGuid(), CompanyId = companyId, Code = "PLT", Name = "Plaquetas", Unit = "x10^3/uL", ValueType = ParameterValueType.Numeric, DefaultReferenceMin = 150.0m, DefaultReferenceMax = 450.0m, DefaultReferenceText = "Normal: 150 - 450 x10^3/uL", DefaultReagentName = "Reactivo Diluyente", DefaultReagentQuantity = 1.0m, CreatedAt = DateTimeOffset.UtcNow },
@@ -1359,7 +1303,9 @@ public static class DbInitializer
             if (!await context.StudyOrders.IgnoreQueryFilters().AnyAsync(o => o.CompanyId == companyId))
             {
                 var patient = await context.Patients.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.CompanyId == companyId);
-                var specialist = await context.Specialists.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.CompanyId == companyId);
+                var doctor = await context.Employees.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.CompanyId == companyId && e.SpecialtyId != null);
+                var laboratorist = await context.Employees.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.CompanyId == companyId && e.LicenseNumber != null && e.SpecialtyId == null);
+
                 var studyCheckup = await context.ClinicalStudies
                     .IgnoreQueryFilters()
                     .Include(s => s.StudyExams)
@@ -1368,28 +1314,20 @@ public static class DbInitializer
                                 .ThenInclude(ep => ep.LabParameter)
                     .FirstOrDefaultAsync(s => s.CompanyId == companyId && s.Code == "EST-CHECKUP-BAS");
 
-                var studyLipid = await context.ClinicalStudies
-                    .IgnoreQueryFilters()
-                    .Include(s => s.StudyExams)
-                        .ThenInclude(se => se.LabExam)
-                            .ThenInclude(e => e.Parameters)
-                                .ThenInclude(ep => ep.LabParameter)
-                    .FirstOrDefaultAsync(s => s.CompanyId == companyId && s.Code == "EST-LIPID");
-
                 if (patient != null && studyCheckup != null)
                 {
-                    // Orden 1: Completada con resultados evaluados (Demostración de alertas)
                     var orderCompleted = new StudyOrder
                     {
                         Id = Guid.NewGuid(),
                         CompanyId = companyId,
                         PatientId = patient.Id,
-                        SpecialistId = specialist?.Id,
+                        RequestingDoctorId = doctor?.Id,
+                        LaboratoristId = laboratorist?.Id,
                         OrderNumber = $"LAB-{DateTimeOffset.UtcNow.Year}-00001",
                         Status = StudyOrderStatus.Completed,
                         OrderDate = DateTimeOffset.UtcNow.AddDays(-2),
                         CompletedDate = DateTimeOffset.UtcNow.AddDays(-1),
-                        LaboratoristName = "Lic. Carlos Mendoza - QFB / Reg. LAB-4402",
+                        LaboratoristName = laboratorist != null ? $"{laboratorist.FirstName} {laboratorist.LastName} - Bioanalista" : "Lic. Carlos Mendoza - QFB / Reg. LAB-4402",
                         ClinicalDiagnosis = "Chequeo médico anual de rutina y control de glicemia.",
                         Notes = "Paciente con leve hiperglicemia e hipercolesterolemia. Se recomienda ajuste nutricional y control en 3 meses.",
                         TotalAmount = studyCheckup.BasePrice
@@ -1425,7 +1363,6 @@ public static class DbInitializer
                                 AlertLevel = "Normal"
                             };
 
-                            // Simulated realistic test results
                             switch (ep.LabParameter.Code)
                             {
                                 case "GLU":
@@ -1492,10 +1429,7 @@ public static class DbInitializer
                                     result.NumericValue = 2.0m;
                                     break;
                                 case "EGO-BACT":
-                                    result.TextValue = "Ausentes";
-                                    break;
-                                default:
-                                    result.NumericValue = ep.LabParameter.DefaultReferenceMin.HasValue ? (ep.LabParameter.DefaultReferenceMin.Value + ep.LabParameter.DefaultReferenceMax.GetValueOrDefault(ep.LabParameter.DefaultReferenceMin.Value)) / 2 : null;
+                                    result.TextValue = "Escasas";
                                     break;
                             }
 
@@ -1505,65 +1439,12 @@ public static class DbInitializer
 
                     orderCompleted.Items.Add(itemCheckup);
                     await context.StudyOrders.AddAsync(orderCompleted);
-
-                    // Orden 2: En Análisis
-                    if (studyLipid != null)
-                    {
-                        var orderInAnalysis = new StudyOrder
-                        {
-                            Id = Guid.NewGuid(),
-                            CompanyId = companyId,
-                            PatientId = patient.Id,
-                            SpecialistId = specialist?.Id,
-                            OrderNumber = $"LAB-{DateTimeOffset.UtcNow.Year}-00002",
-                            Status = StudyOrderStatus.InAnalysis,
-                            OrderDate = DateTimeOffset.UtcNow.AddHours(-3),
-                            ClinicalDiagnosis = "Sospecha de dislipidemia mixta",
-                            Notes = "Muestra sanguínea recibida en tubo con gel separador.",
-                            TotalAmount = studyLipid.BasePrice
-                        };
-
-                        var itemLipid = new StudyOrderItem
-                        {
-                            Id = Guid.NewGuid(),
-                            StudyOrderId = orderInAnalysis.Id,
-                            ClinicalStudyId = studyLipid.Id,
-                            Price = studyLipid.BasePrice,
-                            Status = StudyOrderStatus.InAnalysis
-                        };
-
-                        foreach (var se in studyLipid.StudyExams.OrderBy(x => x.SortOrder))
-                        {
-                            foreach (var ep in se.LabExam.Parameters.OrderBy(x => x.SortOrder))
-                            {
-                                itemLipid.Results.Add(new StudyOrderResult
-                                {
-                                    Id = Guid.NewGuid(),
-                                    StudyOrderItemId = itemLipid.Id,
-                                    LabExamId = se.LabExamId,
-                                    LabParameterId = ep.LabParameterId,
-                                    ParameterCode = ep.LabParameter.Code,
-                                    ParameterName = ep.LabParameter.Name,
-                                    Unit = ep.LabParameter.Unit,
-                                    ValueType = ep.LabParameter.ValueType,
-                                    ReferenceRangeMin = ep.CustomReferenceMin ?? ep.LabParameter.DefaultReferenceMin,
-                                    ReferenceRangeMax = ep.CustomReferenceMax ?? ep.LabParameter.DefaultReferenceMax,
-                                    ReferenceText = ep.CustomReferenceText ?? ep.LabParameter.DefaultReferenceText,
-                                    IsOutOfRange = false,
-                                    AlertLevel = "Normal"
-                                });
-                            }
-                        }
-
-                        orderInAnalysis.Items.Add(itemLipid);
-                        await context.StudyOrders.AddAsync(orderInAnalysis);
-                    }
-
                     await context.SaveChangesAsync();
                     logger.LogInformation("Sample study orders seeded for company {CompanyId}.", companyId);
                 }
             }
         }
     }
-}
 
+    private static Guid webGuid() => Guid.NewGuid();
+}

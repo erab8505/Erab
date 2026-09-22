@@ -92,7 +92,7 @@ import { PaymentReceiptModalComponent } from './components/payment-receipt-modal
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Filtro de Citas:</span>
             
-            @if (authService.isSpecialist()) {
+            @if (authService.isOnlySpecialist()) {
               <span class="btn btn-sm btn-primary cursor-default">
                 👨‍⚕️ Mis Citas
               </span>
@@ -105,10 +105,20 @@ import { PaymentReceiptModalComponent } from './components/payment-receipt-modal
                 (click)="setFilterMode('ALL')">
                 🌐 Todas las Citas
               </button>
+              @if (authService.isSpecialist()) {
+                <button 
+                  type="button" 
+                  class="btn btn-sm" 
+                  [class.btn-primary]="filterMode() === 'MINE'"
+                  [class.btn-secondary]="filterMode() !== 'MINE'"
+                  (click)="setFilterMode('MINE')">
+                  👨‍⚕️ Mis Citas
+                </button>
+              }
             }
           </div>
 
-          @if (!authService.isSpecialist()) {
+          @if (!authService.isOnlySpecialist()) {
             <div class="flex items-center gap-2">
               <label class="text-xs text-slate-500 font-medium">Especialista:</label>
               <select 
@@ -169,7 +179,7 @@ import { PaymentReceiptModalComponent } from './components/payment-receipt-modal
                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 hover:bg-amber-200 transition-colors cursor-pointer border border-amber-300 dark:border-amber-700"
                     title="Clic para registrar cobro"
                     (click)="openPaymentModal(item, $event)">
-                    <span>⏳ Pendiente</span>
+                    <span> Pendiente</span>
                     <span class="text-[10px] font-semibold underline ml-0.5">Cobrar</span>
                   </button>
                 } @else {
@@ -757,7 +767,7 @@ export class SchedulingListComponent implements OnInit {
   readonly activeView = signal<'list' | 'calendar'>('list');
 
   // Filters
-  readonly filterMode = signal<'ALL' | 'MINE'>(this.authService.isSpecialist() ? 'MINE' : 'ALL');
+  readonly filterMode = signal<'ALL' | 'MINE'>(this.authService.isOnlySpecialist() ? 'MINE' : 'ALL');
   readonly selectedSpecialistId = signal<string>('');
 
   readonly filteredSchedulings = computed(() => {
@@ -902,7 +912,7 @@ export class SchedulingListComponent implements OnInit {
     this.loading.set(true);
     forkJoin({
       schedulings: this.http.get<ApiResponse<SchedulingDto[]>>(`${environment.apiUrl}/scheduling`),
-      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`)
+      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/employees`)
     }).subscribe({
       next: (res) => {
         this.loading.set(false);
@@ -1080,7 +1090,8 @@ export class SchedulingListComponent implements OnInit {
     if (!app || !this.newDate) return;
 
     this.loadingNewSlots.set(true);
-    this.http.get<ApiResponse<TimeSlotDto[]>>(`${environment.apiUrl}/specialists/${app.specialistId}/slots?date=${this.newDate}`).subscribe({
+    const empId = app.employeeId || app.specialistId;
+    this.http.get<ApiResponse<TimeSlotDto[]>>(`${environment.apiUrl}/employees/${empId}/slots?date=${this.newDate}`).subscribe({
       next: (res) => {
         this.loadingNewSlots.set(false);
         this.newSlots.set(res.data || []);

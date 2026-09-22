@@ -369,7 +369,7 @@ export class DashboardComponent implements OnInit {
     forkJoin({
       areas: this.http.get<ApiResponse<AreaDto[]>>(`${environment.apiUrl}/areas`),
       specialties: this.http.get<ApiResponse<SpecialtyDto[]>>(`${environment.apiUrl}/specialties`),
-      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`),
+      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/employees`),
       interventions: this.http.get<ApiResponse<InterventionTypeDto[]>>(`${environment.apiUrl}/intervention-types`),
       patients: this.http.get<ApiResponse<PatientDto[]>>(`${environment.apiUrl}/patients`),
       users: this.http.get<ApiResponse<UserDto[]>>(`${environment.apiUrl}/users`)

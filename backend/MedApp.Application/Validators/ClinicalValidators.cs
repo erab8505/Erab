@@ -51,7 +51,7 @@ public class CreatePrescriptionDtoValidator : AbstractValidator<CreatePrescripti
     public CreatePrescriptionDtoValidator()
     {
         RuleFor(x => x.PatientId).NotEmpty();
-        RuleFor(x => x.SpecialistId).NotEmpty();
+        RuleFor(x => x.EmployeeId).NotEmpty();
         RuleFor(x => x.Items).NotEmpty().WithMessage("Prescription must contain at least one medication item.");
         RuleForEach(x => x.Items).SetValidator(new CreatePrescriptionItemDtoValidator());
         RuleFor(x => x.Notes).MaximumLength(2000);

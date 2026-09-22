@@ -78,7 +78,7 @@ public class GlobalExceptionHandlerMiddleware
             _ => new
             {
                 StatusCode = (int)HttpStatusCode.InternalServerError,
-                Envelope = ApiResponse.Fail("An unexpected internal server error occurred.")
+                Envelope = ApiResponse.Fail(exception.Message, new[] { exception.ToString() })
             }
         };
 

@@ -48,13 +48,23 @@ export const routes: Routes = [
         canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       {
-        path: 'specialists',
-        loadComponent: () => import('./features/admin/specialists/specialist-list.component').then(m => m.SpecialistListComponent),
+        path: 'employees',
+        loadComponent: () => import('./features/admin/employees/employee-list.component').then(m => m.EmployeeListComponent),
         canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
       },
       {
+        path: 'employees/:id/availability',
+        loadComponent: () => import('./features/admin/employees/employee-availability.component').then(m => m.EmployeeAvailabilityComponent),
+        canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist'])]
+      },
+      {
+        path: 'specialists',
+        redirectTo: 'employees',
+        pathMatch: 'full'
+      },
+      {
         path: 'specialists/:id/availability',
-        loadComponent: () => import('./features/admin/specialists/specialist-availability.component').then(m => m.SpecialistAvailabilityComponent),
+        loadComponent: () => import('./features/admin/employees/employee-availability.component').then(m => m.EmployeeAvailabilityComponent),
         canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist'])]
       },
       {
@@ -64,8 +74,8 @@ export const routes: Routes = [
       },
       {
         path: 'receptionists',
-        loadComponent: () => import('./features/admin/receptionists/receptionist-list.component').then(m => m.ReceptionistListComponent),
-        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
+        redirectTo: 'employees',
+        pathMatch: 'full'
       },
       {
         path: 'users',

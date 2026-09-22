@@ -30,6 +30,7 @@ public static class DependencyInjection
                 sqlOptions.MigrationsAssembly(typeof(MedAppDbContext).Assembly.FullName);
                 sqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorNumbersToAdd: null);
             });
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<MedAppDbContext>());

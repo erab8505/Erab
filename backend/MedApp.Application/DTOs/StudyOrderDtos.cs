@@ -53,8 +53,20 @@ public class StudyOrderDto
     public string? PatientDocumentId { get; set; }
     public string? PatientPhone { get; set; }
 
-    public Guid? SpecialistId { get; set; }
-    public string? SpecialistName { get; set; }
+    public Guid? RequestingDoctorId { get; set; }
+    public string? RequestingDoctorName { get; set; }
+
+    // Compatibility aliases
+    public Guid? SpecialistId
+    {
+        get => RequestingDoctorId;
+        set => RequestingDoctorId = value;
+    }
+    public string? SpecialistName
+    {
+        get => RequestingDoctorName;
+        set => RequestingDoctorName = value;
+    }
 
     public Guid? SchedulingId { get; set; }
 
@@ -75,7 +87,12 @@ public class StudyOrderDto
 public class CreateStudyOrderDto
 {
     public Guid PatientId { get; set; }
-    public Guid? SpecialistId { get; set; }
+    public Guid? RequestingDoctorId { get; set; }
+    public Guid? SpecialistId
+    {
+        get => RequestingDoctorId;
+        set => RequestingDoctorId = value;
+    }
     public Guid? SchedulingId { get; set; }
     public string? ClinicalDiagnosis { get; set; }
     public string? Notes { get; set; }
@@ -99,7 +116,12 @@ public class SaveParameterResultDto
 
 public class SaveStudyResultsDto
 {
-    public Guid? SpecialistId { get; set; }
+    public Guid? RequestingDoctorId { get; set; }
+    public Guid? SpecialistId
+    {
+        get => RequestingDoctorId;
+        set => RequestingDoctorId = value;
+    }
     public Guid? LaboratoristId { get; set; }
     public string? LaboratoristName { get; set; }
     public string? GeneralInterpretation { get; set; }

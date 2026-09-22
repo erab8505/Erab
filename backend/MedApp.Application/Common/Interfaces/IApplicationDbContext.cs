@@ -7,11 +7,12 @@ public interface IApplicationDbContext
 {
     DbSet<Company> Companies { get; }
     DbSet<User> Users { get; }
+    DbSet<UserRoleAssignment> UserRoles { get; }
     DbSet<UserCompany> UserCompanies { get; }
+    DbSet<Employee> Employees { get; }
+    DbSet<EmployeeAvailability> EmployeeAvailabilities { get; }
     DbSet<Area> Areas { get; }
     DbSet<Specialty> Specialties { get; }
-    DbSet<Specialist> Specialists { get; }
-    DbSet<SpecialistAvailability> SpecialistAvailabilities { get; }
     DbSet<InterventionType> InterventionTypes { get; }
     DbSet<Patient> Patients { get; }
     DbSet<Scheduling> Schedulings { get; }
@@ -28,7 +29,6 @@ public interface IApplicationDbContext
     DbSet<StudyOrder> StudyOrders { get; }
     DbSet<StudyOrderItem> StudyOrderItems { get; }
     DbSet<StudyOrderResult> StudyOrderResults { get; }
-    DbSet<Receptionist> Receptionists { get; }
     DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

@@ -44,10 +44,15 @@ public class StudyOrderConfiguration : IEntityTypeConfiguration<StudyOrder>
             .HasForeignKey(o => o.PatientId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(o => o.Specialist)
+        builder.HasOne(o => o.RequestingDoctor)
             .WithMany()
-            .HasForeignKey(o => o.SpecialistId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .HasForeignKey(o => o.RequestingDoctorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(o => o.Laboratorist)
+            .WithMany()
+            .HasForeignKey(o => o.LaboratoristId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(o => o.Scheduling)
             .WithMany()

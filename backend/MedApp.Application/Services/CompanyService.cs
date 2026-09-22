@@ -30,6 +30,7 @@ public class CompanyService : ICompanyService
     public async Task<List<CompanyDto>> GetMyCompaniesAsync(Guid userId)
     {
         var user = await _context.Users
+            .Include(u => u.UserRoles)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
             .FirstOrDefaultAsync(u => u.Id == userId);
@@ -37,7 +38,7 @@ public class CompanyService : ICompanyService
         if (user == null)
             throw new NotFoundException("Usuario no encontrado.");
 
-        if (user.Role == UserRole.SuperAdmin)
+        if (user.UserRoles.Any(r => r.Role == UserRole.SuperAdmin))
         {
             return await GetAllCompaniesAsync();
         }

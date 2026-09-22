@@ -11,8 +11,8 @@ public class StudyOrder : BaseEntity
     public Guid PatientId { get; set; }
     public Patient Patient { get; set; } = null!;
 
-    public Guid? SpecialistId { get; set; }
-    public Specialist? Specialist { get; set; }
+    public Guid? RequestingDoctorId { get; set; }
+    public Employee? RequestingDoctor { get; set; }
 
     public Guid? SchedulingId { get; set; }
     public Scheduling? Scheduling { get; set; }
@@ -26,6 +26,7 @@ public class StudyOrder : BaseEntity
     public decimal TotalAmount { get; set; }
 
     public Guid? LaboratoristId { get; set; }
+    public Employee? Laboratorist { get; set; }
     public string? LaboratoristName { get; set; }
 
     public ICollection<StudyOrderItem> Items { get; set; } = new List<StudyOrderItem>();

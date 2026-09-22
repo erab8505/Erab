@@ -26,8 +26,8 @@ public class AuthService : IAuthService
     public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
     {
         var user = await _context.Users
-            .Include(u => u.Specialist)
-            .Include(u => u.Receptionist)
+            .Include(u => u.Employee)
+            .Include(u => u.UserRoles)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
             .FirstOrDefaultAsync(u => u.Username == request.Username);
@@ -37,19 +37,16 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Credenciales inválidas. Por favor verifique su usuario y contraseña.");
         }
 
-        string? profileName = null;
-        if (user.Specialist != null)
+        string? profileName = user.Employee?.FullName;
+        var roles = user.UserRoles.Select(r => r.Role.ToString()).ToList();
+        if (!roles.Any())
         {
-            profileName = user.Specialist.FullName;
-        }
-        else if (user.Receptionist != null)
-        {
-            profileName = user.Receptionist.FullName;
+            roles.Add(UserRole.Receptionist.ToString());
         }
 
         List<CompanyDto> assignedCompanies;
 
-        if (user.Role == UserRole.SuperAdmin)
+        if (user.UserRoles.Any(r => r.Role == UserRole.SuperAdmin))
         {
             // SuperAdmins can access all active companies in the platform
             var allCompanies = await _context.Companies
@@ -63,7 +60,7 @@ public class AuthService : IAuthService
         }
         else
         {
-            // Admins, Specialists, Receptionists and Laboratorists only access their assigned companies
+            // Users only access their assigned companies
             assignedCompanies = user.UserCompanies
                 .Where(uc => uc.Company.IsActive)
                 .Select(uc => new CompanyDto(
@@ -82,9 +79,8 @@ public class AuthService : IAuthService
             user.Id,
             user.Username,
             profileName,
-            user.Role.ToString(),
-            user.SpecialistId,
-            user.ReceptionistId,
+            roles,
+            user.EmployeeId,
             assignedCompanies
         );
     }

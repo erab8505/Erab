@@ -1,11 +1,12 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError, forkJoin, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ApiResponse, CompanyDto, ReceptionistDto, SpecialistDto, UserDto, UserRole } from '../../../core/models/models';
+import { ApiResponse, CompanyDto, EmployeeDto, UserDto, UserRole } from '../../../core/models/models';
 import { AuthService } from '../../../core/services/auth.service';
+import { EmployeeService } from '../../../core/services/employee.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../../shared/components/data-table/data-table.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
@@ -20,7 +21,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
       <div class="page-header">
         <div>
           <h1 class="text-2xl font-bold">Gestión de Usuarios y Roles</h1>
-          <p class="text-slate-500 text-sm">Control de acceso multi-empresa, roles y perfiles vinculados</p>
+          <p class="text-slate-500 text-sm">Control de acceso multi-empresa, roles acumulativos y empleados vinculados</p>
         </div>
         <button type="button" class="btn btn-primary" (click)="openCreateModal()">
           <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,22 +39,24 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
         
         <ng-template #cellTemplate let-item let-col="column">
           @switch (col.key) {
-            @case ('role') {
-              <app-badge [variant]="getRoleVariant(item.role)" [text]="getRoleLabel(item.role)"></app-badge>
+            @case ('roles') {
+              <div class="flex flex-wrap gap-1">
+                @for (role of (item.roles && item.roles.length > 0 ? item.roles : [item.role]); track role) {
+                  <app-badge [variant]="getRoleVariant(role)" [text]="getRoleLabel(role)"></app-badge>
+                }
+              </div>
             }
-            @case ('specialistName') {
+            @case ('employeeName') {
               <span class="text-slate-700 dark:text-slate-300">
-                @if (item.specialistName) {
-                  <span>👨‍⚕️ {{ item.specialistName }}</span>
-                } @else if (item.receptionistName) {
-                  <span>📋 {{ item.receptionistName }}</span>
+                @if (item.employeeName || item.specialistName || item.receptionistName) {
+                  <span>👤 {{ item.employeeName || item.specialistName || item.receptionistName }}</span>
                 } @else {
                   <span class="text-slate-400 italic">Ninguno</span>
                 }
               </span>
             }
             @case ('companies') {
-              @if (item.role === 'SuperAdmin') {
+              @if (isUserSuperAdmin(item)) {
                 <span class="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium px-2 py-0.5 rounded">
                   👑 Acceso Global (Todas)
                 </span>
@@ -70,10 +73,8 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
                 </div>
               }
             }
-            @case ('createdAt') {
-              <span class="text-xs text-slate-600 dark:text-slate-400">
-                {{ item.createdAt | date:'mediumDate' }}
-              </span>
+            @case ('isActive') {
+              <app-badge [variant]="item.isActive ? 'success' : 'neutral'" [text]="item.isActive ? 'Activo' : 'Inactivo'"></app-badge>
             }
             @default {
               {{ item[col.key] || '-' }}
@@ -116,65 +117,79 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="form-group">
-              <label class="form-label">Rol del Sistema *</label>
-              <select formControlName="role" class="form-select" (change)="onRoleChange()">
-                @if (authService.isSuperAdmin()) {
-                  <option value="SuperAdmin">👑 Super Administrador (SuperAdmin - Acceso Global)</option>
-                }
-                <option value="Admin">🛡️ Administrador (Admin - Por Empresa/s)</option>
-                <option value="Receptionist">Recepcionista</option>
-                <option value="Specialist">Especialista Médico / Odontológico</option>
-                <option value="Laboratorist">Laboratorista / Personal de Laboratorio</option>
-              </select>
+          <!-- Multi-Role Selection Checkboxes -->
+          <div class="form-group">
+            <label class="form-label">Roles del Sistema * (Seleccione al menos uno)</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+              @if (authService.isSuperAdmin()) {
+                <label class="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    [checked]="hasSelectedRole('SuperAdmin')" 
+                    (change)="toggleRoleSelection('SuperAdmin', $event)" 
+                    class="w-4 h-4 text-blue-600 rounded" />
+                  <span>👑 SuperAdmin</span>
+                </label>
+              }
+              <label class="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  [checked]="hasSelectedRole('Admin')" 
+                  (change)="toggleRoleSelection('Admin', $event)" 
+                  class="w-4 h-4 text-blue-600 rounded" />
+                <span>🛡️ Admin Empresa</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  [checked]="hasSelectedRole('Specialist')" 
+                  (change)="toggleRoleSelection('Specialist', $event)" 
+                  class="w-4 h-4 text-blue-600 rounded" />
+                <span>🩺 Especialista Médico</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  [checked]="hasSelectedRole('Receptionist')" 
+                  (change)="toggleRoleSelection('Receptionist', $event)" 
+                  class="w-4 h-4 text-blue-600 rounded" />
+                <span>📋 Recepcionista</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  [checked]="hasSelectedRole('Laboratorist')" 
+                  (change)="toggleRoleSelection('Laboratorist', $event)" 
+                  class="w-4 h-4 text-blue-600 rounded" />
+                <span>🔬 Laboratorista</span>
+              </label>
             </div>
-
-            @if (form.get('role')?.value === 'Specialist') {
-              <div class="form-group">
-                <label class="form-label">Médico / Especialista Clínico Asociado *</label>
-                <select formControlName="specialistId" class="form-select">
-                  <option value="">-- Seleccionar Especialista Clínico --</option>
-                  @for (doc of clinicalSpecialists(); track doc.id) {
-                    <option [value]="doc.id">👨‍⚕️ {{ doc.fullName }} ({{ doc.specialtyName }})</option>
-                  }
-                </select>
-              </div>
-            } @else if (form.get('role')?.value === 'Laboratorist') {
-              <div class="form-group">
-                <label class="form-label">Perfil de Laboratorista / Bioanalista (Opcional)</label>
-                <select formControlName="specialistId" class="form-select">
-                  <option value="">Sin vincular a perfil específico</option>
-                  @for (doc of labSpecialists(); track doc.id) {
-                    <option [value]="doc.id">🔬 {{ doc.fullName }} ({{ doc.specialtyName }})</option>
-                  }
-                </select>
-              </div>
-            } @else if (form.get('role')?.value === 'Receptionist') {
-              <div class="form-group">
-                <label class="form-label">Perfil de Recepcionista Asociado (Opcional)</label>
-                <select formControlName="receptionistId" class="form-select">
-                  <option value="">Sin vincular a perfil específico</option>
-                  @for (rec of receptionists(); track rec.id) {
-                    <option [value]="rec.id">📋 {{ rec.fullName }} {{ rec.identificationNumber ? '(' + rec.identificationNumber + ')' : '' }}</option>
-                  }
-                </select>
-              </div>
-            } @else {
-              <div class="form-group opacity-60">
-                <label class="form-label">Perfil Profesional Asociado</label>
-                <input type="text" class="form-control text-xs" disabled value="No requerido para este rol" />
-              </div>
+            @if (selectedRoles().length === 0) {
+              <div class="field-error">Debe seleccionar al menos un rol.</div>
             }
           </div>
 
+          <!-- Single Employee Linker -->
+          <div class="form-group">
+            <label class="form-label">Empleado / Perfil Vinculado (Opcional)</label>
+            <select formControlName="employeeId" class="form-select">
+              <option [ngValue]="null">-- Sin vincular a empleado específico --</option>
+              @for (emp of employees(); track emp.id) {
+                <option [value]="emp.id">
+                  {{ emp.fullName }} {{ emp.jobTitle ? '(' + emp.jobTitle + ')' : '' }} {{ emp.specialtyName ? '- ' + emp.specialtyName : '' }}
+                </option>
+              }
+            </select>
+            <p class="text-xs text-slate-400 mt-1">Vincula el usuario con un empleado para mostrar su nombre profesional y habilitar su agenda/órdenes según sus roles.</p>
+          </div>
+
           <!-- Multi-Company Assignment Checkboxes -->
-          @if (form.get('role')?.value === 'SuperAdmin') {
+          @if (hasSelectedRole('SuperAdmin')) {
             <div class="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
               <span class="text-xl">👑</span>
               <div>
                 <div class="font-semibold">Acceso Global Automático</div>
-                <div class="text-xs">El Super Administrador tiene permiso para gestionar todas las empresas de la plataforma sin restricciones.</div>
+                <div class="text-xs">El rol Super Administrador tiene permiso para gestionar todas las empresas de la plataforma sin restricciones.</div>
               </div>
             </div>
           } @else {
@@ -209,7 +224,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
           <button 
             type="button" 
             class="btn btn-primary" 
-            [disabled]="form.invalid || (form.get('role')?.value !== 'SuperAdmin' && selectedCompanyIds().length === 0) || saving()" 
+            [disabled]="form.invalid || selectedRoles().length === 0 || (!hasSelectedRole('SuperAdmin') && selectedCompanyIds().length === 0) || saving()" 
             (click)="saveUser()">
             @if (saving()) {
               <span class="spinner-sm mr-1.5"></span>
@@ -227,30 +242,16 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
 })
 export class UserListComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly employeeService = inject(EmployeeService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   readonly authService = inject(AuthService);
 
   readonly users = signal<UserDto[]>([]);
   readonly companies = signal<CompanyDto[]>([]);
-  readonly specialists = signal<SpecialistDto[]>([]);
-  readonly receptionists = signal<ReceptionistDto[]>([]);
+  readonly employees = signal<EmployeeDto[]>([]);
   readonly selectedCompanyIds = signal<string[]>([]);
-
-  readonly clinicalSpecialists = computed(() => {
-    return this.specialists().filter(s => {
-      const spec = (s.specialtyName || '').toLowerCase();
-      return !spec.includes('laboratorio') && !spec.includes('bioanálisis') && !spec.includes('patología');
-    });
-  });
-
-  readonly labSpecialists = computed(() => {
-    const list = this.specialists().filter(s => {
-      const spec = (s.specialtyName || '').toLowerCase();
-      return spec.includes('laboratorio') || spec.includes('bioanálisis') || spec.includes('patología');
-    });
-    return list.length > 0 ? list : this.specialists();
-  });
+  readonly selectedRoles = signal<UserRole[]>(['Receptionist']);
 
   readonly loading = signal<boolean>(true);
   readonly saving = signal<boolean>(false);
@@ -259,33 +260,21 @@ export class UserListComponent implements OnInit {
 
   readonly columns: TableColumn<UserDto>[] = [
     { key: 'username', label: 'Usuario', sortable: true },
-    { key: 'role', label: 'Rol', sortable: true, width: '150px' },
-    { key: 'specialistName', label: 'Perfil Vinculado' },
+    { key: 'roles', label: 'Roles Asignados', sortable: false },
+    { key: 'employeeName', label: 'Empleado / Perfil Vinculado' },
     { key: 'companies', label: 'Empresas Asignadas' },
-    { key: 'createdAt', label: 'Fecha Alta', sortable: true, width: '130px' }
+    { key: 'isActive', label: 'Estado', sortable: true, width: '110px' }
   ];
 
   readonly form: FormGroup = this.fb.group({
     username: ['', [Validators.required]],
     password: [''],
-    role: ['Receptionist' as UserRole, [Validators.required]],
-    specialistId: [''],
-    receptionistId: [''],
+    employeeId: [null],
     isActive: [true]
   });
 
   ngOnInit(): void {
     this.loadData();
-  }
-
-  onRoleChange(): void {
-    const r = this.form.get('role')?.value;
-    if (r !== 'Specialist' && r !== 'Laboratorist') {
-      this.form.patchValue({ specialistId: '' });
-    }
-    if (r !== 'Receptionist') {
-      this.form.patchValue({ receptionistId: '' });
-    }
   }
 
   loadData(): void {
@@ -298,12 +287,8 @@ export class UserListComponent implements OnInit {
           catchError(() => of({ success: true, data: [] as CompanyDto[], message: '', errors: [] }))
         );
 
-    const specialists$ = this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`).pipe(
-      catchError(() => of({ success: true, data: [] as SpecialistDto[], message: '', errors: [] }))
-    );
-
-    const receptionists$ = this.http.get<ApiResponse<ReceptionistDto[]>>(`${environment.apiUrl}/receptionists`).pipe(
-      catchError(() => of({ success: true, data: [] as ReceptionistDto[], message: '', errors: [] }))
+    const employees$ = this.employeeService.getEmployees().pipe(
+      catchError(() => of({ success: true, data: [] as EmployeeDto[], message: '', errors: [] }))
     );
 
     const users$ = this.http.get<ApiResponse<UserDto[]>>(`${environment.apiUrl}/users`).pipe(
@@ -313,21 +298,24 @@ export class UserListComponent implements OnInit {
     forkJoin({
       users: users$,
       companies: companies$,
-      specialists: specialists$,
-      receptionists: receptionists$
+      employees: employees$
     }).subscribe({
       next: (res) => {
         this.loading.set(false);
         this.users.set(res.users.data || []);
         this.companies.set(res.companies.data || []);
-        this.specialists.set(res.specialists.data || []);
-        this.receptionists.set(res.receptionists.data || []);
+        this.employees.set(res.employees.data || []);
       },
       error: () => this.loading.set(false)
     });
   }
 
-  getRoleVariant(role: UserRole): 'primary' | 'success' | 'info' | 'warning' {
+  isUserSuperAdmin(item: UserDto): boolean {
+    if (item.roles && item.roles.includes('SuperAdmin')) return true;
+    return item.role === 'SuperAdmin';
+  }
+
+  getRoleVariant(role?: UserRole): 'primary' | 'success' | 'info' | 'warning' {
     switch (role) {
       case 'SuperAdmin': return 'primary';
       case 'Admin': return 'primary';
@@ -338,14 +326,27 @@ export class UserListComponent implements OnInit {
     }
   }
 
-  getRoleLabel(role: UserRole): string {
+  getRoleLabel(role?: UserRole): string {
     switch (role) {
       case 'SuperAdmin': return '👑 SuperAdmin';
       case 'Admin': return '🛡️ Admin';
-      case 'Specialist': return 'Especialista';
-      case 'Laboratorist': return 'Laboratorista';
-      case 'Receptionist': return 'Recepcionista';
-      default: return role;
+      case 'Specialist': return '🩺 Especialista';
+      case 'Laboratorist': return '🔬 Laboratorista';
+      case 'Receptionist': return '📋 Recepcionista';
+      default: return role || '';
+    }
+  }
+
+  hasSelectedRole(role: UserRole): boolean {
+    return this.selectedRoles().includes(role);
+  }
+
+  toggleRoleSelection(role: UserRole, event: Event): void {
+    const isChecked = (event.target as HTMLInputElement).checked;
+    if (isChecked) {
+      this.selectedRoles.update(roles => [...roles, role]);
+    } else {
+      this.selectedRoles.update(roles => roles.filter(r => r !== role));
     }
   }
 
@@ -365,10 +366,11 @@ export class UserListComponent implements OnInit {
   openCreateModal(): void {
     this.editingUser.set(null);
     this.selectedCompanyIds.set(this.companies().map(c => c.id));
+    this.selectedRoles.set(['Receptionist']);
     this.form.reset({
-      role: 'Receptionist',
-      specialistId: '',
-      receptionistId: '',
+      username: '',
+      password: '',
+      employeeId: null,
       isActive: true
     });
     this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
@@ -379,12 +381,12 @@ export class UserListComponent implements OnInit {
   openEditModal(user: UserDto): void {
     this.editingUser.set(user);
     this.selectedCompanyIds.set(user.companyIds || []);
+    const roles: UserRole[] = user.roles && user.roles.length > 0 ? user.roles : (user.role ? [user.role] : ['Receptionist']);
+    this.selectedRoles.set(roles);
     this.form.patchValue({
       username: user.username,
       password: '',
-      role: user.role,
-      specialistId: user.specialistId || '',
-      receptionistId: user.receptionistId || '',
+      employeeId: user.employeeId || user.specialistId || user.receptionistId || null,
       isActive: user.isActive
     });
     this.form.get('password')?.clearValidators();
@@ -403,8 +405,8 @@ export class UserListComponent implements OnInit {
   }
 
   saveUser(): void {
-    const isSuperAdmin = this.form.get('role')?.value === 'SuperAdmin';
-    if (this.form.invalid || (!isSuperAdmin && this.selectedCompanyIds().length === 0)) {
+    const isSuperAdmin = this.hasSelectedRole('SuperAdmin');
+    if (this.form.invalid || this.selectedRoles().length === 0 || (!isSuperAdmin && this.selectedCompanyIds().length === 0)) {
       this.form.markAllAsTouched();
       return;
     }
@@ -414,11 +416,11 @@ export class UserListComponent implements OnInit {
     const editing = this.editingUser();
 
     const payload = {
-      username: val.username,
-      password: val.password || null,
-      role: val.role,
-      specialistId: val.specialistId || null,
-      receptionistId: val.receptionistId || null,
+      username: val.username.trim(),
+      password: val.password ? val.password.trim() : null,
+      roles: this.selectedRoles(),
+      role: this.selectedRoles()[0],
+      employeeId: val.employeeId || null,
       isActive: val.isActive,
       companyIds: isSuperAdmin ? [] : this.selectedCompanyIds()
     };
@@ -431,7 +433,10 @@ export class UserListComponent implements OnInit {
           this.closeModal();
           this.loadData();
         },
-        error: () => this.saving.set(false)
+        error: (err) => {
+          this.saving.set(false);
+          this.toast.error(err?.error?.message || 'Error al actualizar el usuario.');
+        }
       });
     } else {
       this.http.post<ApiResponse<UserDto>>(`${environment.apiUrl}/users`, payload).subscribe({
@@ -441,7 +446,10 @@ export class UserListComponent implements OnInit {
           this.closeModal();
           this.loadData();
         },
-        error: () => this.saving.set(false)
+        error: (err) => {
+          this.saving.set(false);
+          this.toast.error(err?.error?.message || 'Error al crear el usuario.');
+        }
       });
     }
   }

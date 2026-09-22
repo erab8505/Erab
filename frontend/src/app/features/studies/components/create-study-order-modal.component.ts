@@ -34,7 +34,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
                   <div class="truncate">
                     <div class="truncate">{{ selectedPatient()?.firstName }} {{ selectedPatient()?.lastName }}</div>
                     <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono font-normal">
-                      Doc: {{ selectedPatient()?.documentId || 'N/A' }} • Tel: {{ selectedPatient()?.phone || 'N/A' }}
+                      Doc: {{ selectedPatient()?.documentId || 'N/A' }} <br>• Tel: {{ selectedPatient()?.phone || 'N/A' }}
                     </div>
                   </div>
                 </div>
@@ -89,7 +89,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
                   <div class="truncate">
                     <div class="truncate">{{ selectedSpecialist()?.fullName || (selectedSpecialist()?.firstName + ' ' + selectedSpecialist()?.lastName) }}</div>
                     <div class="text-[10px] text-slate-500 dark:text-slate-400 font-mono font-normal">
-                      {{ selectedSpecialist()?.specialtyName }} • Lic: {{ selectedSpecialist()?.licenseNumber || 'N/A' }}
+                      {{ selectedSpecialist()?.specialtyName }} <br>• Lic: {{ selectedSpecialist()?.licenseNumber || 'N/A' }}
                     </div>
                   </div>
                 </div>
@@ -375,7 +375,7 @@ export class CreateStudyOrderModalComponent implements OnInit, OnDestroy, OnChan
   }
 
   loadSpecialists(): void {
-    this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/specialists`).subscribe(res => {
+    this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/employees`).subscribe(res => {
       this.specialists.set(res.data || []);
       if (this.preselectedSpecialistId) {
         const found = (res.data || []).find(s => s.id === this.preselectedSpecialistId);

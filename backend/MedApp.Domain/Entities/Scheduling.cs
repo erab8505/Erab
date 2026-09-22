@@ -11,8 +11,8 @@ public class Scheduling : BaseEntity
     public Guid PatientId { get; set; }
     public Patient Patient { get; set; } = null!;
 
-    public Guid SpecialistId { get; set; }
-    public Specialist Specialist { get; set; } = null!;
+    public Guid EmployeeId { get; set; }
+    public Employee Employee { get; set; } = null!;
 
     public Guid InterventionTypeId { get; set; }
     public InterventionType InterventionType { get; set; } = null!;

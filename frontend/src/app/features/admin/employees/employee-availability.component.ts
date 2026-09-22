@@ -2,10 +2,9 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
-import { environment } from '../../../../environments/environment';
-import { ApiResponse, SpecialistAvailabilityDto, SpecialistDto } from '../../../core/models/models';
+import { EmployeeAvailabilityDto, EmployeeDto } from '../../../core/models/models';
+import { EmployeeService } from '../../../core/services/employee.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 interface DayConfig {
@@ -14,7 +13,7 @@ interface DayConfig {
 }
 
 @Component({
-  selector: 'app-specialist-availability',
+  selector: 'app-employee-availability',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
@@ -23,16 +22,22 @@ interface DayConfig {
       <div class="page-header">
         <div>
           <div class="flex items-center gap-2 mb-1">
-            <a routerLink="/specialists" class="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1">
-              &larr; Volver a Especialistas
+            <a routerLink="/employees" class="text-sm font-medium text-blue-600 hover:underline flex items-center gap-1">
+              &larr; Volver a Directorio de Empleados
             </a>
           </div>
           <h1 class="text-2xl font-bold">
             Disponibilidad Semanal: 
-            <span class="text-blue-600 dark:text-blue-400">{{ specialist()?.fullName || 'Cargando...' }}</span>
+            <span class="text-blue-600 dark:text-blue-400">{{ employee()?.fullName || 'Cargando...' }}</span>
           </h1>
           <p class="text-slate-500 text-sm">
-            Especialidad: <b>{{ specialist()?.specialtyName }}</b> | Licencia: <b>{{ specialist()?.licenseNumber }}</b>
+            Puesto: <b>{{ employee()?.jobTitle || 'Empleado' }}</b>
+            @if (employee()?.specialtyName) {
+              | Especialidad: <b>{{ employee()?.specialtyName }}</b>
+            }
+            @if (employee()?.licenseNumber) {
+              | Licencia: <b>{{ employee()?.licenseNumber }}</b>
+            }
           </p>
         </div>
       </div>
@@ -87,15 +92,6 @@ interface DayConfig {
                     <div class="interval-time">
                       <span>{{ formatTime(item.startHour) }} - {{ formatTime(item.endHour) }}</span>
                     </div>
-                    <button 
-                      type="button" 
-                      class="delete-interval-btn" 
-                      title="Eliminar turno" 
-                      (click)="deleteAvailability(item.id)">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                      </svg>
-                    </button>
                   </div>
                 }
               }
@@ -129,29 +125,17 @@ interface DayConfig {
       border-color: #1e40af;
       color: #93c5fd;
     }
-    .delete-interval-btn {
-      background: transparent;
-      border: none;
-      color: #ef4444;
-      cursor: pointer;
-      padding: 0.125rem;
-      display: flex;
-      align-items: center;
-      border-radius: 0.25rem;
-    }
-    .delete-interval-btn:hover { background-color: #fee2e2; }
-    :host-context(.dark) .delete-interval-btn:hover { background-color: rgba(239, 68, 68, 0.2); }
   `]
 })
-export class SpecialistAvailabilityComponent implements OnInit {
+export class EmployeeAvailabilityComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly http = inject(HttpClient);
+  private readonly employeeService = inject(EmployeeService);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
 
-  readonly specialistId = signal<string>('');
-  readonly specialist = signal<SpecialistDto | null>(null);
-  readonly availabilities = signal<SpecialistAvailabilityDto[]>([]);
+  readonly employeeId = signal<string>('');
+  readonly employee = signal<EmployeeDto | null>(null);
+  readonly availabilities = signal<EmployeeAvailabilityDto[]>([]);
   readonly loading = signal<boolean>(true);
   readonly saving = signal<boolean>(false);
 
@@ -165,7 +149,7 @@ export class SpecialistAvailabilityComponent implements OnInit {
     { index: 0, name: 'Domingo' }
   ];
 
-  readonly form: FormGroup = this.fb.group({
+  form: FormGroup = this.fb.group({
     dayOfWeek: [1, [Validators.required]],
     startHour: ['08:00', [Validators.required]],
     endHour: ['12:00', [Validators.required]]
@@ -174,7 +158,7 @@ export class SpecialistAvailabilityComponent implements OnInit {
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.specialistId.set(id);
+      this.employeeId.set(id);
       this.loadData(id);
     }
   }
@@ -182,25 +166,28 @@ export class SpecialistAvailabilityComponent implements OnInit {
   loadData(id: string): void {
     this.loading.set(true);
     forkJoin({
-      specialist: this.http.get<ApiResponse<SpecialistDto>>(`${environment.apiUrl}/specialists/${id}`),
-      availabilities: this.http.get<ApiResponse<SpecialistAvailabilityDto[]>>(`${environment.apiUrl}/specialists/${id}/availability`)
+      employee: this.employeeService.getEmployeeById(id),
+      availabilities: this.employeeService.getAvailability(id)
     }).subscribe({
-      next: (res) => {
+      next: ({ employee, availabilities }) => {
+        this.employee.set(employee.data);
+        this.availabilities.set(availabilities.data || []);
         this.loading.set(false);
-        this.specialist.set(res.specialist.data);
-        this.availabilities.set(res.availabilities.data || []);
       },
-      error: () => this.loading.set(false)
+      error: () => {
+        this.toast.error('Error al cargar la disponibilidad del empleado.');
+        this.loading.set(false);
+      }
     });
   }
 
-  getIntervalsForDay(dayIndex: number): SpecialistAvailabilityDto[] {
+  getIntervalsForDay(dayIndex: number): EmployeeAvailabilityDto[] {
     return this.availabilities().filter(a => a.dayOfWeek === dayIndex);
   }
 
   formatTime(timeStr: string): string {
     if (!timeStr) return '';
-    return timeStr.substring(0, 5); // "08:00:00" -> "08:00"
+    return timeStr.substring(0, 5);
   }
 
   addAvailability(): void {
@@ -213,28 +200,19 @@ export class SpecialistAvailabilityComponent implements OnInit {
     }
 
     this.saving.set(true);
-    const payload = {
-      specialistId: this.specialistId(),
+    this.employeeService.setAvailability(this.employeeId(), {
       dayOfWeek: Number(val.dayOfWeek),
-      startHour: `${val.startHour}:00`,
-      endHour: `${val.endHour}:00`
-    };
-
-    this.http.post<ApiResponse<SpecialistAvailabilityDto>>(`${environment.apiUrl}/specialist-availability`, payload).subscribe({
+      startHour: val.startHour + ':00',
+      endHour: val.endHour + ':00'
+    }).subscribe({
       next: () => {
+        this.toast.success('Horario guardado correctamente.');
         this.saving.set(false);
-        this.toast.success('Horario agregado exitosamente.');
-        this.loadData(this.specialistId());
+        this.loadData(this.employeeId());
       },
-      error: () => this.saving.set(false)
-    });
-  }
-
-  deleteAvailability(id: string): void {
-    this.http.delete<ApiResponse>(`${environment.apiUrl}/specialist-availability/${id}`).subscribe({
-      next: () => {
-        this.toast.info('Horario eliminado.');
-        this.loadData(this.specialistId());
+      error: (err) => {
+        this.toast.error(err?.error?.message || 'Error al guardar el horario.');
+        this.saving.set(false);
       }
     });
   }

@@ -19,7 +19,9 @@ export interface LoginResponseDto {
   userId?: string;
   username: string;
   profileName?: string | null;
-  role: UserRole;
+  roles: UserRole[];
+  role?: UserRole;
+  employeeId?: string | null;
   specialistId?: string | null;
   receptionistId?: string | null;
   assignedCompanies?: CompanyDto[];
@@ -29,7 +31,9 @@ export interface LoginResponseDto {
 export interface UserSession {
   username: string;
   profileName?: string | null;
-  role: UserRole;
+  roles: UserRole[];
+  role?: UserRole;
+  employeeId?: string | null;
   specialistId?: string | null;
   receptionistId?: string | null;
   token: string;
@@ -86,26 +90,79 @@ export interface SpecialtyDto {
   isActive: boolean;
 }
 
-export interface SpecialistDto {
+export interface EmployeeDto {
   id: string;
-  specialtyId: string;
-  specialtyName: string;
+  companyId: string;
+  companyName?: string | null;
+  specialtyId?: string | null;
+  specialtyName?: string | null;
   firstName: string;
   lastName: string;
   fullName: string;
-  licenseNumber: string;
-  phone?: string | null;
+  identificationNumber?: string | null;
+  licenseNumber?: string | null;
+  jobTitle?: string | null;
   email?: string | null;
+  phone?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface CreateEmployeeDto {
+  firstName: string;
+  lastName: string;
+  identificationNumber?: string | null;
+  licenseNumber?: string | null;
+  specialtyId?: string | null;
+  jobTitle?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  isActive?: boolean;
+}
+
+export interface UpdateEmployeeDto {
+  firstName: string;
+  lastName: string;
+  identificationNumber?: string | null;
+  licenseNumber?: string | null;
+  specialtyId?: string | null;
+  jobTitle?: string | null;
+  email?: string | null;
+  phone?: string | null;
   isActive: boolean;
 }
 
-export interface SpecialistAvailabilityDto {
+export interface EmployeeAvailabilityDto {
   id: string;
-  specialistId: string;
+  employeeId: string;
   dayOfWeek: number; // 0 = Sunday, 1 = Monday, ... 6 = Saturday
   startHour: string; // "08:00:00"
   endHour: string;   // "16:00:00"
 }
+
+export interface CreateEmployeeAvailabilityDto {
+  dayOfWeek: number;
+  startHour: string;
+  endHour: string;
+}
+
+export interface BulkEmployeeAvailabilityDto {
+  availabilities: CreateEmployeeAvailabilityDto[];
+}
+
+export interface AvailableSlotDto {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
+// Backward compatibility types
+export type SpecialistDto = EmployeeDto;
+export type SpecialistAvailabilityDto = EmployeeAvailabilityDto;
+export type ReceptionistDto = EmployeeDto;
+export type CreateReceptionistDto = CreateEmployeeDto;
+export type UpdateReceptionistDto = UpdateEmployeeDto;
 
 export interface InterventionTypeDto {
   id: string;
@@ -123,7 +180,10 @@ export interface InterventionTypeDto {
 export interface UserDto {
   id: string;
   username: string;
-  role: UserRole;
+  roles: UserRole[];
+  role?: UserRole;
+  employeeId?: string | null;
+  employeeName?: string | null;
   specialistId?: string | null;
   specialistName?: string | null;
   receptionistId?: string | null;
@@ -133,36 +193,21 @@ export interface UserDto {
   companies: CompanyDto[];
 }
 
-export interface ReceptionistDto {
-  id: string;
-  companyId: string;
-  companyName: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  identificationNumber?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  isActive: boolean;
-  createdAt: string;
+export interface CreateUserDto {
+  username: string;
+  password: string;
+  roles: UserRole[];
+  role?: UserRole;
+  employeeId?: string | null;
+  companyIds?: string[];
 }
 
-export interface CreateReceptionistDto {
-  firstName: string;
-  lastName: string;
-  identificationNumber?: string | null;
-  email?: string | null;
-  phone?: string | null;
+export interface UpdateUserDto {
+  roles?: UserRole[];
+  role?: UserRole;
+  employeeId?: string | null;
+  companyIds?: string[];
   isActive?: boolean;
-}
-
-export interface UpdateReceptionistDto {
-  firstName: string;
-  lastName: string;
-  identificationNumber?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  isActive: boolean;
 }
 
 export interface PatientDto {
@@ -193,6 +238,8 @@ export interface SchedulingDto {
   patientName: string;
   patientDocument?: string;
   patientDocumentId?: string;
+  employeeId: string;
+  employeeName?: string | null;
   specialistId: string;
   specialistName: string;
   interventionTypeId: string;

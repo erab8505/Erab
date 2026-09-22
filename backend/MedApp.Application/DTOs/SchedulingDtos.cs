@@ -8,8 +8,8 @@ public record SchedulingDto(
     Guid PatientId,
     string? PatientName,
     string? PatientDocumentId,
-    Guid SpecialistId,
-    string? SpecialistName,
+    Guid EmployeeId,
+    string? EmployeeName,
     Guid InterventionTypeId,
     string? InterventionTypeName,
     DateTimeOffset ScheduledAt,
@@ -21,11 +21,15 @@ public record SchedulingDto(
     decimal? PaymentAmount = null,
     PaymentMethod? PaymentMethod = null,
     Guid? PaymentId = null
-);
+)
+{
+    public Guid SpecialistId => EmployeeId;
+    public string? SpecialistName => EmployeeName;
+}
 
 public record CreateSchedulingDto(
     Guid PatientId,
-    Guid SpecialistId,
+    Guid EmployeeId,
     Guid InterventionTypeId,
     DateTimeOffset ScheduledAt,
     int DurationMinutes,

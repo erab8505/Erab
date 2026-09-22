@@ -5,11 +5,10 @@ namespace MedApp.Application.DTOs;
 public record UserDto(
     Guid Id,
     string Username,
-    UserRole Role,
-    Guid? SpecialistId,
-    string? SpecialistName,
-    Guid? ReceptionistId,
-    string? ReceptionistName,
+    List<UserRole> Roles,
+    Guid? EmployeeId,
+    string? EmployeeName,
+    string? EmployeeJobTitle,
     List<Guid> CompanyIds,
     List<CompanyDto> Companies,
     DateTimeOffset CreatedAt
@@ -18,17 +17,15 @@ public record UserDto(
 public record CreateUserDto(
     string Username,
     string Password,
-    UserRole Role,
-    Guid? SpecialistId,
-    Guid? ReceptionistId,
+    List<UserRole> Roles,
+    Guid? EmployeeId,
     List<Guid>? CompanyIds
 );
 
 public record UpdateUserDto(
     string? Password,
-    UserRole Role,
-    Guid? SpecialistId,
-    Guid? ReceptionistId,
+    List<UserRole> Roles,
+    Guid? EmployeeId,
     List<Guid>? CompanyIds
 );
 
@@ -42,8 +39,7 @@ public record LoginResponseDto(
     Guid UserId,
     string Username,
     string? ProfileName,
-    string Role,
-    Guid? SpecialistId,
-    Guid? ReceptionistId,
+    List<string> Roles,
+    Guid? EmployeeId,
     List<CompanyDto> AssignedCompanies
 );

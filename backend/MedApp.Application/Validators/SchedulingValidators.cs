@@ -8,7 +8,7 @@ public class CreateSchedulingDtoValidator : AbstractValidator<CreateSchedulingDt
     public CreateSchedulingDtoValidator()
     {
         RuleFor(x => x.PatientId).NotEmpty();
-        RuleFor(x => x.SpecialistId).NotEmpty();
+        RuleFor(x => x.EmployeeId).NotEmpty();
         RuleFor(x => x.InterventionTypeId).NotEmpty();
         RuleFor(x => x.ScheduledAt)
             .GreaterThan(DateTimeOffset.UtcNow.AddMinutes(-5))

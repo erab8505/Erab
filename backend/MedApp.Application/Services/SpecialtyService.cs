@@ -106,16 +106,16 @@ public class SpecialtyService : ISpecialtyService
     public async Task<bool> DeleteSpecialtyAsync(Guid id)
     {
         var specialty = await _context.Specialties
-            .Include(s => s.Specialists)
+            .Include(s => s.Employees)
             .Include(s => s.InterventionTypes)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (specialty == null)
             throw new NotFoundException("Especialidad", id);
 
-        if (specialty.Specialists.Any() || specialty.InterventionTypes.Any())
+        if (specialty.Employees.Any() || specialty.InterventionTypes.Any())
         {
-            throw new ConflictException("No se puede eliminar la especialidad porque contiene especialistas o procedimientos asociados.");
+            throw new ConflictException("No se puede eliminar la especialidad porque contiene colaboradores o procedimientos asociados.");
         }
 
         _context.Specialties.Remove(specialty);

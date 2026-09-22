@@ -37,7 +37,7 @@ public class LabParametersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdminRole")]
     public async Task<ActionResult<ApiResponse<LabParameterDto>>> Create([FromBody] CreateLabParameterDto dto, CancellationToken cancellationToken)
     {
         var result = await _parameterService.CreateAsync(dto, cancellationToken);
@@ -46,7 +46,7 @@ public class LabParametersController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdminRole")]
     public async Task<ActionResult<ApiResponse<LabParameterDto>>> Update(Guid id, [FromBody] UpdateLabParameterDto dto, CancellationToken cancellationToken)
     {
         var result = await _parameterService.UpdateAsync(id, dto, cancellationToken);
@@ -55,7 +55,7 @@ public class LabParametersController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "RequireAdminRole")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(Guid id, CancellationToken cancellationToken)
     {
         var result = await _parameterService.DeleteAsync(id, cancellationToken);

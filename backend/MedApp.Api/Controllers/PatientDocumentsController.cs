@@ -9,7 +9,7 @@ namespace MedApp.Api.Controllers;
 
 [ApiController]
 [Route("api/patients/{patientId:guid}/documents")]
-[Authorize(Roles = "Admin,Specialist,Receptionist")]
+[Authorize(Roles = "SuperAdmin,Admin,Specialist,Receptionist")]
 public class PatientDocumentsController : ControllerBase
 {
     private readonly IPatientDocumentService _documentService;

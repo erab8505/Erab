@@ -39,7 +39,7 @@ public class SchedulingService : ISchedulingService
     {
         var query = _context.Schedulings
             .Include(s => s.Patient)
-            .Include(s => s.Specialist)
+            .Include(s => s.Employee)
             .Include(s => s.InterventionType)
             .AsQueryable();
 
@@ -53,18 +53,18 @@ public class SchedulingService : ISchedulingService
             query = query.Where(s => s.ScheduledAt <= toDate.Value);
         }
 
-        // If the logged-in user is a specialist, strictly force their own SpecialistId
-        if (_currentUserService.IsSpecialist)
+        // If the logged-in user is a specialist without admin/receptionist role, force their own EmployeeId
+        if (_currentUserService.IsSpecialist && !_currentUserService.IsAdmin && !_currentUserService.IsReceptionist)
         {
-            if (!_currentUserService.SpecialistId.HasValue)
+            if (!_currentUserService.EmployeeId.HasValue)
             {
                 return new List<SchedulingDto>();
             }
-            query = query.Where(s => s.SpecialistId == _currentUserService.SpecialistId.Value);
+            query = query.Where(s => s.EmployeeId == _currentUserService.EmployeeId.Value);
         }
         else if (specialistId.HasValue)
         {
-            query = query.Where(s => s.SpecialistId == specialistId.Value);
+            query = query.Where(s => s.EmployeeId == specialistId.Value);
         }
 
         if (patientId.HasValue)
@@ -95,8 +95,8 @@ public class SchedulingService : ISchedulingService
                 s.PatientId,
                 $"{s.Patient.FirstName} {s.Patient.LastName}",
                 s.Patient.DocumentId,
-                s.SpecialistId,
-                $"{s.Specialist.FirstName} {s.Specialist.LastName}",
+                s.EmployeeId,
+                s.Employee != null ? $"{s.Employee.FirstName} {s.Employee.LastName}" : null,
                 s.InterventionTypeId,
                 s.InterventionType.Name,
                 s.ScheduledAt,
@@ -116,15 +116,18 @@ public class SchedulingService : ISchedulingService
     {
         var s = await _context.Schedulings
             .Include(sc => sc.Patient)
-            .Include(sc => sc.Specialist)
+            .Include(sc => sc.Employee)
             .Include(sc => sc.InterventionType)
             .FirstOrDefaultAsync(sc => sc.Id == id);
 
         if (s == null)
             throw new NotFoundException("Cita médica", id);
 
-        if (_currentUserService.IsSpecialist && s.SpecialistId != _currentUserService.SpecialistId)
-            throw new NotFoundException("Cita médica", id);
+        if (_currentUserService.IsSpecialist && !_currentUserService.IsAdmin && !_currentUserService.IsReceptionist)
+        {
+            if (s.EmployeeId != _currentUserService.EmployeeId)
+                throw new NotFoundException("Cita médica", id);
+        }
 
         var payment = await _context.Payments.FirstOrDefaultAsync(p => p.SchedulingId == id);
 
@@ -134,8 +137,8 @@ public class SchedulingService : ISchedulingService
             s.PatientId,
             $"{s.Patient.FirstName} {s.Patient.LastName}",
             s.Patient.DocumentId,
-            s.SpecialistId,
-            $"{s.Specialist.FirstName} {s.Specialist.LastName}",
+            s.EmployeeId,
+            s.Employee != null ? $"{s.Employee.FirstName} {s.Employee.LastName}" : null,
             s.InterventionTypeId,
             s.InterventionType.Name,
             s.ScheduledAt,
@@ -152,9 +155,11 @@ public class SchedulingService : ISchedulingService
 
     public async Task<SchedulingDto> CreateSchedulingAsync(CreateSchedulingDto dto)
     {
-        if (_currentUserService.IsSpecialist)
+        var employeeId = dto.EmployeeId;
+
+        if (_currentUserService.IsSpecialist && !_currentUserService.IsAdmin && !_currentUserService.IsReceptionist)
         {
-            if (!_currentUserService.SpecialistId.HasValue || dto.SpecialistId != _currentUserService.SpecialistId.Value)
+            if (!_currentUserService.EmployeeId.HasValue || employeeId != _currentUserService.EmployeeId.Value)
             {
                 throw new ForbiddenAccessException("Un especialista solo puede agendar citas para su propio perfil profesional.");
             }
@@ -164,12 +169,12 @@ public class SchedulingService : ISchedulingService
         if (patient == null || patient.CompanyId != CurrentCompanyId)
             throw new NotFoundException($"El paciente ({dto.PatientId}) no existe en la empresa activa.");
 
-        var specialist = await _context.Specialists.FindAsync(dto.SpecialistId);
-        if (specialist == null || specialist.CompanyId != CurrentCompanyId)
-            throw new NotFoundException($"El especialista ({dto.SpecialistId}) no existe en la empresa activa.");
+        var employee = await _context.Employees.FindAsync(employeeId);
+        if (employee == null || employee.CompanyId != CurrentCompanyId)
+            throw new NotFoundException($"El colaborador ({employeeId}) no existe en la empresa activa.");
 
-        if (!specialist.IsActive)
-            throw new ConflictException("No se pueden agendar citas con un especialista inactivo.");
+        if (!employee.IsActive)
+            throw new ConflictException("No se pueden agendar citas con un colaborador inactivo.");
 
         var intervention = await _context.InterventionTypes.FindAsync(dto.InterventionTypeId);
         if (intervention == null || intervention.CompanyId != CurrentCompanyId)
@@ -181,21 +186,21 @@ public class SchedulingService : ISchedulingService
 
         // Check for conflicting overlap: existing.Start < requested.End && requested.Start < existing.End
         var hasConflict = await _context.Schedulings
-            .AnyAsync(s => s.SpecialistId == dto.SpecialistId &&
+            .AnyAsync(s => s.EmployeeId == employeeId &&
                            s.Status != AppointmentStatus.Cancelled &&
                            s.ScheduledAt < reqEnd &&
                            reqStart < s.ScheduledAt.AddMinutes(s.DurationMinutes));
 
         if (hasConflict)
         {
-            throw new ConflictException($"El especialista ya tiene una cita reservada que se solapa con el horario seleccionado ({reqStart:HH:mm} - {reqEnd:HH:mm}).");
+            throw new ConflictException($"El profesional ya tiene una cita reservada que se solapa con el horario seleccionado ({reqStart:HH:mm} - {reqEnd:HH:mm}).");
         }
 
         var scheduling = new Scheduling
         {
             CompanyId = CurrentCompanyId,
             PatientId = dto.PatientId,
-            SpecialistId = dto.SpecialistId,
+            EmployeeId = employeeId,
             InterventionTypeId = dto.InterventionTypeId,
             ScheduledAt = dto.ScheduledAt,
             DurationMinutes = duration,
@@ -210,7 +215,7 @@ public class SchedulingService : ISchedulingService
             "CREATE",
             "Scheduling",
             scheduling.Id.ToString(),
-            $"Agendó cita para el paciente '{patient.FirstName} {patient.LastName}' con el especialista '{specialist.FirstName} {specialist.LastName}' para el {scheduling.ScheduledAt:yyyy-MM-dd HH:mm}"
+            $"Agendó cita para el paciente '{patient.FirstName} {patient.LastName}' con el profesional '{employee.FirstName} {employee.LastName}' para el {scheduling.ScheduledAt:yyyy-MM-dd HH:mm}"
         );
 
         return new SchedulingDto(
@@ -219,8 +224,8 @@ public class SchedulingService : ISchedulingService
             scheduling.PatientId,
             $"{patient.FirstName} {patient.LastName}",
             patient.DocumentId,
-            scheduling.SpecialistId,
-            $"{specialist.FirstName} {specialist.LastName}",
+            scheduling.EmployeeId,
+            $"{employee.FirstName} {employee.LastName}",
             scheduling.InterventionTypeId,
             intervention.Name,
             scheduling.ScheduledAt,
@@ -235,15 +240,18 @@ public class SchedulingService : ISchedulingService
     {
         var scheduling = await _context.Schedulings
             .Include(s => s.Patient)
-            .Include(s => s.Specialist)
+            .Include(s => s.Employee)
             .Include(s => s.InterventionType)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (scheduling == null)
             throw new NotFoundException("Cita médica", id);
 
-        if (_currentUserService.IsSpecialist && scheduling.SpecialistId != _currentUserService.SpecialistId)
-            throw new ForbiddenAccessException("No tiene autorización para modificar el estado de citas de otros especialistas.");
+        if (_currentUserService.IsSpecialist && !_currentUserService.IsAdmin && !_currentUserService.IsReceptionist)
+        {
+            if (scheduling.EmployeeId != _currentUserService.EmployeeId)
+                throw new ForbiddenAccessException("No tiene autorización para modificar el estado de citas de otros profesionales.");
+        }
 
         var oldStatus = scheduling.Status;
         scheduling.Status = dto.Status;
@@ -262,8 +270,8 @@ public class SchedulingService : ISchedulingService
             scheduling.PatientId,
             $"{scheduling.Patient.FirstName} {scheduling.Patient.LastName}",
             scheduling.Patient.DocumentId,
-            scheduling.SpecialistId,
-            $"{scheduling.Specialist.FirstName} {scheduling.Specialist.LastName}",
+            scheduling.EmployeeId,
+            scheduling.Employee != null ? $"{scheduling.Employee.FirstName} {scheduling.Employee.LastName}" : null,
             scheduling.InterventionTypeId,
             scheduling.InterventionType.Name,
             scheduling.ScheduledAt,
@@ -278,15 +286,18 @@ public class SchedulingService : ISchedulingService
     {
         var scheduling = await _context.Schedulings
             .Include(s => s.Patient)
-            .Include(s => s.Specialist)
+            .Include(s => s.Employee)
             .Include(s => s.InterventionType)
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (scheduling == null)
             throw new NotFoundException("Cita médica", id);
 
-        if (_currentUserService.IsSpecialist && scheduling.SpecialistId != _currentUserService.SpecialistId)
-            throw new ForbiddenAccessException("No tiene autorización para reagendar citas de otros especialistas.");
+        if (_currentUserService.IsSpecialist && !_currentUserService.IsAdmin && !_currentUserService.IsReceptionist)
+        {
+            if (scheduling.EmployeeId != _currentUserService.EmployeeId)
+                throw new ForbiddenAccessException("No tiene autorización para reagendar citas de otros profesionales.");
+        }
 
         var reqStart = dto.NewScheduledAt;
         var duration = dto.DurationMinutes > 0 ? dto.DurationMinutes : scheduling.DurationMinutes;
@@ -295,14 +306,14 @@ public class SchedulingService : ISchedulingService
         // Check overlap excluding the current appointment
         var hasConflict = await _context.Schedulings
             .AnyAsync(s => s.Id != id &&
-                           s.SpecialistId == scheduling.SpecialistId &&
+                           s.EmployeeId == scheduling.EmployeeId &&
                            s.Status != AppointmentStatus.Cancelled &&
                            s.ScheduledAt < reqEnd &&
                            reqStart < s.ScheduledAt.AddMinutes(s.DurationMinutes));
 
         if (hasConflict)
         {
-            throw new ConflictException($"El especialista ya tiene una cita reservada que se solapa con el nuevo horario ({reqStart:HH:mm} - {reqEnd:HH:mm}).");
+            throw new ConflictException($"El profesional ya tiene una cita reservada que se solapa con el nuevo horario ({reqStart:HH:mm} - {reqEnd:HH:mm}).");
         }
 
         var oldDate = scheduling.ScheduledAt;
@@ -325,8 +336,8 @@ public class SchedulingService : ISchedulingService
             scheduling.PatientId,
             $"{scheduling.Patient.FirstName} {scheduling.Patient.LastName}",
             scheduling.Patient.DocumentId,
-            scheduling.SpecialistId,
-            $"{scheduling.Specialist.FirstName} {scheduling.Specialist.LastName}",
+            scheduling.EmployeeId,
+            scheduling.Employee != null ? $"{scheduling.Employee.FirstName} {scheduling.Employee.LastName}" : null,
             scheduling.InterventionTypeId,
             scheduling.InterventionType.Name,
             scheduling.ScheduledAt,

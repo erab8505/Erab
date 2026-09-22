@@ -25,7 +25,7 @@ public class PrescriptionService : IPrescriptionService
     {
         return await _context.Prescriptions
             .Include(p => p.Patient)
-            .Include(p => p.Specialist)
+            .Include(p => p.Employee)
             .Include(p => p.Items)
             .Where(p => p.PatientId == patientId)
             .OrderByDescending(p => p.PrescriptionDate)
@@ -35,8 +35,8 @@ public class PrescriptionService : IPrescriptionService
                 p.PatientId,
                 $"{p.Patient.FirstName} {p.Patient.LastName}",
                 p.MedicalRecordId,
-                p.SpecialistId,
-                $"{p.Specialist.FirstName} {p.Specialist.LastName}",
+                p.EmployeeId,
+                $"{p.Employee.FirstName} {p.Employee.LastName}",
                 p.PrescriptionDate,
                 p.Notes,
                 p.Items.Select(i => new PrescriptionItemDto(
@@ -51,7 +51,7 @@ public class PrescriptionService : IPrescriptionService
     {
         var p = await _context.Prescriptions
             .Include(pr => pr.Patient)
-            .Include(pr => pr.Specialist)
+            .Include(pr => pr.Employee)
             .Include(pr => pr.Items)
             .FirstOrDefaultAsync(pr => pr.Id == id);
 
@@ -64,8 +64,8 @@ public class PrescriptionService : IPrescriptionService
             p.PatientId,
             $"{p.Patient.FirstName} {p.Patient.LastName}",
             p.MedicalRecordId,
-            p.SpecialistId,
-            $"{p.Specialist.FirstName} {p.Specialist.LastName}",
+            p.EmployeeId,
+            $"{p.Employee.FirstName} {p.Employee.LastName}",
             p.PrescriptionDate,
             p.Notes,
             p.Items.Select(i => new PrescriptionItemDto(
@@ -81,9 +81,9 @@ public class PrescriptionService : IPrescriptionService
         if (patient == null || patient.CompanyId != CurrentCompanyId)
             throw new NotFoundException($"El paciente ({dto.PatientId}) no existe en la empresa activa.");
 
-        var specialist = await _context.Specialists.FindAsync(dto.SpecialistId);
-        if (specialist == null || specialist.CompanyId != CurrentCompanyId)
-            throw new NotFoundException($"El especialista ({dto.SpecialistId}) no existe en la empresa activa.");
+        var employee = await _context.Employees.FindAsync(dto.EmployeeId);
+        if (employee == null || employee.CompanyId != CurrentCompanyId)
+            throw new NotFoundException($"El profesional ({dto.EmployeeId}) no existe en la empresa activa.");
 
         if (dto.MedicalRecordId.HasValue)
         {
@@ -96,7 +96,7 @@ public class PrescriptionService : IPrescriptionService
         {
             CompanyId = CurrentCompanyId,
             PatientId = dto.PatientId,
-            SpecialistId = dto.SpecialistId,
+            EmployeeId = dto.EmployeeId,
             MedicalRecordId = dto.MedicalRecordId,
             PrescriptionDate = dto.PrescriptionDate ?? DateTimeOffset.UtcNow,
             Notes = dto.Notes
@@ -123,8 +123,8 @@ public class PrescriptionService : IPrescriptionService
             prescription.PatientId,
             $"{patient.FirstName} {patient.LastName}",
             prescription.MedicalRecordId,
-            prescription.SpecialistId,
-            $"{specialist.FirstName} {specialist.LastName}",
+            prescription.EmployeeId,
+            $"{employee.FirstName} {employee.LastName}",
             prescription.PrescriptionDate,
             prescription.Notes,
             prescription.Items.Select(i => new PrescriptionItemDto(

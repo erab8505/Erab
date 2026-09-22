@@ -13,8 +13,8 @@ public class Prescription : BaseEntity
     public Guid? MedicalRecordId { get; set; }
     public MedicalRecord? MedicalRecord { get; set; }
 
-    public Guid SpecialistId { get; set; }
-    public Specialist Specialist { get; set; } = null!;
+    public Guid EmployeeId { get; set; }
+    public Employee Employee { get; set; } = null!;
 
     public DateTimeOffset PrescriptionDate { get; set; } = DateTimeOffset.UtcNow;
     public string? Notes { get; set; }
