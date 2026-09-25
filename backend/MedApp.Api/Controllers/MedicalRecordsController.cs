@@ -8,7 +8,7 @@ namespace MedApp.Api.Controllers;
 
 [ApiController]
 [Route("api/medical-records")]
-[Authorize(Policy = "RequireClinicalRole")]
+[Authorize(Policy = "RequireClinicalOrReceptionistRole")]
 public class MedicalRecordsController : ControllerBase
 {
     private readonly IMedicalRecordService _medicalRecordService;
@@ -39,6 +39,7 @@ public class MedicalRecordsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "RequireClinicalRole")]
     [ProducesResponseType(typeof(ApiResponse<MedicalRecordDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -50,6 +51,7 @@ public class MedicalRecordsController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "RequireClinicalRole")]
     [ProducesResponseType(typeof(ApiResponse<MedicalRecordDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateMedicalRecord(Guid id, [FromBody] UpdateMedicalRecordDto dto)

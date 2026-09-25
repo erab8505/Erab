@@ -2,6 +2,7 @@ using MedApp.Application.Common.Interfaces;
 using MedApp.Application.Common.Models;
 using MedApp.Application.DTOs;
 using MedApp.Application.Interfaces;
+using MedApp.Domain.Constants;
 using MedApp.Domain.Entities;
 using MedApp.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -188,6 +189,26 @@ public class StudyOrderService : IStudyOrderService
         if (_companyContext.CompanyId == null)
         {
             return ApiResponse<StudyOrderDto>.Fail("Contexto de empresa no establecido.");
+        }
+
+        var companyFeatures = await _context.CompanyFeatures
+            .IgnoreQueryFilters()
+            .Where(f => f.CompanyId == _companyContext.CompanyId.Value)
+            .ToListAsync(cancellationToken);
+
+        var labFeature = companyFeatures.FirstOrDefault(f => string.Equals(f.FeatureKey, CompanyFeatureKeys.ModuleLaboratory, StringComparison.OrdinalIgnoreCase));
+        if (labFeature != null && !labFeature.IsEnabled)
+        {
+            return ApiResponse<StudyOrderDto>.Fail("El módulo de laboratorio no está habilitado para esta empresa.");
+        }
+
+        if (_currentUserService.IsReceptionist && !_currentUserService.IsAdmin && !_currentUserService.IsSuperAdmin)
+        {
+            var allowReceptionist = companyFeatures.FirstOrDefault(f => string.Equals(f.FeatureKey, CompanyFeatureKeys.AllowReceptionistStudyOrders, StringComparison.OrdinalIgnoreCase));
+            if (allowReceptionist != null && !allowReceptionist.IsEnabled)
+            {
+                return ApiResponse<StudyOrderDto>.Fail("El rol de recepcionista no tiene permiso para crear órdenes de estudio en esta empresa.");
+            }
         }
 
         if (dto.ClinicalStudyIds == null || dto.ClinicalStudyIds.Count == 0)

@@ -39,6 +39,7 @@ public class MedAppDbContext : DbContext, IApplicationDbContext
     public DbSet<StudyOrder> StudyOrders => Set<StudyOrder>();
     public DbSet<StudyOrderItem> StudyOrderItems => Set<StudyOrderItem>();
     public DbSet<StudyOrderResult> StudyOrderResults => Set<StudyOrderResult>();
+    public DbSet<CompanyFeature> CompanyFeatures => Set<CompanyFeature>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

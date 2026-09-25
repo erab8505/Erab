@@ -630,6 +630,7 @@ export class BookingWizardComponent implements OnInit, OnDestroy {
     this.booking.set(true);
     const payload = {
       patientId: pat.id,
+      employeeId: doc.id,
       specialistId: doc.id,
       interventionTypeId: it.id,
       scheduledAt: slot.startTime,

@@ -1,13 +1,14 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SpecialistDto } from '../../../core/models/models';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CreatePrescriptionItemDto, PrescriptionItemDto, SpecialistDto } from '../../../core/models/models';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { MedicationModalComponent } from './medication-modal.component';
 
 @Component({
   selector: 'app-medical-record-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ModalComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ModalComponent, MedicationModalComponent],
   template: `
     <app-modal 
       [isOpen]="isOpen" 
@@ -85,6 +86,41 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
             </div>
           </div>
         </div>
+
+        <!-- TARJETA ENLACE A SUBMODAL DE RECETA MÉDICA -->
+        <div class="rx-banner-card">
+          <div>
+            <span class="rx-banner-title">💊 Receta / Fórmula Médica</span>
+            <span class="rx-banner-desc">
+              @if (pendingPrescriptionItems().length === 0) {
+                No se ha adjuntado receta a esta consulta.
+              } @else {
+                <b>{{ pendingPrescriptionItems().length }} medicamento(s)</b> adjunto(s) a la fórmula médica.
+              }
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button 
+              type="button" 
+              class="btn btn-sm btn-primary border-none" 
+              (click)="openPrescriptionModal()">
+              @if (pendingPrescriptionItems().length === 0) {
+                💊 + Emitir Receta
+              } @else {
+                📝 Ver / Editar Receta ({{ pendingPrescriptionItems().length }})
+              }
+            </button>
+            @if (pendingPrescriptionItems().length > 0) {
+              <button 
+                type="button" 
+                class="btn btn-sm btn-remove-rx" 
+                title="Quitar Receta" 
+                (click)="clearPrescription()">
+                ✕ Quitar
+              </button>
+            }
+          </div>
+        </div>
       </form>
 
       <div modal-footer class="flex items-center gap-2">
@@ -97,6 +133,117 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
         </button>
       </div>
     </app-modal>
+
+    <!-- SUBMODAL 2: EMITIR RECETA / FÓRMULA MÉDICA -->
+    <app-modal
+      [isOpen]="prescriptionSubModalOpen()"
+      title="Emitir Receta / Fórmula Médica"
+      size="lg"
+      [zIndex]="70"
+      (closed)="closePrescriptionModal()">
+      
+      <div class="space-y-4">
+        @if (patientName) {
+          <div class="rx-modal-patient-card">
+            <div>
+              <span class="rx-patient-name">Paciente: {{ patientName }}</span>
+              <span class="rx-patient-doc">Doc: {{ patientDocument || 'N/A' }}</span>
+            </div>
+            <div class="text-right">
+              <span class="rx-specialist-name">👨‍⚕️ {{ getSelectedSpecialistName() }}</span>
+              <span class="rx-procedure-name">Consulta Médica</span>
+            </div>
+          </div>
+        }
+
+        <div class="rx-section-header">
+          <span class="rx-section-title">Medicamentos Formulados ({{ pendingPrescriptionItems().length }})</span>
+          <button 
+            type="button" 
+            class="btn btn-primary btn-sm font-semibold" 
+            (click)="openAddMedication()">
+            + Agregar Medicamento
+          </button>
+        </div>
+
+        @if (pendingPrescriptionItems().length === 0) {
+          <div class="rx-empty-box">
+            <span class="rx-empty-icon">💊</span>
+            <p class="rx-empty-title">Aún no hay medicamentos en esta receta.</p>
+            <p class="rx-empty-subtitle">Haga clic a continuación para añadir fármacos con sus dosis, frecuencia y duración.</p>
+            <button type="button" class="btn btn-primary btn-sm mt-2" (click)="openAddMedication()">
+              + Agregar Primer Medicamento
+            </button>
+          </div>
+        } @else {
+          <div class="rx-items-list">
+            @for (med of pendingPrescriptionItems(); track $index; let idx = $index) {
+              <div class="rx-item-card">
+                <div class="rx-item-info">
+                  <span class="rx-item-name">
+                    💊 {{ med.medicationName }}
+                  </span>
+                  <div class="rx-item-meta">
+                    <span><b>Dosis:</b> {{ med.dosage }}</span>
+                    <span>•</span>
+                    <span><b>Frecuencia:</b> {{ med.frequency }}</span>
+                    <span>•</span>
+                    <span><b>Duración:</b> {{ med.durationDays }} días</span>
+                  </div>
+                  @if (med.instructions) {
+                    <div class="rx-item-instrux">
+                      <b>Indicaciones:</b> {{ med.instructions }}
+                    </div>
+                  }
+                </div>
+                <div class="flex items-center gap-1">
+                  <button 
+                    type="button" 
+                    class="btn btn-secondary btn-sm p-1.5" 
+                    title="Editar medicamento"
+                    (click)="openEditMedication(idx)">
+                    ✏️
+                  </button>
+                  <button 
+                    type="button" 
+                    class="rx-item-delete-btn" 
+                    title="Eliminar medicamento"
+                    (click)="removePrescriptionItem(idx)">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="form-group pt-2">
+          <label class="form-label">Notas / Observaciones Generales de la Receta</label>
+          <textarea 
+            [ngModel]="prescriptionNotes()" 
+            (ngModelChange)="prescriptionNotes.set($event)"
+            class="form-control" 
+            rows="2" 
+            placeholder="Indicaciones generales, precauciones de uso o recomendaciones no farmacológicas..."></textarea>
+        </div>
+      </div>
+
+      <div modal-footer class="flex items-center gap-2">
+        <button type="button" class="btn btn-secondary font-medium" (click)="closePrescriptionModal()">Volver a la Consulta</button>
+        <button type="button" class="btn btn-primary font-semibold" (click)="closePrescriptionModal()">
+          ✓ Confirmar Receta
+        </button>
+      </div>
+    </app-modal>
+
+    <!-- SUBMODAL 3: AGREGAR / EDITAR MEDICAMENTO INDIVIDUAL -->
+    <app-medication-modal
+      [isOpen]="medicationModalOpen()"
+      [itemToEdit]="itemToEdit()"
+      [zIndex]="90"
+      (closed)="closeMedicationModal()"
+      (saved)="saveMedication($event)">
+    </app-medication-modal>
   `
 })
 export class MedicalRecordModalComponent implements OnChanges {
@@ -106,9 +253,18 @@ export class MedicalRecordModalComponent implements OnChanges {
   @Input() specialists: SpecialistDto[] = [];
   @Input() defaultSpecialistId: string | null = null;
   @Input() saving = false;
+  @Input() patientName = '';
+  @Input() patientDocument = '';
 
   @Output() closed = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
+
+  readonly pendingPrescriptionItems = signal<CreatePrescriptionItemDto[]>([]);
+  readonly prescriptionNotes = signal<string>('');
+  readonly prescriptionSubModalOpen = signal<boolean>(false);
+  readonly medicationModalOpen = signal<boolean>(false);
+  readonly editingMedIndex = signal<number | null>(null);
+  readonly itemToEdit = signal<Partial<PrescriptionItemDto> | null>(null);
 
   readonly recordForm: FormGroup = this.fb.group({
     specialistId: [''],
@@ -146,6 +302,81 @@ export class MedicalRecordModalComponent implements OnChanges {
       weightKg: null,
       heightCm: null
     });
+    this.clearPrescription();
+    this.prescriptionSubModalOpen.set(false);
+    this.medicationModalOpen.set(false);
+  }
+
+  getSelectedSpecialistName(): string {
+    const specId = this.recordForm.get('specialistId')?.value;
+    const found = this.specialists.find(s => s.id === specId);
+    return found ? found.fullName : 'Especialista';
+  }
+
+  openPrescriptionModal(): void {
+    this.prescriptionSubModalOpen.set(true);
+  }
+
+  closePrescriptionModal(): void {
+    this.prescriptionSubModalOpen.set(false);
+  }
+
+  clearPrescription(): void {
+    this.pendingPrescriptionItems.set([]);
+    this.prescriptionNotes.set('');
+  }
+
+  openAddMedication(): void {
+    this.editingMedIndex.set(null);
+    this.itemToEdit.set(null);
+    this.medicationModalOpen.set(true);
+  }
+
+  openEditMedication(index: number): void {
+    const item = this.pendingPrescriptionItems()[index];
+    if (!item) return;
+    this.editingMedIndex.set(index);
+    this.itemToEdit.set({
+      medicationName: item.medicationName,
+      dosage: item.dosage,
+      frequency: item.frequency,
+      durationDays: item.durationDays,
+      instructions: item.instructions || ''
+    });
+    this.medicationModalOpen.set(true);
+  }
+
+  closeMedicationModal(): void {
+    this.medicationModalOpen.set(false);
+    this.itemToEdit.set(null);
+    this.editingMedIndex.set(null);
+  }
+
+  saveMedication(item: any): void {
+    const medItem: CreatePrescriptionItemDto = {
+      medicationName: item.medicationName,
+      dosage: item.dosage,
+      frequency: item.frequency,
+      durationDays: Number(item.durationDays),
+      instructions: item.instructions || null
+    };
+
+    const current = [...this.pendingPrescriptionItems()];
+    const editIdx = this.editingMedIndex();
+
+    if (editIdx !== null && editIdx >= 0 && editIdx < current.length) {
+      current[editIdx] = medItem;
+    } else {
+      current.push(medItem);
+    }
+
+    this.pendingPrescriptionItems.set(current);
+    this.closeMedicationModal();
+  }
+
+  removePrescriptionItem(index: number): void {
+    const current = this.pendingPrescriptionItems().filter((_, i) => i !== index);
+    this.pendingPrescriptionItems.set(current);
   }
 
   close(): void {
@@ -157,6 +388,20 @@ export class MedicalRecordModalComponent implements OnChanges {
       this.recordForm.markAllAsTouched();
       return;
     }
-    this.save.emit(this.recordForm.value);
+
+    const payload = { ...this.recordForm.value };
+    const items = this.pendingPrescriptionItems();
+
+    const prescriptionPayload = items.length > 0 ? {
+      specialistId: payload.specialistId || this.defaultSpecialistId,
+      prescriptionDate: new Date().toISOString(),
+      notes: this.prescriptionNotes() || null,
+      items: items
+    } : null;
+
+    this.save.emit({
+      record: payload,
+      prescription: prescriptionPayload
+    });
   }
 }

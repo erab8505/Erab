@@ -9,7 +9,14 @@ public record CompanyDto(
     string? Email,
     bool IsActive,
     string? Description,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    Dictionary<string, bool>? Features = null
+);
+
+public record CompanyFeatureDto(
+    string FeatureKey,
+    bool IsEnabled,
+    string? ConfigValue = null
 );
 
 public record CreateCompanyDto(
@@ -19,7 +26,8 @@ public record CreateCompanyDto(
     string? Phone,
     string? Email,
     bool IsActive,
-    string? Description
+    string? Description,
+    Dictionary<string, bool>? Features = null
 );
 
 public record UpdateCompanyDto(
@@ -29,5 +37,6 @@ public record UpdateCompanyDto(
     string? Phone,
     string? Email,
     bool IsActive,
-    string? Description
+    string? Description,
+    Dictionary<string, bool>? Features = null
 );

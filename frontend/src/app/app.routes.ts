@@ -2,6 +2,8 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { companyGuard } from './core/guards/company.guard';
 import { roleGuard } from './core/guards/role.guard';
+import { moduleGuard } from './core/guards/module.guard';
+import { CompanyFeatureKeys } from './core/models/models';
 import { ShellComponent } from './layout/shell.component';
 import { LoginComponent } from './features/auth/login.component';
 import { SelectCompanyComponent } from './features/auth/select-company.component';
@@ -101,22 +103,23 @@ export const routes: Routes = [
       {
         path: 'scheduling',
         loadComponent: () => import('./features/scheduling/scheduling-list.component').then(m => m.SchedulingListComponent),
-        canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist'])]
+        canActivate: [moduleGuard(CompanyFeatureKeys.ModuleScheduling, 'la Agenda y Citas'), roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist'])]
       },
       {
         path: 'scheduling/new',
         loadComponent: () => import('./features/scheduling/booking-wizard.component').then(m => m.BookingWizardComponent),
-        canActivate: [roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist'])]
+        canActivate: [moduleGuard(CompanyFeatureKeys.ModuleScheduling, 'la Agenda y Citas'), roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist'])]
       },
       // Clinical Studies & Laboratory Routes
       {
         path: 'studies',
-        loadComponent: () => import('./features/studies/study-order-list.component').then(m => m.StudyOrderListComponent)
+        loadComponent: () => import('./features/studies/study-order-list.component').then(m => m.StudyOrderListComponent),
+        canActivate: [moduleGuard(CompanyFeatureKeys.ModuleLaboratory, 'el módulo de Laboratorio'), roleGuard(['SuperAdmin', 'Admin', 'Specialist', 'Laboratorist', 'Receptionist'])]
       },
       {
         path: 'studies/catalog',
         loadComponent: () => import('./features/studies/clinical-study-list.component').then(m => m.ClinicalStudyListComponent),
-        canActivate: [roleGuard(['SuperAdmin', 'Admin'])]
+        canActivate: [moduleGuard(CompanyFeatureKeys.ModuleLaboratory, 'el catálogo de Laboratorio'), roleGuard(['SuperAdmin', 'Admin'])]
       }
     ]
   },

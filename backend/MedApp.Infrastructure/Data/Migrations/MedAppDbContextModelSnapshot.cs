@@ -255,6 +255,42 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.ToTable("Companies", (string)null);
                 });
 
+            modelBuilder.Entity("MedApp.Domain.Entities.CompanyFeature", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConfigValue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("FeatureKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "FeatureKey")
+                        .IsUnique();
+
+                    b.ToTable("CompanyFeatures", (string)null);
+                });
+
             modelBuilder.Entity("MedApp.Domain.Entities.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1338,6 +1374,17 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Navigation("LabExam");
                 });
 
+            modelBuilder.Entity("MedApp.Domain.Entities.CompanyFeature", b =>
+                {
+                    b.HasOne("MedApp.Domain.Entities.Company", "Company")
+                        .WithMany("Features")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("MedApp.Domain.Entities.Employee", b =>
                 {
                     b.HasOne("MedApp.Domain.Entities.Company", "Company")
@@ -1626,7 +1673,7 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.HasOne("MedApp.Domain.Entities.Employee", "Laboratorist")
                         .WithMany()
                         .HasForeignKey("LaboratoristId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MedApp.Domain.Entities.Patient", "Patient")
                         .WithMany()
@@ -1637,7 +1684,7 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.HasOne("MedApp.Domain.Entities.Employee", "RequestingDoctor")
                         .WithMany()
                         .HasForeignKey("RequestingDoctorId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MedApp.Domain.Entities.Scheduling", "Scheduling")
                         .WithMany()
@@ -1758,6 +1805,8 @@ namespace MedApp.Infrastructure.Data.Migrations
                     b.Navigation("AuditLogs");
 
                     b.Navigation("Employees");
+
+                    b.Navigation("Features");
 
                     b.Navigation("InterventionTypes");
 

@@ -29,12 +29,14 @@ import { StudyReportModalComponent } from '../../studies/components/study-report
           <p class="text-xs text-slate-500">Órdenes solicitadas, valores analíticos, alertas y reportes oficiales del paciente</p>
         </div>
 
-        <button type="button" class="btn btn-sm btn-primary" (click)="openCreateModal()">
-          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-          </svg>
-          + Solicitar Estudio para este Paciente
-        </button>
+        @if (canCreateOrder()) {
+          <button type="button" class="btn btn-sm btn-primary" (click)="openCreateModal()">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
+            + Solicitar Estudio para este Paciente
+          </button>
+        }
       </div>
 
       <!-- Orders List / Cards -->
@@ -50,9 +52,11 @@ import { StudyReportModalComponent } from '../../studies/components/study-report
           <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
             No se han emitido órdenes de laboratorio o estudios para este paciente.
           </p>
-          <button type="button" class="btn btn-sm btn-primary mt-4" (click)="openCreateModal()">
-            + Solicitar Primer Estudio
-          </button>
+          @if (canCreateOrder()) {
+            <button type="button" class="btn btn-sm btn-primary mt-4" (click)="openCreateModal()">
+              + Solicitar Primer Estudio
+            </button>
+          }
         </div>
       } @else {
         <div class="space-y-3">
@@ -206,6 +210,13 @@ export class PatientStudiesTabComponent implements OnInit, OnChanges {
       case 'Cancelled': return '✕ Cancelado';
       default: return status || '';
     }
+  }
+
+  canCreateOrder(): boolean {
+    if (!this.companyContext.hasLaboratory()) return false;
+    if (this.authService.canManageStudyOrders()) return true;
+    if (this.authService.isReceptionist() && this.companyContext.canReceptionistCreateStudies()) return true;
+    return false;
   }
 
   openCreateModal(): void {

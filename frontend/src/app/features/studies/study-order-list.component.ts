@@ -41,12 +41,14 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
               ⚙️ Catálogo de Estudios
             </a>
           }
-          <button type="button" class="btn btn-primary" (click)="openCreateModal()">
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            + Nueva Orden de Estudio
-          </button>
+          @if (canCreateStudyOrder()) {
+            <button type="button" class="btn btn-primary" (click)="openCreateModal()">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              + Nueva Orden de Estudio
+            </button>
+          }
         </div>
       </div>
 
@@ -215,23 +217,25 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
 
         <ng-template #actionTemplate let-item>
           <div class="table-actions">
-            <!-- Stage transition button -->
-            @if (item.status === 'Requested') {
-              <button
-                type="button"
-                class="table-action-btn font-semibold text-purple-600"
-                title="Marcar muestra tomada"
-                (click)="changeStatus(item, 'SampleCollected')">
-                🩸 Muestra Tomada
-              </button>
-            } @else if (item.status === 'SampleCollected') {
-              <button
-                type="button"
-                class="table-action-btn font-semibold text-blue-600"
-                title="Pasar a análisis"
-                (click)="changeStatus(item, 'InAnalysis')">
-                🔬 Iniciar Análisis
-              </button>
+            <!-- Stage transition button (Only for Laboratorists / Admins) -->
+            @if (authService.canUpdateStudyStatus()) {
+              @if (item.status === 'Requested') {
+                <button
+                  type="button"
+                  class="table-action-btn font-semibold text-purple-600"
+                  title="Marcar muestra tomada"
+                  (click)="changeStatus(item, 'SampleCollected')">
+                  🩸 Muestra Tomada
+                </button>
+              } @else if (item.status === 'SampleCollected') {
+                <button
+                  type="button"
+                  class="table-action-btn font-semibold text-blue-600"
+                  title="Pasar a análisis"
+                  (click)="changeStatus(item, 'InAnalysis')">
+                  🔬 Iniciar Análisis
+                </button>
+              }
             }
 
             <!-- Capture Results Button (Only for Laboratorists / Admins) -->
@@ -256,8 +260,8 @@ import { StudyReportModalComponent } from './components/study-report-modal.compo
               </button>
             }
 
-            <!-- Cancel Button -->
-            @if (item.status !== 'Completed' && item.status !== 'Delivered' && item.status !== 'Cancelled') {
+            <!-- Cancel Button (Only for Laboratorists / Admins) -->
+            @if (authService.canUpdateStudyStatus() && item.status !== 'Completed' && item.status !== 'Delivered' && item.status !== 'Cancelled') {
               <button
                 type="button"
                 class="table-action-btn text-slate-400 hover:text-rose-600"
@@ -323,6 +327,13 @@ export class StudyOrderListComponent implements OnInit {
   readonly loading = signal<boolean>(true);
   readonly selectedStatus = signal<StudyOrderStatus | null>(null);
   searchQuery = '';
+
+  canCreateStudyOrder(): boolean {
+    if (!this.companyContext.hasLaboratory()) return false;
+    if (this.authService.canManageStudyOrders()) return true;
+    if (this.authService.isReceptionist() && this.companyContext.canReceptionistCreateStudies()) return true;
+    return false;
+  }
 
   // Modals
   readonly createModalOpen = signal<boolean>(false);

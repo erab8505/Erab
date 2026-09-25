@@ -87,11 +87,35 @@ public record PrescriptionDto(
     public string? SpecialistName => EmployeeName;
 }
 
-public record CreatePrescriptionDto(
-    Guid PatientId,
-    Guid? MedicalRecordId,
-    Guid EmployeeId,
-    DateTimeOffset? PrescriptionDate,
-    string? Notes,
-    List<CreatePrescriptionItemDto> Items
-);
+public class CreatePrescriptionDto
+{
+    public Guid PatientId { get; set; }
+    public Guid? MedicalRecordId { get; set; }
+    public Guid EmployeeId { get; set; }
+    public Guid? SpecialistId
+    {
+        get => EmployeeId;
+        set
+        {
+            if (value.HasValue && value.Value != Guid.Empty)
+            {
+                EmployeeId = value.Value;
+            }
+        }
+    }
+    public DateTimeOffset? PrescriptionDate { get; set; }
+    public string? Notes { get; set; }
+    public List<CreatePrescriptionItemDto> Items { get; set; } = new();
+
+    public CreatePrescriptionDto() { }
+
+    public CreatePrescriptionDto(Guid patientId, Guid? medicalRecordId, Guid employeeId, DateTimeOffset? prescriptionDate, string? notes, List<CreatePrescriptionItemDto> items, Guid? specialistId = null)
+    {
+        PatientId = patientId;
+        MedicalRecordId = medicalRecordId;
+        EmployeeId = employeeId != Guid.Empty ? employeeId : (specialistId ?? Guid.Empty);
+        PrescriptionDate = prescriptionDate;
+        Notes = notes;
+        Items = items;
+    }
+}

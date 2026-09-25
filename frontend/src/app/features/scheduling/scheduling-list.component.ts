@@ -1037,6 +1037,7 @@ export class SchedulingListComponent implements OnInit {
           if (medItems && medItems.length > 0) {
             const rxPayload: CreatePrescriptionDto = {
               patientId: app.patientId,
+              employeeId: app.employeeId || app.specialistId,
               specialistId: app.specialistId,
               medicalRecordId: medicalRecordId,
               prescriptionDate: new Date().toISOString(),

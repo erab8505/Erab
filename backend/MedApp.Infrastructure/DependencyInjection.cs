@@ -91,6 +91,7 @@ public static class DependencyInjection
             options.AddPolicy("RequireSuperAdminRole", policy => policy.RequireRole("SuperAdmin"));
             options.AddPolicy("RequireAdminRole", policy => policy.RequireRole("SuperAdmin", "Admin"));
             options.AddPolicy("RequireClinicalRole", policy => policy.RequireRole("SuperAdmin", "Admin", "Specialist"));
+            options.AddPolicy("RequireClinicalOrReceptionistRole", policy => policy.RequireRole("SuperAdmin", "Admin", "Specialist", "Receptionist"));
             options.AddPolicy("RequireSpecialistSelfOrAdmin", policy => policy.Requirements.Add(new SpecialistSelfRequirement()));
         });
 

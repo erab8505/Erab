@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, MedicalRecordDto, PatientDto, PrescriptionDto, SchedulingDto, SpecialistDto, StudyOrderDto } from '../../core/models/models';
 import { AuthService } from '../../core/services/auth.service';
@@ -68,13 +68,18 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
         </div>
 
         <div class="header-actions flex items-center gap-2">
-          <button type="button" class="btn btn-outline-primary" (click)="openStudyOrderModal()">
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-            </svg>
-            + Orden de Estudio
-          </button>
-          @if (authService.canAccessScheduling()) {
+          @if (canCreateStudyOrder()) {
+            <button 
+              type="button" 
+              [class]="hasSchedulingModule() ? 'btn btn-outline-primary' : 'btn btn-primary'" 
+              (click)="openStudyOrderModal()">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+              </svg>
+              Agregar Estudio
+            </button>
+          }
+          @if (authService.canAccessScheduling() && hasSchedulingModule()) {
             <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: patientId() }" class="btn btn-primary">
               🗓️ Agendar Cita
             </a>
@@ -87,25 +92,29 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
         <button type="button" class="tab-btn" [class.active]="activeTab() === 'info'" (click)="setTab('info')">
           📋 Datos Personales
         </button>
-        @if (authService.canAccessScheduling()) {
-          <button type="button" class="tab-btn" [class.active]="activeTab() === 'appointments'" (click)="setTab('appointments')">
-            🗓️ Citas ({{ appointments().length }})
+        @if (hasSchedulingModule()) {
+          @if (authService.canAccessScheduling()) {
+            <button type="button" class="tab-btn" [class.active]="activeTab() === 'appointments'" (click)="setTab('appointments')">
+              🗓️ Citas ({{ appointments().length }})
+            </button>
+          }
+          @if (authService.canViewMedicalRecords()) {
+            <button type="button" class="tab-btn" [class.active]="activeTab() === 'records'" (click)="setTab('records')">
+              🩺 Historia Clínica ({{ medicalRecords().length }})
+            </button>
+          }
+          @if (authService.canViewPrescriptions()) {
+            <button type="button" class="tab-btn" [class.active]="activeTab() === 'prescriptions'" (click)="setTab('prescriptions')">
+              💊 Recetas y Fórmulas ({{ prescriptions().length }})
+            </button>
+          }
+        }
+        @if (authService.canAccessStudies() || authService.isReceptionist() || authService.isSuperAdmin()) {
+          <button type="button" class="tab-btn" [class.active]="activeTab() === 'studies'" (click)="setTab('studies')">
+            🧪 Estudios y Laboratorio
           </button>
         }
-        @if (authService.canViewMedicalRecords()) {
-          <button type="button" class="tab-btn" [class.active]="activeTab() === 'records'" (click)="setTab('records')">
-            🩺 Historia Clínica ({{ medicalRecords().length }})
-          </button>
-        }
-        @if (authService.canViewPrescriptions()) {
-          <button type="button" class="tab-btn" [class.active]="activeTab() === 'prescriptions'" (click)="setTab('prescriptions')">
-            💊 Recetas y Fórmulas ({{ prescriptions().length }})
-          </button>
-        }
-        <button type="button" class="tab-btn" [class.active]="activeTab() === 'studies'" (click)="setTab('studies')">
-          🧪 Estudios y Laboratorio
-        </button>
-        @if (authService.canViewDocuments()) {
+        @if (hasSchedulingModule() && authService.canViewDocuments()) {
           <button type="button" class="tab-btn" [class.active]="activeTab() === 'documents'" (click)="setTab('documents')">
             📂 Archivos Adjuntos
           </button>
@@ -118,7 +127,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 2: CITAS / SCHEDULING -->
-      @if (activeTab() === 'appointments' && authService.canAccessScheduling()) {
+      @if (activeTab() === 'appointments' && hasSchedulingModule() && authService.canAccessScheduling()) {
         <app-patient-appointments-tab 
           [appointments]="appointments()" 
           [patientId]="patientId()">
@@ -126,7 +135,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 3: NOTAS MÉDICAS / HISTORIA CLÍNICA -->
-      @if (activeTab() === 'records' && authService.canViewMedicalRecords()) {
+      @if (activeTab() === 'records' && hasSchedulingModule() && authService.canViewMedicalRecords()) {
         <app-patient-records-tab 
           [medicalRecords]="medicalRecords()" 
           [canCreate]="canCreateClinical()"
@@ -135,7 +144,7 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 4: RECETAS / PRESCRIPCIONES -->
-      @if (activeTab() === 'prescriptions' && authService.canViewPrescriptions()) {
+      @if (activeTab() === 'prescriptions' && hasSchedulingModule() && authService.canViewPrescriptions()) {
         <app-patient-prescriptions-tab 
           [prescriptions]="prescriptions()" 
           [canCreate]="canCreateClinical()"
@@ -145,12 +154,12 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
       }
 
       <!-- TAB 5: ESTUDIOS Y LABORATORIO -->
-      @if (activeTab() === 'studies') {
+      @if (activeTab() === 'studies' && (authService.canAccessStudies() || authService.isReceptionist() || authService.isSuperAdmin())) {
         <app-patient-studies-tab [patient]="patient()"></app-patient-studies-tab>
       }
 
       <!-- TAB 6: ARCHIVOS ADJUNTOS -->
-      @if (activeTab() === 'documents' && authService.canViewDocuments()) {
+      @if (activeTab() === 'documents' && hasSchedulingModule() && authService.canViewDocuments()) {
         <app-patient-documents-tab [patientId]="patientId()"></app-patient-documents-tab>
       }
 
@@ -159,6 +168,8 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
         [isOpen]="recordModalOpen()" 
         [specialists]="specialists()"
         [defaultSpecialistId]="authService.specialistId()"
+        [patientName]="patient()?.fullName || ''"
+        [patientDocument]="patient()?.documentId || ''"
         [saving]="savingRecord()"
         (closed)="closeRecordModal()"
         (save)="saveRecord($event)">
@@ -262,13 +273,27 @@ export class PatientDetailComponent implements OnInit {
     }
   }
 
-  loadAllData(id: string): void {
-    const canAccessScheduling = this.authService.canAccessScheduling();
-    const canViewRecords = this.authService.canViewMedicalRecords();
-    const canViewPrescriptions = this.authService.canViewPrescriptions();
+  hasSchedulingModule(): boolean {
+    return this.companyContext.hasScheduling() || this.authService.isSuperAdmin();
+  }
 
-    if (this.authService.isOnlyLaboratorist()) {
-      this.activeTab.set('studies');
+  canCreateStudyOrder(): boolean {
+    if (!this.companyContext.hasLaboratory() && !this.authService.isSuperAdmin()) return false;
+    if (this.authService.isSuperAdmin() || this.authService.canManageStudyOrders()) return true;
+    if (this.authService.isReceptionist() && this.companyContext.canReceptionistCreateStudies()) return true;
+    return false;
+  }
+
+  loadAllData(id: string): void {
+    const hasScheduling = this.hasSchedulingModule();
+    const canAccessScheduling = hasScheduling && this.authService.canAccessScheduling();
+    const canViewRecords = hasScheduling && this.authService.canViewMedicalRecords();
+    const canViewPrescriptions = hasScheduling && this.authService.canViewPrescriptions();
+
+    if (this.authService.isOnlyLaboratorist() || !hasScheduling) {
+      if (this.activeTab() !== 'info' && this.activeTab() !== 'studies') {
+        this.activeTab.set('info');
+      }
     }
 
     forkJoin({
@@ -282,7 +307,9 @@ export class PatientDetailComponent implements OnInit {
       prescriptions: canViewPrescriptions
         ? this.http.get<ApiResponse<PrescriptionDto[]>>(`${environment.apiUrl}/prescriptions?patientId=${id}`)
         : of({ success: true, message: '', data: [] as PrescriptionDto[], errors: [] }),
-      specialists: this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/employees`)
+      specialists: hasScheduling
+        ? this.http.get<ApiResponse<SpecialistDto[]>>(`${environment.apiUrl}/employees`)
+        : of({ success: true, message: '', data: [] as SpecialistDto[], errors: [] })
     }).subscribe({
       next: (res) => {
         const pat = res.patient.data;
@@ -314,7 +341,10 @@ export class PatientDetailComponent implements OnInit {
     this.recordModalOpen.set(false);
   }
 
-  saveRecord(formValue: any): void {
+  saveRecord(event: any): void {
+    const formValue = event.record || event;
+    const rxPayload = event.prescription;
+
     this.savingRecord.set(true);
     const payload = {
       patientId: this.patientId(),
@@ -332,10 +362,29 @@ export class PatientDetailComponent implements OnInit {
       heightCm: formValue.heightCm ? Number(formValue.heightCm) : null
     };
 
-    this.http.post<ApiResponse<MedicalRecordDto>>(`${environment.apiUrl}/medical-records`, payload).subscribe({
-      next: () => {
+    this.http.post<ApiResponse<MedicalRecordDto>>(`${environment.apiUrl}/medical-records`, payload).pipe(
+      switchMap(() => {
+        if (rxPayload && rxPayload.items && rxPayload.items.length > 0) {
+          const rxBody = {
+            patientId: this.patientId(),
+            employeeId: rxPayload.specialistId || formValue.specialistId || this.authService.specialistId(),
+            specialistId: rxPayload.specialistId || formValue.specialistId || this.authService.specialistId(),
+            prescriptionDate: rxPayload.prescriptionDate || new Date().toISOString(),
+            notes: rxPayload.notes || null,
+            items: rxPayload.items
+          };
+          return this.http.post<ApiResponse<PrescriptionDto>>(`${environment.apiUrl}/prescriptions`, rxBody);
+        }
+        return of(null);
+      })
+    ).subscribe({
+      next: (rxRes) => {
         this.savingRecord.set(false);
-        this.toast.success('Atención clínica registrada exitosamente.');
+        if (rxRes) {
+          this.toast.success('Atención clínica y receta médica registradas exitosamente.');
+        } else {
+          this.toast.success('Atención clínica registrada exitosamente.');
+        }
         this.closeRecordModal();
         this.loadAllData(this.patientId());
       },
@@ -355,6 +404,7 @@ export class PatientDetailComponent implements OnInit {
     this.savingRx.set(true);
     const payload = {
       patientId: this.patientId(),
+      employeeId: formValue.specialistId,
       specialistId: formValue.specialistId,
       prescriptionDate: new Date(formValue.prescriptionDate).toISOString(),
       notes: formValue.notes || null,

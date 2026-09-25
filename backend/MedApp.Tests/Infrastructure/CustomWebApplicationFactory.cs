@@ -1,4 +1,5 @@
 using MedApp.Application.Common.Interfaces;
+using MedApp.Domain.Constants;
 using MedApp.Domain.Entities;
 using MedApp.Domain.Enums;
 using MedApp.Infrastructure.Data;
@@ -29,6 +30,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public Guid Patient1Id { get; } = Guid.Parse("44444444-0000-0000-0000-000000000001");
     public Guid Patient2Id { get; } = Guid.Parse("44444444-0000-0000-0000-000000000002");
     public Guid InterventionId { get; } = Guid.Parse("55555555-0000-0000-0000-000000000001");
+    public Guid ClinicalStudy1Id { get; } = Guid.Parse("77777777-0000-0000-0000-000000000001");
+    public Guid ClinicalStudy2Id { get; } = Guid.Parse("77777777-0000-0000-0000-000000000002");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -82,6 +85,17 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             IsActive = true
         };
         context.Companies.AddRange(c1, c2);
+
+        // Features for Company 1 (Full Clinic + Lab + Receptionist can create studies)
+        context.CompanyFeatures.AddRange(
+            new CompanyFeature { CompanyId = Company1Id, FeatureKey = CompanyFeatureKeys.ModuleScheduling, IsEnabled = true },
+            new CompanyFeature { CompanyId = Company1Id, FeatureKey = CompanyFeatureKeys.ModuleLaboratory, IsEnabled = true },
+            new CompanyFeature { CompanyId = Company1Id, FeatureKey = CompanyFeatureKeys.AllowReceptionistStudyOrders, IsEnabled = true },
+            // Features for Company 2 (Clinic only, no Lab, Receptionist cannot create studies)
+            new CompanyFeature { CompanyId = Company2Id, FeatureKey = CompanyFeatureKeys.ModuleScheduling, IsEnabled = true },
+            new CompanyFeature { CompanyId = Company2Id, FeatureKey = CompanyFeatureKeys.ModuleLaboratory, IsEnabled = false },
+            new CompanyFeature { CompanyId = Company2Id, FeatureKey = CompanyFeatureKeys.AllowReceptionistStudyOrders, IsEnabled = false }
+        );
 
         // Areas & Specialties in Company 1
         var area1 = new Area
@@ -211,6 +225,29 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             Notes = "Cita con Especialista 2"
         };
         context.Schedulings.AddRange(scheduling1, scheduling2);
+
+        // Clinical Studies
+        var study1 = new ClinicalStudy
+        {
+            Id = ClinicalStudy1Id,
+            CompanyId = Company1Id,
+            Code = "HEM-01",
+            Name = "Hemograma Completo",
+            Category = StudyCategory.Laboratory,
+            BasePrice = 25.0m,
+            IsActive = true
+        };
+        var study2 = new ClinicalStudy
+        {
+            Id = ClinicalStudy2Id,
+            CompanyId = Company2Id,
+            Code = "HEM-02",
+            Name = "Hemograma Completo C2",
+            Category = StudyCategory.Laboratory,
+            BasePrice = 25.0m,
+            IsActive = true
+        };
+        context.ClinicalStudies.AddRange(study1, study2);
 
         // Users
         var admin = new User

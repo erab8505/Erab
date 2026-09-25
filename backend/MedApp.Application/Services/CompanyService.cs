@@ -2,8 +2,10 @@ using MedApp.Application.Common.Exceptions;
 using MedApp.Application.Common.Interfaces;
 using MedApp.Application.DTOs;
 using MedApp.Application.Interfaces;
+using MedApp.Domain.Constants;
 using MedApp.Domain.Entities;
 using MedApp.Domain.Enums;
+using MedApp.Domain.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedApp.Application.Services;
@@ -19,12 +21,15 @@ public class CompanyService : ICompanyService
 
     public async Task<List<CompanyDto>> GetAllCompaniesAsync()
     {
-        return await _context.Companies
+        var companies = await _context.Companies
+            .Include(c => c.Features)
             .OrderBy(c => c.Name)
-            .Select(c => new CompanyDto(
-                c.Id, c.Name, c.TaxId, c.Address, c.Phone, c.Email, c.IsActive, c.Description, c.CreatedAt
-            ))
             .ToListAsync();
+
+        return companies.Select(c => new CompanyDto(
+            c.Id, c.Name, c.TaxId, c.Address, c.Phone, c.Email, c.IsActive, c.Description, c.CreatedAt,
+            c.Features.ToFeaturesDictionary()
+        )).ToList();
     }
 
     public async Task<List<CompanyDto>> GetMyCompaniesAsync(Guid userId)
@@ -33,6 +38,7 @@ public class CompanyService : ICompanyService
             .Include(u => u.UserRoles)
             .Include(u => u.UserCompanies)
                 .ThenInclude(uc => uc.Company)
+                    .ThenInclude(c => c.Features)
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
@@ -47,7 +53,8 @@ public class CompanyService : ICompanyService
             .Where(uc => uc.Company != null && uc.Company.IsActive)
             .Select(uc => new CompanyDto(
                 uc.Company.Id, uc.Company.Name, uc.Company.TaxId, uc.Company.Address,
-                uc.Company.Phone, uc.Company.Email, uc.Company.IsActive, uc.Company.Description, uc.Company.CreatedAt
+                uc.Company.Phone, uc.Company.Email, uc.Company.IsActive, uc.Company.Description, uc.Company.CreatedAt,
+                uc.Company.Features.ToFeaturesDictionary()
             ))
             .OrderBy(c => c.Name)
             .ToList();
@@ -55,13 +62,17 @@ public class CompanyService : ICompanyService
 
     public async Task<CompanyDto> GetCompanyByIdAsync(Guid id)
     {
-        var company = await _context.Companies.FindAsync(id);
+        var company = await _context.Companies
+            .Include(c => c.Features)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (company == null)
             throw new NotFoundException("Empresa", id);
 
         return new CompanyDto(
             company.Id, company.Name, company.TaxId, company.Address,
-            company.Phone, company.Email, company.IsActive, company.Description, company.CreatedAt
+            company.Phone, company.Email, company.IsActive, company.Description, company.CreatedAt,
+            company.Features.ToFeaturesDictionary()
         );
     }
 
@@ -85,18 +96,39 @@ public class CompanyService : ICompanyService
             Description = dto.Description
         };
 
+        var featuresToApply = dto.Features ?? new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
+        {
+            [CompanyFeatureKeys.ModuleScheduling] = true,
+            [CompanyFeatureKeys.ModuleLaboratory] = true,
+            [CompanyFeatureKeys.AllowReceptionistStudyOrders] = true
+        };
+
+        foreach (var kvp in featuresToApply)
+        {
+            company.Features.Add(new CompanyFeature
+            {
+                CompanyId = company.Id,
+                FeatureKey = kvp.Key,
+                IsEnabled = kvp.Value
+            });
+        }
+
         await _context.Companies.AddAsync(company);
         await _context.SaveChangesAsync();
 
         return new CompanyDto(
             company.Id, company.Name, company.TaxId, company.Address,
-            company.Phone, company.Email, company.IsActive, company.Description, company.CreatedAt
+            company.Phone, company.Email, company.IsActive, company.Description, company.CreatedAt,
+            company.Features.ToFeaturesDictionary()
         );
     }
 
     public async Task<CompanyDto> UpdateCompanyAsync(Guid id, UpdateCompanyDto dto)
     {
-        var company = await _context.Companies.FindAsync(id);
+        var company = await _context.Companies
+            .Include(c => c.Features)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (company == null)
             throw new NotFoundException("Empresa", id);
 
@@ -115,11 +147,35 @@ public class CompanyService : ICompanyService
         company.IsActive = dto.IsActive;
         company.Description = dto.Description;
 
+        if (dto.Features != null)
+        {
+            foreach (var kvp in dto.Features)
+            {
+                var existing = company.Features.FirstOrDefault(f => string.Equals(f.FeatureKey, kvp.Key, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    existing.IsEnabled = kvp.Value;
+                }
+                else
+                {
+                    var newFeature = new CompanyFeature
+                    {
+                        CompanyId = company.Id,
+                        FeatureKey = kvp.Key,
+                        IsEnabled = kvp.Value
+                    };
+                    _context.CompanyFeatures.Add(newFeature);
+                    company.Features.Add(newFeature);
+                }
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         return new CompanyDto(
             company.Id, company.Name, company.TaxId, company.Address,
-            company.Phone, company.Email, company.IsActive, company.Description, company.CreatedAt
+            company.Phone, company.Email, company.IsActive, company.Description, company.CreatedAt,
+            company.Features.ToFeaturesDictionary()
         );
     }
 

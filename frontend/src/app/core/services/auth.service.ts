@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiResponse, LoginRequestDto, LoginResponseDto, UserRole, UserSession } from '../models/models';
+import { CompanyContextService } from './company-context.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ import { ApiResponse, LoginRequestDto, LoginResponseDto, UserRole, UserSession }
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly companyService = inject(CompanyContextService);
 
   private readonly tokenKey = 'medapp_jwt_token';
   private readonly userKey = 'medapp_user_session';
@@ -44,12 +46,16 @@ export class AuthService {
     );
   }
 
-  logout(): void {
+  clearSession(): void {
     localStorage.removeItem(this.tokenKey);
     localStorage.removeItem(this.userKey);
-    localStorage.removeItem('medapp_active_company');
     this.token.set(null);
     this.currentUser.set(null);
+    this.companyService.resetContext();
+  }
+
+  logout(): void {
+    this.clearSession();
     this.router.navigate(['/login']);
   }
 
@@ -92,7 +98,7 @@ export class AuthService {
   }
 
   canViewMedicalRecords(): boolean {
-    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist']);
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
   }
 
   canCreateMedicalRecords(): boolean {
@@ -111,6 +117,18 @@ export class AuthService {
     return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
   }
 
+  canAccessStudies(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Laboratorist']);
+  }
+
+  canManageStudyOrders(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Laboratorist']);
+  }
+
+  canUpdateStudyStatus(): boolean {
+    return this.hasRole(['SuperAdmin', 'Admin', 'Laboratorist']);
+  }
+
   canCaptureStudyResults(): boolean {
     return this.hasRole(['Laboratorist', 'SuperAdmin', 'Admin']);
   }
@@ -119,11 +137,17 @@ export class AuthService {
     return this.isLaboratorist() && !this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Receptionist']);
   }
 
+  isOnlyReceptionist(): boolean {
+    return this.isReceptionist() && !this.hasRole(['SuperAdmin', 'Admin', 'Specialist', 'Laboratorist']);
+  }
+
   isOnlySpecialist(): boolean {
     return this.isSpecialist() && !this.isAdmin() && !this.isReceptionist();
   }
 
   private handleAuthSuccess(data: LoginResponseDto): void {
+    this.companyService.resetContext();
+
     const companies = data.assignedCompanies || data.companies || [];
     const roles: UserRole[] = data.roles && data.roles.length > 0
       ? data.roles

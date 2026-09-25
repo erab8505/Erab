@@ -40,6 +40,20 @@ export interface UserSession {
   companyIds: string[];
 }
 
+export const CompanyFeatureKeys = {
+  ModuleScheduling: 'MODULE_SCHEDULING',
+  ModuleLaboratory: 'MODULE_LABORATORY',
+  AllowReceptionistStudyOrders: 'ALLOW_RECEPTIONIST_STUDY_ORDERS',
+} as const;
+
+export type CompanyFeatureKey = typeof CompanyFeatureKeys[keyof typeof CompanyFeatureKeys];
+
+export interface CompanyFeatureDto {
+  featureKey: string;
+  isEnabled: boolean;
+  configValue?: string | null;
+}
+
 export interface CompanyDto {
   id: string;
   name: string;
@@ -50,6 +64,7 @@ export interface CompanyDto {
   description?: string | null;
   isActive: boolean;
   createdAt: string;
+  features?: Record<string, boolean>;
 }
 
 export interface CreateCompanyDto {
@@ -60,6 +75,7 @@ export interface CreateCompanyDto {
   email?: string | null;
   description?: string | null;
   isActive: boolean;
+  features?: Record<string, boolean>;
 }
 
 export interface UpdateCompanyDto {
@@ -70,6 +86,7 @@ export interface UpdateCompanyDto {
   email?: string | null;
   description?: string | null;
   isActive: boolean;
+  features?: Record<string, boolean>;
 }
 
 export interface AreaDto {
@@ -256,6 +273,16 @@ export interface SchedulingDto {
   paymentId?: string | null;
 }
 
+export interface CreateSchedulingDto {
+  patientId: string;
+  employeeId?: string;
+  specialistId?: string;
+  interventionTypeId: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  notes?: string | null;
+}
+
 export interface PaymentDto {
   id: string;
   companyId: string;
@@ -385,7 +412,8 @@ export interface PrescriptionDto {
 export interface CreatePrescriptionDto {
   patientId: string;
   medicalRecordId?: string | null;
-  specialistId: string;
+  employeeId?: string;
+  specialistId?: string;
   prescriptionDate?: string;
   notes?: string | null;
   items: CreatePrescriptionItemDto[];

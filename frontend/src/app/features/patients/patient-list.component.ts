@@ -7,6 +7,7 @@ import { Subject, Subscription, catchError, debounceTime, distinctUntilChanged, 
 import { environment } from '../../../environments/environment';
 import { ApiResponse, Gender, PatientDto, StudyOrderDto } from '../../core/models/models';
 import { AuthService } from '../../core/services/auth.service';
+import { CompanyContextService } from '../../core/services/company-context.service';
 import { ToastService } from '../../core/services/toast.service';
 import { DataTableComponent, TableColumn } from '../../shared/components/data-table/data-table.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
@@ -25,12 +26,14 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
           <p class="text-slate-500 text-sm">Registro de pacientes, datos demográficos y acceso a expedientes clínicos</p>
         </div>
         <div class="flex items-center gap-2">
-          <button type="button" class="btn btn-outline-primary" (click)="openStudyOrderModal(null)">
-            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
-            </svg>
-            + Orden de Estudio
-          </button>
+          @if (canCreateStudy()) {
+            <button type="button" class="btn btn-outline-primary" (click)="openStudyOrderModal(null)">
+              <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+              </svg>
+              + Orden de Estudio
+            </button>
+          }
           @if (authService.canManagePatients()) {
             <button type="button" class="btn btn-primary" (click)="openCreateModal()">
               <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,13 +103,17 @@ import { CreateStudyOrderModalComponent } from '../studies/components/create-stu
 
         <ng-template #actionTemplate let-item>
           <div class="flex items-center justify-end gap-1.5">
-            <button type="button" class="btn btn-secondary btn-sm text-blue-600 dark:text-blue-400 font-semibold" title="Emitir orden de laboratorio / estudio clínico" (click)="openStudyOrderModal(item)">
-              🧪 Estudio
-            </button>
+            @if (canCreateStudy()) {
+              <button type="button" class="btn btn-secondary btn-sm text-blue-600 dark:text-blue-400 font-semibold" title="Emitir orden de laboratorio / estudio clínico" (click)="openStudyOrderModal(item)">
+                🧪 Estudio
+              </button>
+            }
             @if (authService.canManagePatients()) {
-              <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: item.id }" class="btn btn-secondary btn-sm" title="Agendar nueva cita">
-                🗓️ Agendar
-              </a>
+              @if (companyService.hasScheduling() || authService.isSuperAdmin()) {
+                <a [routerLink]="['/scheduling/new']" [queryParams]="{ patientId: item.id }" class="btn btn-secondary btn-sm" title="Agendar nueva cita">
+                  🗓️ Agendar
+                </a>
+              }
               <a [routerLink]="['/patients', item.id]" class="btn btn-secondary btn-sm" title="Ver historial clínico completo">
                 Expediente
               </a>
@@ -241,6 +248,7 @@ export class PatientListComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   readonly authService = inject(AuthService);
+  readonly companyService = inject(CompanyContextService);
   private readonly toast = inject(ToastService);
 
   readonly patients = signal<PatientDto[]>([]);
@@ -251,6 +259,13 @@ export class PatientListComponent implements OnInit, OnDestroy {
 
   readonly studyOrderModalOpen = signal<boolean>(false);
   readonly patientForStudyOrder = signal<PatientDto | null>(null);
+
+  canCreateStudy(): boolean {
+    if (!this.companyService.hasLaboratory() && !this.authService.isSuperAdmin()) return false;
+    if (this.authService.isSuperAdmin() || this.authService.canManageStudyOrders()) return true;
+    if (this.authService.isReceptionist() && this.companyService.canReceptionistCreateStudies()) return true;
+    return false;
+  }
 
   private readonly searchSubject = new Subject<string>();
   private searchSub?: Subscription;

@@ -77,13 +77,15 @@ public class PrescriptionService : IPrescriptionService
 
     public async Task<PrescriptionDto> CreatePrescriptionAsync(CreatePrescriptionDto dto)
     {
+        var employeeId = dto.EmployeeId != Guid.Empty ? dto.EmployeeId : (dto.SpecialistId ?? Guid.Empty);
+
         var patient = await _context.Patients.FindAsync(dto.PatientId);
         if (patient == null || patient.CompanyId != CurrentCompanyId)
             throw new NotFoundException($"El paciente ({dto.PatientId}) no existe en la empresa activa.");
 
-        var employee = await _context.Employees.FindAsync(dto.EmployeeId);
+        var employee = await _context.Employees.FindAsync(employeeId);
         if (employee == null || employee.CompanyId != CurrentCompanyId)
-            throw new NotFoundException($"El profesional ({dto.EmployeeId}) no existe en la empresa activa.");
+            throw new NotFoundException($"El profesional ({employeeId}) no existe en la empresa activa.");
 
         if (dto.MedicalRecordId.HasValue)
         {
@@ -96,7 +98,7 @@ public class PrescriptionService : IPrescriptionService
         {
             CompanyId = CurrentCompanyId,
             PatientId = dto.PatientId,
-            EmployeeId = dto.EmployeeId,
+            EmployeeId = employeeId,
             MedicalRecordId = dto.MedicalRecordId,
             PrescriptionDate = dto.PrescriptionDate ?? DateTimeOffset.UtcNow,
             Notes = dto.Notes

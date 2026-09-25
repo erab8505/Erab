@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using MedApp.Application.Common.Models;
 using MedApp.Application.DTOs;
+using MedApp.Domain.Enums;
 using MedApp.Tests.Infrastructure;
 using Xunit;
 
@@ -33,7 +34,7 @@ public class ClinicalAuthorizationTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Fact]
-    public async Task Receptionist_AccessingMedicalRecords_Returns403Forbidden()
+    public async Task Receptionist_CanViewMedicalRecords_ButCannotCreateRecord_Returns403Forbidden()
     {
         // Arrange
         var token = await AuthenticateAsync("receptionist_test", "ReceptTest123!");
@@ -43,13 +44,13 @@ public class ClinicalAuthorizationTests : IClassFixture<CustomWebApplicationFact
 
         var patientId = _factory.Patient1Id;
 
-        // Act: Try to query medical records
+        // Act: Receptionist CAN view medical records
         var getResponse = await _client.GetAsync($"/api/medical-records?patientId={patientId}");
 
         // Assert
-        getResponse.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        // Act: Try to create medical record
+        // Act: Try to create medical record (forbidden)
         var postRecord = await _client.PostAsJsonAsync("/api/medical-records", new CreateMedicalRecordDto(
             patientId, null, DateTimeOffset.UtcNow, "Hipertensión", "Enalapril", null, 75.5m, 172m, 36.5m, 120, 80, 72, 98
         ));
@@ -115,5 +116,37 @@ public class ClinicalAuthorizationTests : IClassFixture<CustomWebApplicationFact
         rxResult.Data!.Items.Should().HaveCount(2);
         rxResult.Data.Items.Should().Contain(i => i.MedicationName == "Aspirina Protect");
         rxResult.Data.Items.Should().Contain(i => i.MedicationName == "Atorvastatina");
+    }
+
+    [Fact]
+    public async Task Receptionist_StudyOrderManagementActions_Returns403Forbidden()
+    {
+        // Arrange
+        var token = await AuthenticateAsync("receptionist_test", "ReceptTest123!");
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        _client.DefaultRequestHeaders.Remove("X-Company-Id");
+        _client.DefaultRequestHeaders.Add("X-Company-Id", _factory.Company1Id.ToString());
+
+        var randomOrderId = Guid.NewGuid();
+
+        // Act 1: Try to change status of a study order (Laboratorist/Admin only)
+        var patchStatus = await _client.PatchAsJsonAsync($"/api/study-orders/{randomOrderId}/status", new UpdateStudyOrderStatusDto
+        {
+            Status = StudyOrderStatus.SampleCollected
+        });
+        patchStatus.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Act 2: Try to capture results (Laboratorist/Admin only)
+        var postResults = await _client.PostAsJsonAsync($"/api/study-orders/{randomOrderId}/results", new SaveStudyResultsDto
+        {
+            LaboratoristName = "Recepcionista Test",
+            GeneralInterpretation = "Notas",
+            Results = new List<SaveParameterResultDto>()
+        });
+        postResults.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Act 3: Try to cancel study order (Admin/Specialist only)
+        var deleteOrder = await _client.DeleteAsync($"/api/study-orders/{randomOrderId}");
+        deleteOrder.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 }

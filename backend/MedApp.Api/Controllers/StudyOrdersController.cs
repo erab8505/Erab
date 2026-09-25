@@ -41,6 +41,7 @@ public class StudyOrdersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "SuperAdmin,Admin,Specialist,Laboratorist,Receptionist")]
     public async Task<ActionResult<ApiResponse<StudyOrderDto>>> Create([FromBody] CreateStudyOrderDto dto, CancellationToken cancellationToken)
     {
         var result = await _orderService.CreateAsync(dto, cancellationToken);
@@ -52,6 +53,7 @@ public class StudyOrdersController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/status")]
+    [Authorize(Roles = "SuperAdmin,Admin,Laboratorist")]
     public async Task<ActionResult<ApiResponse<StudyOrderDto>>> UpdateStatus(Guid id, [FromBody] UpdateStudyOrderStatusDto dto, CancellationToken cancellationToken)
     {
         var result = await _orderService.UpdateStatusAsync(id, dto.Status, cancellationToken);
@@ -75,6 +77,7 @@ public class StudyOrdersController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "SuperAdmin,Admin,Laboratorist")]
     public async Task<ActionResult<ApiResponse<StudyOrderDto>>> Cancel(Guid id, CancellationToken cancellationToken)
     {
         var result = await _orderService.UpdateStatusAsync(id, StudyOrderStatus.Cancelled, cancellationToken);

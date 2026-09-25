@@ -29,6 +29,7 @@ public interface IApplicationDbContext
     DbSet<StudyOrder> StudyOrders { get; }
     DbSet<StudyOrderItem> StudyOrderItems { get; }
     DbSet<StudyOrderResult> StudyOrderResults { get; }
+    DbSet<CompanyFeature> CompanyFeatures { get; }
     DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

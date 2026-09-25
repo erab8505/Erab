@@ -27,14 +27,38 @@ public record SchedulingDto(
     public string? SpecialistName => EmployeeName;
 }
 
-public record CreateSchedulingDto(
-    Guid PatientId,
-    Guid EmployeeId,
-    Guid InterventionTypeId,
-    DateTimeOffset ScheduledAt,
-    int DurationMinutes,
-    string? Notes
-);
+public class CreateSchedulingDto
+{
+    public Guid PatientId { get; set; }
+    public Guid EmployeeId { get; set; }
+    public Guid? SpecialistId
+    {
+        get => EmployeeId;
+        set
+        {
+            if (value.HasValue && value.Value != Guid.Empty)
+            {
+                EmployeeId = value.Value;
+            }
+        }
+    }
+    public Guid InterventionTypeId { get; set; }
+    public DateTimeOffset ScheduledAt { get; set; }
+    public int DurationMinutes { get; set; }
+    public string? Notes { get; set; }
+
+    public CreateSchedulingDto() { }
+
+    public CreateSchedulingDto(Guid patientId, Guid employeeId, Guid interventionTypeId, DateTimeOffset scheduledAt, int durationMinutes, string? notes, Guid? specialistId = null)
+    {
+        PatientId = patientId;
+        EmployeeId = employeeId != Guid.Empty ? employeeId : (specialistId ?? Guid.Empty);
+        InterventionTypeId = interventionTypeId;
+        ScheduledAt = scheduledAt;
+        DurationMinutes = durationMinutes;
+        Notes = notes;
+    }
+}
 
 public record UpdateSchedulingStatusDto(
     AppointmentStatus Status

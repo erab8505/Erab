@@ -1,3 +1,4 @@
+using MedApp.Domain.Constants;
 using MedApp.Domain.Entities;
 using MedApp.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -89,6 +90,9 @@ public static class DbInitializer
 
             // Seed Clinical Studies & Laboratory Module
             await SeedClinicalStudiesAndLabModuleAsync(context, logger);
+
+            // Seed Company Features for all companies
+            await SeedCompanyFeaturesAsync(context, logger);
         }
         catch (Exception ex)
         {
@@ -1443,6 +1447,62 @@ public static class DbInitializer
                     logger.LogInformation("Sample study orders seeded for company {CompanyId}.", companyId);
                 }
             }
+        }
+    }
+
+    private static async Task SeedCompanyFeaturesAsync(MedAppDbContext context, ILogger logger)
+    {
+        var companies = await context.Companies.IgnoreQueryFilters().Include(c => c.Features).ToListAsync();
+        bool anyAdded = false;
+
+        foreach (var company in companies)
+        {
+            var existingKeys = company.Features.Select(f => f.FeatureKey).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (!existingKeys.Contains(CompanyFeatureKeys.ModuleScheduling))
+            {
+                var f = new CompanyFeature
+                {
+                    CompanyId = company.Id,
+                    FeatureKey = CompanyFeatureKeys.ModuleScheduling,
+                    IsEnabled = true
+                };
+                context.CompanyFeatures.Add(f);
+                company.Features.Add(f);
+                anyAdded = true;
+            }
+
+            if (!existingKeys.Contains(CompanyFeatureKeys.ModuleLaboratory))
+            {
+                var f = new CompanyFeature
+                {
+                    CompanyId = company.Id,
+                    FeatureKey = CompanyFeatureKeys.ModuleLaboratory,
+                    IsEnabled = true
+                };
+                context.CompanyFeatures.Add(f);
+                company.Features.Add(f);
+                anyAdded = true;
+            }
+
+            if (!existingKeys.Contains(CompanyFeatureKeys.AllowReceptionistStudyOrders))
+            {
+                var f = new CompanyFeature
+                {
+                    CompanyId = company.Id,
+                    FeatureKey = CompanyFeatureKeys.AllowReceptionistStudyOrders,
+                    IsEnabled = true
+                };
+                context.CompanyFeatures.Add(f);
+                company.Features.Add(f);
+                anyAdded = true;
+            }
+        }
+
+        if (anyAdded)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Company features seeded successfully for all existing companies.");
         }
     }
 

@@ -155,7 +155,7 @@ public class SchedulingService : ISchedulingService
 
     public async Task<SchedulingDto> CreateSchedulingAsync(CreateSchedulingDto dto)
     {
-        var employeeId = dto.EmployeeId;
+        var employeeId = dto.EmployeeId != Guid.Empty ? dto.EmployeeId : (dto.SpecialistId ?? Guid.Empty);
 
         if (_currentUserService.IsSpecialist && !_currentUserService.IsAdmin && !_currentUserService.IsReceptionist)
         {

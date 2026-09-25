@@ -14,7 +14,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
       [title]="isEditing ? 'Editar Medicamento' : 'Agregar Medicamento a la Receta'" 
       subtitle="Especifique el nombre, dosis, frecuencia e instrucciones de administración."
       size="md"
-      [zIndex]="60"
+      [zIndex]="zIndex"
       (closed)="close()">
       
       <form [formGroup]="medForm" class="space-y-3">
@@ -97,6 +97,7 @@ export class MedicationModalComponent implements OnChanges {
 
   @Input() isOpen = false;
   @Input() itemToEdit: Partial<PrescriptionItemDto> | null = null;
+  @Input() zIndex = 60;
 
   @Output() closed = new EventEmitter<void>();
   @Output() saved = new EventEmitter<any>();

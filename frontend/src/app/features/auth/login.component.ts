@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -298,7 +298,7 @@ import { ThemeService } from '../../core/services/theme.service';
     :host-context(.dark) .login-footer { border-top-color: #334155; }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly companyService = inject(CompanyContextService);
@@ -314,6 +314,13 @@ export class LoginComponent {
   readonly loading = signal<boolean>(false);
   readonly errorMessage = signal<string>('');
   readonly showPassword = signal<boolean>(false);
+
+  ngOnInit(): void {
+    // If user reaches login page, clear any residual unauthenticated tenant state
+    if (!this.authService.isAuthenticated()) {
+      this.companyService.resetContext();
+    }
+  }
 
   isFieldInvalid(field: string): boolean {
     const ctrl = this.loginForm.get(field);
@@ -345,15 +352,9 @@ export class LoginComponent {
           if (companies.length === 1) {
             this.companyService.setActiveCompany(companies[0]);
             this.router.navigateByUrl(returnUrl);
-          } else if (companies.length > 1) {
-            // Check if there is already an active company that matches one of the assigned ones
-            const currentActive = this.companyService.activeCompany();
-            if (currentActive && companies.some(c => c.id === currentActive.id)) {
-              this.router.navigateByUrl(returnUrl);
-            } else {
-              this.router.navigate(['/select-company']);
-            }
           } else {
+            // For SuperAdmin or users with multiple companies, ALWAYS direct to company selector
+            this.companyService.clearActiveCompany();
             this.router.navigate(['/select-company']);
           }
         }
